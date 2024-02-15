@@ -83,7 +83,7 @@ namespace InnoWerks.Simulators
             WaitCycles(cycles);
 
             byte m = accum ? A : read(addr);
-            SET_CARRY_FROM_VALUE(m);
+            SET_CARRY_ON_SHIFT(m);
             m <<= 1;
             m &= 0xff;
             SET_NEGATIVE_FROM_VALUE(m);
@@ -488,7 +488,7 @@ namespace InnoWerks.Simulators
 
             SET_CARRY(A >= (m & 0xff));
             SET_ZERO(A == (m & 0xff));
-            SET_ZERO_FROM_VALUE(res & 0xff);
+            SET_NEGATIVE_FROM_VALUE(res & 0xff);
         }
 
         /// <summary>
@@ -511,7 +511,7 @@ namespace InnoWerks.Simulators
 
             SET_CARRY(X >= (m & 0xff));
             SET_ZERO(X == (m & 0xff));
-            SET_ZERO_FROM_VALUE(res & 0xff);
+            SET_NEGATIVE_FROM_VALUE(res & 0xff);
         }
 
         /// <summary>
@@ -534,7 +534,7 @@ namespace InnoWerks.Simulators
 
             SET_CARRY(Y >= (m & 0xff));
             SET_ZERO(Y == (m & 0xff));
-            SET_ZERO_FROM_VALUE(res & 0xff);
+            SET_NEGATIVE_FROM_VALUE(res & 0xff);
         }
 
         /// <summary>
@@ -798,7 +798,7 @@ namespace InnoWerks.Simulators
             WaitCycles(cycles);
 
             byte m = accum ? A : read(addr);
-            SET_CARRY_FROM_VALUE(m);
+            SET_CARRY_ON_SHIFT(m);
             m >>= 1;
             SET_NEGATIVE(false);
             SET_ZERO_FROM_VALUE(m);
@@ -1064,7 +1064,7 @@ namespace InnoWerks.Simulators
             {
                 m |= 0x100;
             }
-            SET_CARRY_FROM_VALUE(m);
+            SET_CARRY_ON_SHIFT(m);
             m >>= 1;
             m &= 0xff;
             SET_NEGATIVE_FROM_VALUE(m);

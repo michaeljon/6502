@@ -2,7 +2,7 @@ namespace InnoWerks.Simulators
 {
     public partial class Cpu
     {
-        private void SET_CARRY_FROM_VALUE(int x) { Carry = ((byte)x & 0x01) != 0; }
+        private void SET_CARRY_ON_SHIFT(int x) { Carry = ((byte)x & 0x01) != 0; }
         private void SET_CARRY(bool v) { Carry = v; }
         private void SET_ZERO_FROM_VALUE(int x) { Zero = x == 0; }
         private void SET_ZERO(bool v) { Zero = v; }
