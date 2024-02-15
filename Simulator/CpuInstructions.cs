@@ -1,12 +1,10 @@
-#pragma warning disable CA1822
-
 namespace InnoWerks.Simulators
 {
     public partial class Cpu
     {
         /// <summary>
-        /// ADC - Add with Carry
-        ///
+        /// <para>ADC - Add with Carry</para>
+        /// <code>
         /// Flags affected: nv----zc
         ///
         /// A ← A + M + c
@@ -15,12 +13,10 @@ namespace InnoWerks.Simulators
         /// v ← Signed overflow of result
         /// z ← Set if the result is zero
         /// c ← Carry from ALU (bit 8/16 of result)
-        ///
+        /// </code>
         /// </summary>
         public void ADC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = read(addr);
             int tmp = m + A + (IF_CARRY() ? 1 : 0);
             SET_ZERO_FROM_VALUE(tmp & 0xff);
@@ -44,32 +40,35 @@ namespace InnoWerks.Simulators
             }
 
             A = (byte)(tmp & 0xff);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// AND - And Accumulator with Memory
-        ///
+        /// <para>AND - And Accumulator with Memory</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// A ← A ^ M
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
+        /// </code>
         /// </summary>
         public void AND(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = read(addr);
             byte res = (byte)(m & A);
             SET_NEGATIVE_FROM_VALUE(res);
             SET_ZERO_FROM_VALUE(res);
             A = res;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// ASL - Arithmetic Shift Left
-        ///
+        /// <para>ASL - Arithmetic Shift Left</para>
+        /// <code>
         /// Flags affected: n-----zc
         ///
         /// M ← M + M
@@ -77,11 +76,10 @@ namespace InnoWerks.Simulators
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
         /// c ← Most significant bit of original Memory
+        /// </code>
         /// </summary>
         public void ASL(ushort addr, bool accum, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = accum ? A : read(addr);
             SET_CARRY_ON_SHIFT(m);
             m <<= 1;
@@ -96,17 +94,20 @@ namespace InnoWerks.Simulators
             {
                 write(addr, m);
             }
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BBR - Branch on Bit Reset
-        ///
+        /// <para>BBR - Branch on Bit Reset</para>
+        /// <code>
         /// Flags affected: --------
         /// Branch not taken:
         /// —
         ///
         /// Branch taken:
         /// PC ← PC + sign-extend(near)
+        /// </code>
         ///
         /// The specified bit in the zero page location specified in the
         /// operand is tested. If it is clear (reset), a branch is taken; if it is
@@ -125,24 +126,25 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void BBR(ushort addr, byte bit, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             if ((addr & (0x01 << bit)) == 0)
             {
                 sbyte offset = (sbyte)read(ProgramCounter++);
                 ProgramCounter = (ushort)(ProgramCounter + offset);
             }
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BBS - Branch on Bit Set
-        ///
+        /// <para>BBS - Branch on Bit Set</para>
+        /// <code>
         /// Flags affected: --------
         /// Branch not taken:
         /// —
         ///
         /// Branch taken:
         /// PC ← PC + sign-extend(near)
+        /// </code>
         ///
         /// The specified bit in the zero page location specified in the
         /// operand is tested. If it is set, a branch is taken; if it is
@@ -162,78 +164,81 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void BBS(ushort addr, byte bit, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             if ((addr & (0x01 << bit)) != 0)
             {
                 sbyte offset = (sbyte)read(ProgramCounter++);
                 ProgramCounter = (ushort)(ProgramCounter + offset);
             }
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BCC - Branch on Carry Clear
-        ///
+        /// <para>BCC - Branch on Carry Clear</para>
+        /// <code>
         /// Flags affected: --------
         /// Branch not taken:
         /// —
         ///
         /// Branch taken:
         /// PC ← PC + sign-extend(near)
+        /// </code>
         /// </summary>
         public void BCC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             if (IF_CARRY() == false)
             {
                 ProgramCounter = addr;
             }
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BCS - Branch on Carry Set
-        ///
+        /// <para>BCS - Branch on Carry Set</para>
+        /// <code>
         /// Flags affected: --------
         /// Branch not taken:
         /// —
         ///
         /// Branch taken:
         /// PC ← PC + sign-extend(near)
+        /// </code>
         /// </summary>
         public void BCS(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             if (IF_CARRY())
             {
                 ProgramCounter = addr;
             }
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BEQ - Branch on Result Zero
-        ///
+        /// <para>BEQ - Branch on Result Zero</para>
+        /// <code>
         /// Flags affected: --------
         /// Branch not taken:
         /// —
         ///
         /// Branch taken:
         /// PC ← PC + sign-extend(near)
+        /// </code>
         /// </summary>
         public void BEQ(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             if (IF_ZERO())
             {
                 ProgramCounter = addr;
             }
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BIT - Test Memory Bits against Accumulator
-        ///
+        /// <para>BIT - Test Memory Bits against Accumulator</para>
+        /// <code>
         /// Flags affected: nv----z-
         /// Flags affected (Immediate addressing mode only): ------z-
         ///
@@ -242,22 +247,23 @@ namespace InnoWerks.Simulators
         /// n ← Most significant bit of memory
         /// v ← Second most significant bit of memory
         /// z ← Set if logical AND of memory and Accumulator is zero
+        /// </code>
         /// </summary>
         public void BIT(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = read(addr);
             SET_NEGATIVE_FROM_VALUE(m);
             SET_OVERFLOW_FROM_VALUE(m);
 
             byte res = (byte)(m & A);
             SET_ZERO_FROM_VALUE(res);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BMI - Branch on Result Minus
-        ///
+        /// <para>BMI - Branch on Result Minus</para>
+        /// <code>
         /// Flags affected: --------
         /// Branch not taken:
         /// —
@@ -267,20 +273,21 @@ namespace InnoWerks.Simulators
         ///
         /// Branch taken (BRL):
         /// PC ← PC + label
+        /// </code>
         /// </summary>
         public void BMI(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             if (IF_NEGATIVE())
             {
                 ProgramCounter = addr;
             }
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BNE - Branch on Negative
-        ///
+        /// <para>BNE - Branch on Negative</para>
+        /// <code>
         /// Flags affected: --------
         /// Branch not taken:
         /// —
@@ -290,74 +297,76 @@ namespace InnoWerks.Simulators
         ///
         /// Branch taken (BRL):
         /// PC ← PC + label
+        /// </code>
         /// </summary>
         public void BNE(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             if (IF_ZERO() == false)
             {
                 ProgramCounter = addr;
             }
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BPL - Branch on Result Plus
-        ///
+        /// <para>BPL - Branch on Result Plus</para>
+        /// <code>
         /// Flags affected: --------
         /// Branch not taken:
         /// —
         ///
         /// Branch taken:
         /// PC ← PC + sign-extend(near)
+        /// </code>
         /// </summary>
         public void BPL(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             if (IF_NEGATIVE() == false)
             {
                 ProgramCounter = addr;
             }
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BRA - Branch Always
-        ///
+        /// <para>BRA - Branch Always</para>
+        /// <code>
         /// Flags affected: --------
-        /// Branch not taken:
-        /// —
         ///
         /// Branch taken:
         /// PC ← PC + sign-extend(near)
+        /// </code>
         /// </summary>
         public void BRA(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             ProgramCounter = addr;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BRL - Branch Long
-        ///
+        /// <para>BRL - Branch Long</para>
+        /// <code>
         /// Flags affected: --------
         /// Branch not taken:
         /// —
         ///
         /// Branch taken:
         /// PC ← PC + sign-extend(near)
+        /// </code>
         /// </summary>
         public void BRL(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             ProgramCounter += addr;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BRK - Force Break
-        ///
+        /// <para>BRK - Force Break</para>
+        /// <code>
         /// Flags affected: ----di--
         ///
         /// S     ← S - 4
@@ -369,131 +378,148 @@ namespace InnoWerks.Simulators
         /// i     ← 1
         /// P     ← 0
         /// PC    ← interrupt address
+        /// </code>
         /// </summary>
         public void BRK(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             ProgramCounter++;
             StackPush((byte)(ProgramCounter >> 8));
             StackPush((byte)(ProgramCounter & 0xff));
             StackPush((byte)(ProcessorStatus | (byte)ProcessorStatusBit.Unused | (byte)ProcessorStatusBit.BreakCommand));
             SET_INTERRUPT(true);
             ProgramCounter = (ushort)((read(IrqVectorH) << 8) + read(IrqVectorL));
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BBR - Branch on Overflow Clear
-        ///
+        /// <para>BBR - Branch on Overflow Clear</para>
+        /// <code>
         /// Flags affected: --------
         /// Branch not taken:
         /// —
         ///
         /// Branch taken:
         /// PC ← PC + sign-extend(near)
+        /// </code>
         /// </summary>
         public void BVC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             if (IF_OVERFLOW() == false)
             {
                 ProgramCounter = addr;
             }
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// BBR - Branch on Overflow Set
-        ///
+        /// <para>BBR - Branch on Overflow Set</para>
+        /// <code>
         /// Flags affected: --------
         /// Branch not taken:
         /// —
         ///
         /// Branch taken:
         /// PC ← PC + sign-extend(near)
+        /// </code>
         /// </summary>
         public void BVS(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             if (IF_OVERFLOW())
             {
                 ProgramCounter = addr;
             }
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// CLC - Clear Carry
-        /// Flags affected (CLC): -------c
+        /// <para>CLC - Clear Carry</para>
+        /// <code>
+        /// Flags affected: -------c
+        ///
         /// c ← 0
+        /// </code>
         /// </summary>
         public void CLC(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             SET_CARRY(false);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// CLC - Clear Decimal
-        /// Flags affected (CLD): ----d---
+        /// <para>CLC - Clear Decimal</para>
+        /// <code>
+        /// Flags affected: ----d---
+        ///
         /// d ← 0
+        /// </code>
         /// </summary>
         public void CLD(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             SET_DECIMAL(false);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// CLC - Clear Interrupt
-        /// Flags affected (CLI): -----i--
+        /// <para>CLC - Clear Interrupt</para>
+        /// <code>
+        /// Flags affected: -----i--
+        ///
         /// i ← 0
+        /// </code>
         /// </summary>
         public void CLI(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             SET_INTERRUPT(false);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// CLC - Clear Overflow
-        /// Flags affected (CLV): -v------
+        /// <para>CLV - Clear Overflow</para>
+        /// <code>
+        /// Flags affected: -v------
+        ///
         /// v ← 0
+        /// </code>
         /// </summary>
         public void CLV(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             SET_OVERFLOW(false);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// CMP - Compare Accumulator with Memory
-        ///
+        /// <para>CMP - Compare Accumulator with Memory</para>
+        /// <code>
         /// Flags affected: n-----zc
+        ///
         /// A - M
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero (Set if A == M)
         /// c ← Carry from ALU (Set if A >= M)
+        /// </code>
         /// </summary>
         public void CMP(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             int m = read(addr);
             int res = A - m;
 
             SET_CARRY(A >= (m & 0xff));
             SET_ZERO(A == (m & 0xff));
             SET_NEGATIVE_FROM_VALUE(res & 0xff);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// CPX - Compare Index Register X with Memory
-        ///
+        /// <para>CPX - Compare Index Register X with Memory</para>
+        /// <code>
         /// Flags affected: n-----zc
         ///
         /// X - M
@@ -501,22 +527,23 @@ namespace InnoWerks.Simulators
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero (Set if X == M)
         /// c ← Carry from ALU (Set if X >= M)
+        /// </code>
         /// </summary>
         public void CPX(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             int m = read(addr);
             int res = X - m;
 
             SET_CARRY(X >= (m & 0xff));
             SET_ZERO(X == (m & 0xff));
             SET_NEGATIVE_FROM_VALUE(res & 0xff);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// CPY - Compare Index Register Y with Memory
-        ///
+        /// <para>CPY - Compare Index Register Y with Memory</para>
+        /// <code>
         /// Flags affected: n-----zc
         ///
         /// Y - M
@@ -524,183 +551,193 @@ namespace InnoWerks.Simulators
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero (Set if Y == M)
         /// c ← Carry from ALU (Set if Y >= M)
+        /// </code>
         /// </summary>
         public void CPY(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             int m = read(addr);
             int res = Y - m;
 
             SET_CARRY(Y >= (m & 0xff));
             SET_ZERO(Y == (m & 0xff));
             SET_NEGATIVE_FROM_VALUE(res & 0xff);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// DEC - Decrement
-        ///
+        /// <para>DEC - Decrement</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// M ← M - 1
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
+        /// </code>
         /// </summary>
         public void DEC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = read(addr);
             m = (byte)((m - 1) & 0xff);
             SET_NEGATIVE_FROM_VALUE(m);
             SET_ZERO_FROM_VALUE(m);
             write(addr, m);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// DEX - Decrement Index Registers
-        ///
+        /// <para>DEX - Decrement Index Registers</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// R ← R - 1
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
+        /// </code>
         /// </summary>
         public void DEX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = X;
             m = (byte)((m - 1) & 0xff);
             SET_NEGATIVE_FROM_VALUE(m);
             SET_ZERO_FROM_VALUE(m);
             X = m;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// DEY - Decrement Index Registers
-        ///
+        /// <para>DEY - Decrement Index Registers</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// R ← R - 1
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
+        /// </code>
         /// </summary>
         public void DEY(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = Y;
             m = (byte)((m - 1) & 0xff);
             SET_NEGATIVE_FROM_VALUE(m);
             SET_ZERO_FROM_VALUE(m);
             Y = m;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// EOR - Exclusive OR Accumulator with Memory
-        ///
+        /// <para>EOR - Exclusive OR Accumulator with Memory</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// A ← A ^ M
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
+        /// </code>
         /// </summary>
         public void EOR(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = read(addr);
             m = (byte)(A ^ m);
             SET_NEGATIVE_FROM_VALUE(m);
             SET_ZERO_FROM_VALUE(m);
             A = m;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// INC - Increment
-        ///
+        /// <para>INC - Increment</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// M ← M + 1
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
+        /// </code>
         /// </summary>
         public void INC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = read(addr);
             m = (byte)((m + 1) & 0xff);
             SET_NEGATIVE_FROM_VALUE(m);
             SET_ZERO_FROM_VALUE(m);
             write(addr, m);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// INX - Increment Index Registers
-        ///
+        /// <para>INX - Increment Index Registers</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// R ← R + 1
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
+        /// </code>
         /// </summary>
         public void INX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = X;
             m = (byte)((m + 1) & 0xff);
             SET_NEGATIVE_FROM_VALUE(m);
             SET_ZERO_FROM_VALUE(m);
             X = m;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// INY - Increment Index Registers
-        ///
+        /// <para>INY - Increment Index Registers</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// R ← R + 1
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
+        /// </code>
         /// </summary>
         public void INY(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = Y;
             m = (byte)((m + 1) & 0xff);
             SET_NEGATIVE_FROM_VALUE(m);
             SET_ZERO_FROM_VALUE(m);
             Y = m;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// JMP - Jump
-        ///
+        /// <para>JMP - Jump</para>
+        /// <code>
         /// Flags affected: --------
         ///
         /// JMP:
         /// PC     ← M
+        /// </code>
         /// </summary>
         public void JMP(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             ProgramCounter = addr;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// JSR - Jump to Subroutine
+        /// <para>JSR - Jump to Subroutine</para>
+        /// <code>
         /// Flags affected: --------
         ///
         /// JSR:
@@ -709,80 +746,84 @@ namespace InnoWerks.Simulators
         /// [S+2]  ← PC.h
         /// [S+1]  ← PC.l
         /// PC     ← M
+        /// </code>
         /// </summary>
         public void JSR(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             ProgramCounter--;
             StackPush((byte)((ProgramCounter >> 8) & 0xff));
             StackPush((byte)(ProgramCounter & 0xff));
             ProgramCounter = addr;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// LDA - Load Accumulator from Memory
-        ///
-        ///         Flags affected: n-----z-
+        /// <para>LDA - Load Accumulator from Memory</para>
+        /// <code>
+        /// Flags affected: n-----z-
         ///
         /// A ← M
         ///
         /// n ← Most significant bit of Accumulator
         /// z ← Set if the Accumulator is zero
+        /// </code>
         /// </summary>
         public void LDA(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = read(addr);
             SET_NEGATIVE_FROM_VALUE(m);
             SET_ZERO_FROM_VALUE(m);
             A = m;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// LDX - Load Index Register X from Memory
-        ///
+        /// <para>LDX - Load Index Register X from Memory</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// X ← M
         ///
         /// n ← Most significant bit of X
         /// z ← Set if the X is zero
+        /// </code>
         /// </summary>
         public void LDX(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = read(addr);
             SET_NEGATIVE_FROM_VALUE(m);
             SET_ZERO_FROM_VALUE(m);
             X = m;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// LDY - Load Index Register Y from Memory
-        ///
+        /// <para>LDY - Load Index Register Y from Memory</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// Y ← M
         ///
         /// n ← Most significant bit of Y
         /// z ← Set if the Y is zero
+        /// </code>
         /// </summary>
         public void LDY(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = read(addr);
             SET_NEGATIVE_FROM_VALUE(m);
             SET_ZERO_FROM_VALUE(m);
             Y = m;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// LSR - Logical Shift Right
-        ///
+        /// <para>LSR - Logical Shift Right</para>
+        /// <code>
         /// Flags affected: n-----zc
         ///
         /// M ← M >> 1
@@ -790,13 +831,12 @@ namespace InnoWerks.Simulators
         /// n ← cleared
         /// z ← Set if the result is zero
         /// c ← Bit 0 of original memory
+        /// </code>
         ///
         /// NOTE: This is an unsigned operation, the MSB of the result is always 0.
         /// </summary>
         public void LSR(ushort addr, bool accum, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = accum ? A : read(addr);
             SET_CARRY_ON_SHIFT(m);
             m >>= 1;
@@ -810,12 +850,15 @@ namespace InnoWerks.Simulators
             {
                 write(addr, m);
             }
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// NOP - No Operation
-        ///
+        /// <para>NOP - No Operation</para>
+        /// <code>
         /// Flags affected: --------
+        /// </code>
         /// </summary>
         public void NOP(ushort _, long cycles, long pageCrossPenalty = 0)
         {
@@ -823,93 +866,98 @@ namespace InnoWerks.Simulators
         }
 
         /// <summary>
-        /// ORA - OR Accumulator with Memory
-        ///
+        /// <para>ORA - OR Accumulator with Memory</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// A ← A | M
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
+        /// </code>
         /// </summary>
         public void ORA(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = read(addr);
             m = (byte)(A | m);
             SET_NEGATIVE_FROM_VALUE(m);
             SET_ZERO_FROM_VALUE(m);
             A = m;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// PHA - Push to Stack
-        ///
+        /// <para>PHA - Push A to Stack</para>
+        /// <code>
         /// Flags affected: --------
         ///
         /// 8 bit register:
         /// S     ← S - 1
         /// [S+1] ← R
+        /// </code>
         /// </summary>
         public void PHA(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             StackPush(A);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// PHP - Push to Stack
-        ///
+        /// <para>PHP - Push PS to Stack</para>
+        /// <code>
         /// Flags affected: --------
         ///
         /// 8 bit register:
         /// S     ← S - 1
         /// [S+1] ← R
+        /// </code>
         /// </summary>
         public void PHP(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             StackPush(ProcessorStatus);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// PHX - Push to Stack
-        ///
+        /// <para>PHX - Push X to Stack</para>
+        /// <code>
         /// Flags affected: --------
         ///
         /// 8 bit register:
         /// S     ← S - 1
         /// [S+1] ← R
+        /// </code>
         /// </summary>
         public void PHX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             StackPush(X);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// PHY - Push to Stack
-        ///
+        /// <para>PHY - Push Y to Stack</para>
+        /// <code>
         /// Flags affected: --------
         ///
         /// 8 bit register:
         /// S     ← S - 1
         /// [S+1] ← R
+        /// </code>
         /// </summary>
         public void PHY(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             StackPush(Y);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// PLA - Pull from Stack
-        ///
+        /// <para>PLA - Pull A from Stack</para>
+        /// <code>
         /// Flags affected: n-----z-
         /// Flags affected (PLP): nvmxdizc
         ///
@@ -919,35 +967,37 @@ namespace InnoWerks.Simulators
         ///
         /// n   ← Most significant bit of register
         /// z   ← Set if the register is zero
+        /// </code>
         /// </summary>
         public void PLA(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             A = StackPop();
             SET_NEGATIVE_FROM_VALUE(A);
             SET_ZERO_FROM_VALUE(A);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// PLP - Pull from Stack
-        ///
+        /// <para>PLP - Pull PS from Stack</para>
+        /// <code>
         /// Flags affected (PLP): nvmxdizc
         ///
         /// 8 bit register:
         /// P   ← [S+1]
         /// S   ← S + 1
+        /// </code>
         /// </summary>
         public void PLP(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             ProcessorStatus = StackPop();
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// PLX - Pull from Stack
-        ///
+        /// <para>PLX - Pull X from Stack</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// 8 bit register:
@@ -956,19 +1006,20 @@ namespace InnoWerks.Simulators
         ///
         /// n   ← Most significant bit of register
         /// z   ← Set if the register is zero
+        /// </code>
         /// </summary>
         public void PLX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             X = StackPop();
             SET_NEGATIVE_FROM_VALUE(X);
             SET_ZERO_FROM_VALUE(X);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// PLY - Pull from Stack
-        ///
+        /// <para>PLY - Pull Y from Stack</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// 8 bit register:
@@ -977,39 +1028,41 @@ namespace InnoWerks.Simulators
         ///
         /// n   ← Most significant bit of register
         /// z   ← Set if the register is zero
+        /// </code>
         /// </summary>
         public void PLY(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             Y = StackPop();
             SET_NEGATIVE_FROM_VALUE(Y);
             SET_ZERO_FROM_VALUE(Y);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// RMB - Reset Memory Bit
-        ///
+        /// <para>RMB - Reset Memory Bit</para>
+        /// <code>
         /// Flags affected: -------
         ///
         /// Clear the specified bit in the zero page memory location
         /// specified in the operand. The bit to clear is specified
         /// by a number (0 through 7) concatenated to the end of the
         /// mnemonic.
+        /// </code>
         /// </summary>
         public void RMB(ushort addr, byte bit, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte flag = (byte)(0x01 << bit);
             byte value = read(addr);
             value &= unchecked((byte)~flag);
             write(addr, value);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// ROL - Rotate Left
-        ///
+        /// <para>ROL - Rotate Left</para>
+        /// <code>
         /// Flags affected: n-----zc
         ///
         /// M ← M + M + c
@@ -1017,11 +1070,10 @@ namespace InnoWerks.Simulators
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
         /// c ← Most significant bit of original Memory
+        /// </code>
         /// </summary>
         public void ROL(ushort addr, bool accum, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             ushort m = accum ? A : read(addr);
             m <<= 1;
             if (IF_CARRY())
@@ -1040,25 +1092,24 @@ namespace InnoWerks.Simulators
             {
                 write(addr, (byte)m);
             }
+
+            WaitCycles(cycles);
         }
 
-#pragma warning disable CS1570
         /// <summary>
-        /// ROR - Rotate Right
-        ///
+        /// <para>ROR - Rotate Right</para>
+        /// <code>
         /// Flags affected: n-----zc
         ///
-        /// M ← (c << (m ? 7 : 15)) | (M >> 1)
+        /// M ← (c &lt;&lt; (m ? 7 : 15)) | (M &gt;&gt; 1)
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
         /// c ← Bit 0 of original memory
+        /// </code>
         /// </summary>
-#pragma warning restore CS1570
         public void ROR(ushort addr, bool accum, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             ushort m = accum ? A : read(addr);
             if (IF_CARRY())
             {
@@ -1077,53 +1128,57 @@ namespace InnoWerks.Simulators
             {
                 write(addr, (byte)m);
             }
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// RTI - Return From Interrupt
-        ///
+        /// <para>RTI - Return From Interrupt</para>
+        /// <code>
         /// Flags affected: nvmxdizc
         ///
         /// P    ← [S+1]
         /// PC.l ← [S+2]
         /// PC.h ← [S+3]
         /// S    ← S + 3
+        /// </code>
         /// </summary>
         public void RTI(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             ProcessorStatus = StackPop();
 
             byte lo = StackPop();
             byte hi = StackPop();
 
             ProgramCounter = (ushort)((hi << 8) | lo);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// RTS  - Return From Subroutine
-        ///
+        /// <para>RTS  - Return From Subroutine</para>
+        /// <code>
         /// Flags affected: --------
         ///
         /// PC.l ← [S+1]
         /// PC.h ← [S+2]
         /// S    ← S + 2
         /// PC   ← PC + 1
+        /// </code>
         /// </summary>
         public void RTS(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte lo = StackPop();
             byte hi = StackPop();
 
             ProgramCounter = (ushort)(((hi << 8) | lo) + 1);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// SBC - Subtract with Borrow from Accumulator
-        ///
+        /// <para>SBC - Subtract with Borrow from Accumulator</para>
+        /// <code>
         /// Flags affected: nv----zc
         ///
         /// A ← A + (~M) + c
@@ -1132,11 +1187,10 @@ namespace InnoWerks.Simulators
         /// v ← Signed overflow of result
         /// z ← Set if the Accumulator is zero
         /// c ← Carry from ALU(bit 8/16 of result) (set if borrow not required)
+        /// </code>
         /// </summary>
         public void SBC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte m = read(addr);
             int tmp = A - m - (IF_CARRY() ? 0 : 1);
 
@@ -1156,54 +1210,60 @@ namespace InnoWerks.Simulators
 
             SET_CARRY(tmp < 0x100);
             A = (byte)(tmp & 0xff);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// SEC - Set Carry
-        ///
+        /// <para>SEC - Set Carry</para>
+        /// <code>
         /// Flags affected (SEC): -------c
         ///
         /// c ← 1
+        /// </code>
         /// </summary>
         public void SEC(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             SET_CARRY(true);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// SED - Set Decimal
-        ///
+        /// <para>SED - Set Decimal</para>
+        /// <code>
         /// Flags affected (SED): ----d---
         ///
         /// d ← 1
+        /// </code>
         /// </summary>
         public void SED(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             SET_DECIMAL(true);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// SED - Set Interrupt
-        ///
+        /// <para>SEI - Set Interrupt</para>
+        /// <code>
         /// Flags affected (SEI): -----i--
         ///
         /// i ← 1
+        /// </code>
         /// </summary>
         public void SEI(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             SET_INTERRUPT(true);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// SMB - Set Memory Bit
-        ///
+        /// <para>SMB - Set Memory Bit</para>
+        /// <code>
         /// Flags affected: n------ ?
+        /// </code>
         ///
         /// Clear the specified bit in the zero page memory location
         /// specified in the operand. The bit to clear is specified
@@ -1212,110 +1272,117 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void SMB(ushort addr, byte bit, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte flag = (byte)(0x01 << bit);
             byte value = read(addr);
             value |= flag;
             write(addr, value);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// STA - Store Accumulator to Memory
-        ///
+        /// <para>STA - Store Accumulator to Memory</para>
+        /// <code>
         /// Flags affected: --------
         ///
         /// M ← A
+        /// </code>
         /// </summary>
         public void STA(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             write(addr, A);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// STX - Store Index Register X to Memory
-        ///
+        /// <para>STX - Store Index Register X to Memory</para>
+        /// <code>
         /// Flags affected: --------
         ///
         /// M ← X
+        /// </code>
         /// </summary>
         public void STX(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             write(addr, X);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// STY - Store Index Register Y to Memory
-        ///
+        /// <para>STY - Store Index Register Y to Memory</para>
+        /// <code>
         /// Flags affected: --------
         ///
         /// M ← Y
+        /// </code>
         /// </summary>
         public void STY(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             write(addr, Y);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// STZ - Store Zero to Memory
-        ///
+        /// <para>STZ - Store Zero to Memory</para>
+        /// <code>
         /// Flags affected: --------
         ///
         /// M ← 0
+        /// </code>
         /// </summary>
         public void STZ(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             write(addr, 0);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// TAX - Transfer Accumulator to X
-        ///
+        /// <para>TAX - Transfer Accumulator to X</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// X ← A
         /// n ← Most significant bit of the transferred value
         /// z ← Set if the transferred value is zero
+        /// </code>
         /// </summary>
         public void TAX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             X = A;
             SET_NEGATIVE_FROM_VALUE(X);
             SET_ZERO_FROM_VALUE(X);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// TAY - Transfer Accumulator to Y
-        ///
+        /// <para>TAY - Transfer Accumulator to Y</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// Y ← A
         /// n ← Most significant bit of the transferred value
         /// z ← Set if the transferred value is zero
+        /// </code>
         /// </summary>
         public void TAY(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             Y = A;
             SET_NEGATIVE_FROM_VALUE(Y);
             SET_ZERO_FROM_VALUE(Y);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// TRB - Test and Reset Memory Bits Against Accumulator
-        ///
+        /// <para>TRB - Test and Reset Memory Bits Against Accumulator</para>
+        /// <code>
         /// Flags affected: ------z-
+        /// </code>
         ///
         /// Logically AND together the complement of the value in the
         /// accumulator with the data at the effective address specified
@@ -1333,18 +1400,18 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TRB(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte value = read(addr);
             value = (byte)(value & (byte)~A);
             write(addr, value);
 
             SET_ZERO_FROM_VALUE(value & A);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// TSB - Test and Set Memory Bits Against Accumulator
-        ///
+        /// <para>TSB - Test and Set Memory Bits Against Accumulator</para>
+        /// <code>
         /// Flags affected: ------z-
         ///
         /// Logically OR together the value in the accumulator with the data
@@ -1361,86 +1428,91 @@ namespace InnoWerks.Simulators
         /// same way the BIT instruction affects the zero flag). The result
         /// of this second operation is not saved; only the zero flag is
         /// affected by it.
+        /// </code>
         /// </summary>
         public void TSB(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             byte value = read(addr);
             value = (byte)(value | A);
             write(addr, value);
 
             SET_ZERO_FROM_VALUE(value & A);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// TSX - Transfer Stack Pointer to X
-        ///
+        /// <para>TSX - Transfer Stack Pointer to X</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// X ← S
         /// n ← Most significant bit of the transferred value
         /// z ← Set if the transferred value is zero
+        /// </code>
         /// </summary>
         public void TSX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             X = StackPointer;
             SET_NEGATIVE_FROM_VALUE(StackPointer);
             SET_ZERO_FROM_VALUE(StackPointer);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// TSX - Transfer X to Accumulator
-        ///
+        /// <para>TXA - Transfer X to Accumulator</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// A ← X
         /// n ← Most significant bit of the transferred value
         /// z ← Set if the transferred value is zero
+        /// </code>
         /// </summary>
         public void TXA(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             A = X;
             SET_NEGATIVE_FROM_VALUE(A);
             SET_ZERO_FROM_VALUE(A);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// TXS - Transfer X to Stack Pointer
-        ///
+        /// <para>TXS - Transfer X to Stack Pointer</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// S ← X
         /// n ← Most significant bit of the transferred value
         /// z ← Set if the transferred value is zero
+        /// </code>
         /// </summary>
         public void TXS(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             StackPointer = X;
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
-        /// TYA - Transfer Y to Accumulator
-        ///
+        /// <para>TYA - Transfer Y to Accumulator</para>
+        /// <code>
         /// Flags affected: n-----z-
         ///
         /// A ← Y
         /// n ← Most significant bit of the transferred value
         /// z ← Set if the transferred value is zero
+        /// </code>
         /// </summary>
         public void TYA(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            WaitCycles(cycles);
-
             A = Y;
             SET_NEGATIVE_FROM_VALUE(A);
             SET_ZERO_FROM_VALUE(A);
+
+            WaitCycles(cycles);
         }
 
         /// <summary>
