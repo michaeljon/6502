@@ -11,8 +11,8 @@ namespace InnoWerks.Simulators.Driver
         private static void Main(string[] _)
         {
             var program = new Program();
-            // program.Run("sw/sort", 0x6000, 0x605c);
-            program.Run("sw/sort", 0x6000, 0x606f);
+            program.Run("sw/sort", 0x6000, 0x605c);
+            // program.Run("sw/sort", 0x6000, 0x606f);
         }
 
         private void Run(string filename, ushort org, ushort startAddr)
@@ -41,8 +41,7 @@ namespace InnoWerks.Simulators.Driver
             // run
             cpu.Run(stopOnBreak: true, writeInstructions: true);
 
-            PrintPage(0x00);
-            PrintPage(0x01);
+            Console.WriteLine($"Ticks: {cpu.Cycles}");
         }
 
         private byte Read(ushort addr)

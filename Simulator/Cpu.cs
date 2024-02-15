@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace InnoWerks.Simulators
 {
@@ -13,6 +14,8 @@ namespace InnoWerks.Simulators
 
         public const ushort NmiVectorH = 0xFFFB;
         public const ushort NmiVectorL = 0xFFFA;
+
+        private const long TicksPerMicrosecond = 10;    // a tick is 100ns
 
         private bool illegalOpCode;
 
@@ -43,7 +46,7 @@ namespace InnoWerks.Simulators
             while (illegalOpCode == false)
             {
                 opcode = read(ProgramCounter++);
-                opCodeDefinition = OpCodes.OpCodeDefinitions[opcode];
+                opCodeDefinition = OpCodes.OpCode6502[opcode];
 
                 if (opCodeDefinition.Nmemonic == null)
                 {
@@ -84,6 +87,7 @@ namespace InnoWerks.Simulators
             StackPush((byte)((ProcessorStatus & 0xef) | 0x10));
 
             SET_INTERRUPT(true);
+            SET_DECIMAL(false);
 
             // load PC from reset vector
             ushort pcl = read(NmiVectorL);
@@ -101,6 +105,7 @@ namespace InnoWerks.Simulators
                 StackPush((byte)((ProcessorStatus & 0xef) | 0x10));
 
                 SET_INTERRUPT(true);
+                SET_DECIMAL(false);
 
                 // load PC from reset vector
                 ushort pcl = read(IrqVectorL);
@@ -117,16 +122,32 @@ namespace InnoWerks.Simulators
             Console.WriteLine($"PS: {(Negative ? 1 : 0)}{(Overflow ? 1 : 0)}{1}{(Break ? 1 : 0)}{(Decimal ? 1 : 0)}{(Interrupt ? 1 : 0)}{(Zero ? 1 : 0)}{(Carry ? 1 : 0)}");
         }
 
+        private long runningCycles;
+
+        public long Cycles => runningCycles;
+
+        private void WaitCycles(long cycles)
+        {
+            runningCycles += cycles;
+
+            var t = Task.Run(async delegate
+                          {
+                              await Task.Delay(new TimeSpan(TicksPerMicrosecond * cycles));
+                              return 0;
+                          });
+            t.Wait();
+        }
+
         private void Execute(byte opcode, OpCodeDefinition opCodeDefinition, bool writeInstructions)
         {
-            // for display we need to 'reverse' the auto-increment
-            ushort pc = (ushort)(ProgramCounter - 1);
             ushort src = opCodeDefinition.DecodeOperand(this);
 
             if (writeInstructions)
             {
-                Console.WriteLine($"{pc:X4} {opCodeDefinition.Nmemonic} [{opcode:X2}] {src:X4}");
+                // for display we need to 'reverse' the auto-increment
+                Console.WriteLine($"{(ushort)(ProgramCounter - 1):X4} {opCodeDefinition.Nmemonic} [{opcode:X2}] {src:X4}");
             }
+
             opCodeDefinition.Execute(this, src);
             callback?.Invoke(this);
         }
@@ -134,28 +155,12 @@ namespace InnoWerks.Simulators
         private void StackPush(byte b)
         {
             write((ushort)(0x0100 + StackPointer), b);
-
-            if (StackPointer == 0x00)
-            {
-                StackPointer = 0xff;
-            }
-            else
-            {
-                StackPointer--;
-            }
+            StackPointer = (byte)((StackPointer == 0x00) ? 0xff : (StackPointer - 1));
         }
 
         private byte StackPop()
         {
-            if (StackPointer == 0xff)
-            {
-                StackPointer = 0x00;
-            }
-            else
-            {
-                StackPointer++;
-            }
-
+            StackPointer = (byte)((StackPointer == 0xff) ? 0x00 : (StackPointer + 1));
             return read((ushort)(0x0100 + StackPointer));
         }
     }

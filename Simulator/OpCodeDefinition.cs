@@ -1,22 +1,31 @@
 using System;
 
-//
-// See: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
-//
 namespace InnoWerks.Simulators
 {
     public record OpCodeDefinition(
         string Nmemonic,
         Action<Cpu, ushort> Execute,
         Func<Cpu, ushort> DecodeOperand,
-        int Cycles)
+        long PageCrossPenalty = 0)
     {
+        /// <summary>
+        ///
+        /// </summary>
         public string Nmemonic { get; init; } = Nmemonic;
 
+        /// <summary>
+        ///
+        /// </summary>
         public Func<Cpu, ushort> DecodeOperand { get; init; } = DecodeOperand;
 
+        /// <summary>
+        ///
+        /// </summary>
         public Action<Cpu, ushort> Execute { get; init; } = Execute;
 
-        public int Cycles { get; init; } = Cycles;
+        /// <summary>
+        ///
+        /// </summary>
+        public long PageCrossPenalty { get; init; } = PageCrossPenalty;
     }
 }

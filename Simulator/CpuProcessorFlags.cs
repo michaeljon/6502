@@ -26,17 +26,17 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool Carry
         {
-            get => (ProcessorStatus & (byte)ProcessorFlag.Carry) != 0;
+            get => (ProcessorStatus & (byte)ProcessorStatusBit.Carry) != 0;
 
             private set
             {
                 if (value == false)
                 {
-                    ProcessorStatus &= unchecked((byte)~ProcessorFlag.Carry);
+                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.Carry);
                 }
                 else
                 {
-                    ProcessorStatus |= (byte)ProcessorFlag.Carry;
+                    ProcessorStatus |= (byte)ProcessorStatusBit.Carry;
                 }
             }
         }
@@ -46,17 +46,17 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool Zero
         {
-            get => (ProcessorStatus & (byte)ProcessorFlag.Zero) != 0;
+            get => (ProcessorStatus & (byte)ProcessorStatusBit.Zero) != 0;
 
             private set
             {
                 if (value == false)
                 {
-                    ProcessorStatus &= unchecked((byte)~ProcessorFlag.Zero);
+                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.Zero);
                 }
                 else
                 {
-                    ProcessorStatus |= (byte)ProcessorFlag.Zero;
+                    ProcessorStatus |= (byte)ProcessorStatusBit.Zero;
                 }
             }
         }
@@ -66,17 +66,17 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool Interrupt
         {
-            get => (ProcessorStatus & (byte)ProcessorFlag.InterruptDisable) != 0;
+            get => (ProcessorStatus & (byte)ProcessorStatusBit.InterruptDisable) != 0;
 
             private set
             {
                 if (value == false)
                 {
-                    ProcessorStatus &= unchecked((byte)~ProcessorFlag.InterruptDisable);
+                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.InterruptDisable);
                 }
                 else
                 {
-                    ProcessorStatus |= (byte)ProcessorFlag.InterruptDisable;
+                    ProcessorStatus |= (byte)ProcessorStatusBit.InterruptDisable;
                 }
             }
         }
@@ -87,17 +87,17 @@ namespace InnoWerks.Simulators
 #pragma warning disable CA1720
         public bool Decimal
         {
-            get => (ProcessorStatus & (byte)ProcessorFlag.DecimalMode) != 0;
+            get => (ProcessorStatus & (byte)ProcessorStatusBit.DecimalMode) != 0;
 
             private set
             {
                 if (value == false)
                 {
-                    ProcessorStatus &= unchecked((byte)~ProcessorFlag.DecimalMode);
+                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.DecimalMode);
                 }
                 else
                 {
-                    ProcessorStatus |= (byte)ProcessorFlag.DecimalMode;
+                    ProcessorStatus |= (byte)ProcessorStatusBit.DecimalMode;
                 }
             }
         }
@@ -107,17 +107,17 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool Break
         {
-            get => (ProcessorStatus & (byte)ProcessorFlag.BreakCommand) != 0;
+            get => (ProcessorStatus & (byte)ProcessorStatusBit.BreakCommand) != 0;
 
             private set
             {
                 if (value == false)
                 {
-                    ProcessorStatus &= unchecked((byte)~ProcessorFlag.BreakCommand);
+                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.BreakCommand);
                 }
                 else
                 {
-                    ProcessorStatus |= (byte)ProcessorFlag.BreakCommand;
+                    ProcessorStatus |= (byte)ProcessorStatusBit.BreakCommand;
                 }
             }
         }
@@ -127,17 +127,17 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool Overflow
         {
-            get => (ProcessorStatus & (byte)ProcessorFlag.Overflow) != 0;
+            get => (ProcessorStatus & (byte)ProcessorStatusBit.Overflow) != 0;
 
             private set
             {
                 if (value == false)
                 {
-                    ProcessorStatus &= unchecked((byte)~ProcessorFlag.Overflow);
+                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.Overflow);
                 }
                 else
                 {
-                    ProcessorStatus |= (byte)ProcessorFlag.Overflow;
+                    ProcessorStatus |= (byte)ProcessorStatusBit.Overflow;
                 }
             }
         }
@@ -147,17 +147,17 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool Negative
         {
-            get => (ProcessorStatus & (byte)ProcessorFlag.Negative) != 0;
+            get => (ProcessorStatus & (byte)ProcessorStatusBit.Negative) != 0;
 
             private set
             {
                 if (value == false)
                 {
-                    ProcessorStatus &= unchecked((byte)~ProcessorFlag.Negative);
+                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.Negative);
                 }
                 else
                 {
-                    ProcessorStatus |= (byte)ProcessorFlag.Negative;
+                    ProcessorStatus |= (byte)ProcessorStatusBit.Negative;
                 }
             }
         }
