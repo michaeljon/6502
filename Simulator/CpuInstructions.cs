@@ -22,6 +22,8 @@ namespace InnoWerks.Simulators
             SET_ZERO_FROM_VALUE(tmp & 0xff);
             if (IF_DECIMAL())
             {
+                cycles++;
+
                 if (((A & 0xF) + (m & 0xF) + (IF_CARRY() ? 1 : 0)) > 9)
                     tmp += 6;
                 SET_NEGATIVE_FROM_VALUE(tmp);
@@ -128,8 +130,15 @@ namespace InnoWerks.Simulators
         {
             if ((addr & (0x01 << bit)) == 0)
             {
+                ushort savePC = ProgramCounter;
+
                 sbyte offset = (sbyte)read(ProgramCounter++);
                 ProgramCounter = (ushort)(ProgramCounter + offset);
+
+                if ((savePC & 0xff00) != (ProgramCounter & 0xff00))
+                {
+                    cycles += pageCrossPenalty;
+                }
             }
 
             WaitCycles(cycles);
@@ -166,8 +175,15 @@ namespace InnoWerks.Simulators
         {
             if ((addr & (0x01 << bit)) != 0)
             {
+                ushort savePC = ProgramCounter;
+
                 sbyte offset = (sbyte)read(ProgramCounter++);
                 ProgramCounter = (ushort)(ProgramCounter + offset);
+
+                if ((savePC & 0xff00) != (ProgramCounter & 0xff00))
+                {
+                    cycles += pageCrossPenalty;
+                }
             }
 
             WaitCycles(cycles);
@@ -188,6 +204,11 @@ namespace InnoWerks.Simulators
         {
             if (IF_CARRY() == false)
             {
+                if ((addr & 0xff00) != (ProgramCounter & 0xff00))
+                {
+                    cycles += pageCrossPenalty;
+                }
+
                 ProgramCounter = addr;
             }
 
@@ -209,6 +230,11 @@ namespace InnoWerks.Simulators
         {
             if (IF_CARRY())
             {
+                if ((addr & 0xff00) != (ProgramCounter & 0xff00))
+                {
+                    cycles += pageCrossPenalty;
+                }
+
                 ProgramCounter = addr;
             }
 
@@ -230,6 +256,11 @@ namespace InnoWerks.Simulators
         {
             if (IF_ZERO())
             {
+                if ((addr & 0xff00) != (ProgramCounter & 0xff00))
+                {
+                    cycles += pageCrossPenalty;
+                }
+
                 ProgramCounter = addr;
             }
 
@@ -279,6 +310,11 @@ namespace InnoWerks.Simulators
         {
             if (IF_NEGATIVE())
             {
+                if ((addr & 0xff00) != (ProgramCounter & 0xff00))
+                {
+                    cycles += pageCrossPenalty;
+                }
+
                 ProgramCounter = addr;
             }
 
@@ -303,6 +339,11 @@ namespace InnoWerks.Simulators
         {
             if (IF_ZERO() == false)
             {
+                if ((addr & 0xff00) != (ProgramCounter & 0xff00))
+                {
+                    cycles += pageCrossPenalty;
+                }
+
                 ProgramCounter = addr;
             }
 
@@ -324,6 +365,11 @@ namespace InnoWerks.Simulators
         {
             if (IF_NEGATIVE() == false)
             {
+                if ((addr & 0xff00) != (ProgramCounter & 0xff00))
+                {
+                    cycles += pageCrossPenalty;
+                }
+
                 ProgramCounter = addr;
             }
 
@@ -341,6 +387,11 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void BRA(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
+            if ((addr & 0xff00) != (ProgramCounter & 0xff00))
+            {
+                cycles += pageCrossPenalty;
+            }
+
             ProgramCounter = addr;
 
             WaitCycles(cycles);
@@ -359,6 +410,11 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void BRL(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
+            if ((addr & 0xff00) != (ProgramCounter & 0xff00))
+            {
+                cycles += pageCrossPenalty;
+            }
+
             ProgramCounter += addr;
 
             WaitCycles(cycles);
@@ -507,11 +563,11 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CMP(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            int m = read(addr);
+            byte m = read(addr);
             int res = A - m;
 
-            SET_CARRY(A >= (m & 0xff));
-            SET_ZERO(A == (m & 0xff));
+            SET_CARRY(A >= m);
+            SET_ZERO(A == m);
             SET_NEGATIVE_FROM_VALUE(res & 0xff);
 
             WaitCycles(cycles);
@@ -531,11 +587,11 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CPX(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            int m = read(addr);
+            byte m = read(addr);
             int res = X - m;
 
-            SET_CARRY(X >= (m & 0xff));
-            SET_ZERO(X == (m & 0xff));
+            SET_CARRY(X >= m);
+            SET_ZERO(X == m);
             SET_NEGATIVE_FROM_VALUE(res & 0xff);
 
             WaitCycles(cycles);
@@ -555,11 +611,11 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CPY(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            int m = read(addr);
+            byte m = read(addr);
             int res = Y - m;
 
-            SET_CARRY(Y >= (m & 0xff));
-            SET_ZERO(Y == (m & 0xff));
+            SET_CARRY(Y >= m);
+            SET_ZERO(Y == m);
             SET_NEGATIVE_FROM_VALUE(res & 0xff);
 
             WaitCycles(cycles);
@@ -1200,6 +1256,8 @@ namespace InnoWerks.Simulators
 
             if (IF_DECIMAL())
             {
+                cycles++;
+
                 if (((A & 0x0F) - (IF_CARRY() ? 0 : 1)) < (m & 0x0F))
                     tmp -= 6;
                 if (tmp > 0x99)
