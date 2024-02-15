@@ -11,11 +11,23 @@ namespace InnoWerks.Simulators.Driver
         private static void Main(string[] _)
         {
             var program = new Program();
-            program.Run("sw/sort", 0x6000, 0x605c);
-            // program.Run("sw/sort", 0x6000, 0x606f);
+            program.Run("sw/sort", 0x6000, 0x605c, (cpu) =>
+            {
+                if (cpu.A != 0x04 || cpu.Carry != false)
+                {
+                    Console.WriteLine("POSCASE failed");
+                }
+            });
+            program.Run("sw/sort", 0x6000, 0x606f, (cpu) =>
+            {
+                if (cpu.Carry != true)
+                {
+                    Console.WriteLine("NEGCASE failed");
+                }
+            });
         }
 
-        private void Run(string filename, ushort org, ushort startAddr)
+        private void Run(string filename, ushort org, ushort startAddr, Action<Cpu> test)
         {
             using (var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
             {
@@ -26,10 +38,10 @@ namespace InnoWerks.Simulators.Driver
             // todo: load a program
             var cpu = new Cpu(Read, Write, (cpu) =>
             {
-                cpu.PrintStatus();
-                Console.Write($"{memory[0x6059]:X2} ");
-                Console.Write($"{memory[0x605A]:X2} ");
-                Console.WriteLine($"{memory[0x605B]:X2}\n");
+                // cpu.PrintStatus();
+                // Console.Write($"{memory[0x6059]:X2} ");
+                // Console.Write($"{memory[0x605A]:X2} ");
+                // Console.WriteLine($"{memory[0x605B]:X2}\n");
             });
 
             // power up initialization
@@ -39,7 +51,8 @@ namespace InnoWerks.Simulators.Driver
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: true);
+            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            test?.Invoke(cpu);
 
             Console.WriteLine($"Ticks: {cpu.Cycles}");
         }
