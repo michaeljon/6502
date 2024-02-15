@@ -1,0 +1,195 @@
+------+------------------+-------------+----+---------+------+-----------------------+-------------------------------------------------------------------
+ Line | # File      Line | Line Type   | MX |  Reloc  | Size | Address   Object Code |  Source Code                                                      
+------+------------------+-------------+----+---------+------+-----------------------+-------------------------------------------------------------------
+    1 |  1 sort.S      1 | Comment     | 11 |         |    0 | 00/8000               | **********************************************************
+    2 |  1 sort.S      2 | Comment     | 11 |         |    0 | 00/8000               | *
+    3 |  1 sort.S      3 | Comment     | 11 |         |    0 | 00/8000               | * BINARY SEARCH
+    4 |  1 sort.S      4 | Comment     | 11 |         |    0 | 00/8000               | *
+    5 |  1 sort.S      5 | Comment     | 11 |         |    0 | 00/8000               | * Searches an ordered array
+    6 |  1 sort.S      6 | Comment     | 11 |         |    0 | 00/8000               | * of unsigned bytes, with a
+    7 |  1 sort.S      7 | Comment     | 11 |         |    0 | 00/8000               | * maximum array size of 255
+    8 |  1 sort.S      8 | Comment     | 11 |         |    0 | 00/8000               | * elements.
+    9 |  1 sort.S      9 | Comment     | 11 |         |    0 | 00/8000               | *
+   10 |  1 sort.S     10 | Comment     | 11 |         |    0 | 00/8000               | * ENTRY: Top of stack
+   11 |  1 sort.S     11 | Comment     | 11 |         |    0 | 00/8000               | *   Low byte of return address
+   12 |  1 sort.S     12 | Comment     | 11 |         |    0 | 00/8000               | *   High byte of return address
+   13 |  1 sort.S     13 | Comment     | 11 |         |    0 | 00/8000               | *   Value to find
+   14 |  1 sort.S     14 | Comment     | 11 |         |    0 | 00/8000               | *   Length of array
+   15 |  1 sort.S     15 | Comment     | 11 |         |    0 | 00/8000               | *   Low byte of array address
+   16 |  1 sort.S     16 | Comment     | 11 |         |    0 | 00/8000               | *   High byte of array address
+   17 |  1 sort.S     17 | Comment     | 11 |         |    0 | 00/8000               | *
+   18 |  1 sort.S     18 | Comment     | 11 |         |    0 | 00/8000               | * EXIT: If value is found then
+   19 |  1 sort.S     19 | Comment     | 11 |         |    0 | 00/8000               | *           CARRY = 0
+   20 |  1 sort.S     20 | Comment     | 11 |         |    0 | 00/8000               | *           A = index of value in array
+   21 |  1 sort.S     21 | Comment     | 11 |         |    0 | 00/8000               | *       Else
+   22 |  1 sort.S     22 | Comment     | 11 |         |    0 | 00/8000               | *           CARRY = 1
+   23 |  1 sort.S     23 | Comment     | 11 |         |    0 | 00/8000               | *
+   24 |  1 sort.S     24 | Comment     | 11 |         |    0 | 00/8000               | * Registers used: All
+   25 |  1 sort.S     25 | Comment     | 11 |         |    0 | 00/8000               | *
+   26 |  1 sort.S     26 | Comment     | 11 |         |    0 | 00/8000               | * Time: Approx 52 cycles for each time through the 
+   27 |  1 sort.S     27 | Comment     | 11 |         |    0 | 00/8000               | *       search loop plus 80 cycles overhead.
+   28 |  1 sort.S     28 | Comment     | 11 |         |    0 | 00/8000               | *       A binary search will take on the order of
+   29 |  1 sort.S     29 | Comment     | 11 |         |    0 | 00/8000               | *       lg(N), where N is the number of elements.
+   30 |  1 sort.S     30 | Comment     | 11 |         |    0 | 00/8000               | *
+   31 |  1 sort.S     31 | Comment     | 11 |         |    0 | 00/8000               | * Size: Program 89 bytes
+   32 |  1 sort.S     32 | Comment     | 11 |         |    0 | 00/8000               | *       Data     3 bytes temporary
+   33 |  1 sort.S     33 | Comment     | 11 |         |    0 | 00/8000               | *                2 bytes in page 0 $EE $EF
+   34 |  1 sort.S     34 | Comment     | 11 |         |    0 | 00/8000               | * 
+   35 |  1 sort.S     35 | Comment     | 11 |         |    0 | 00/8000               | **********************************************************
+   36 |  1 sort.S     36 | Comment     | 11 |         |    0 | 00/8000               | *
+   37 |  1 sort.S     37 | Directive   | 11 |         |    0 | 00/8000               |             ORG   $6000          
+   38 |  1 sort.S     38 | Comment     | 11 |         |    0 | 00/6000               | *
+   39 |  1 sort.S     39 | Equivalence | 11 |         |    0 | 00/6000               | ARYADR      EQU   $EE            ; PAGE ZERO POINTER TO ARRAY
+   40 |  1 sort.S     40 | Empty       | 11 |         |    0 | 00/6000               |                                  
+   41 |  1 sort.S     41 | Comment     | 11 |         |    0 | 00/6000               | *
+   42 |  1 sort.S     42 | Comment     | 11 |         |    0 | 00/6000               | * FUNCTION PROLOG, ALL VALUES ON STACK
+   43 |  1 sort.S     43 | Comment     | 11 |         |    0 | 00/6000               | *
+   44 |  1 sort.S     44 | Empty       | 11 |         |    0 | 00/6000               |                                  
+   45 |  1 sort.S     45 | Comment     | 11 |         |    0 | 00/6000               | * GET THE RETURN ADDRESS
+   46 |  1 sort.S     46 | Code        | 11 |         |    1 | 00/6000 : 68          | BINSRCH     PLA                  
+   47 |  1 sort.S     47 | Code        | 11 |         |    1 | 00/6001 : A8          |             TAY                  
+   48 |  1 sort.S     48 | Code        | 11 |         |    1 | 00/6002 : 68          |             PLA                  
+   49 |  1 sort.S     49 | Code        | 11 |         |    1 | 00/6003 : AA          |             TAX                  
+   50 |  1 sort.S     50 | Empty       | 11 |         |    0 | 00/6004               |                                  
+   51 |  1 sort.S     51 | Comment     | 11 |         |    0 | 00/6004               | * GET THE VALUE TO SEARCH FOR
+   52 |  1 sort.S     52 | Code        | 11 |         |    1 | 00/6004 : 68          |             PLA                  
+   53 |  1 sort.S     53 | Code        | 11 |         |    3 | 00/6005 : 8D 59 60    |             STA   VALUE          
+   54 |  1 sort.S     54 | Empty       | 11 |         |    0 | 00/6008               |                                  
+   55 |  1 sort.S     55 | Comment     | 11 |         |    0 | 00/6008               | * GET THE LENGTH OF THE ARRAY
+   56 |  1 sort.S     56 | Code        | 11 |         |    1 | 00/6008 : 68          |             PLA                  
+   57 |  1 sort.S     57 | Code        | 11 |         |    3 | 00/6009 : 8D 5A 60    |             STA   UBND           
+   58 |  1 sort.S     58 | Empty       | 11 |         |    0 | 00/600C               |                                  
+   59 |  1 sort.S     59 | Comment     | 11 |         |    0 | 00/600C               | * GET THE STARTING ADRESSES OF ARRAY
+   60 |  1 sort.S     60 | Code        | 11 |         |    1 | 00/600C : 68          |             PLA                  
+   61 |  1 sort.S     61 | Code        | 11 |         |    2 | 00/600D : 85 EE       |             STA   {$EE}          
+   62 |  1 sort.S     62 | Code        | 11 |         |    1 | 00/600F : 68          |             PLA                  
+   63 |  1 sort.S     63 | Code        | 11 |         |    2 | 00/6010 : 85 EF       |             STA   {$EE}+1        
+   64 |  1 sort.S     64 | Empty       | 11 |         |    0 | 00/6012               |                                  
+   65 |  1 sort.S     65 | Comment     | 11 |         |    0 | 00/6012               | * RESTORE THE RETURN ADDRESS
+   66 |  1 sort.S     66 | Code        | 11 |         |    1 | 00/6012 : 8A          |             TXA                  
+   67 |  1 sort.S     67 | Code        | 11 |         |    1 | 00/6013 : 48          |             PHA                  
+   68 |  1 sort.S     68 | Code        | 11 |         |    1 | 00/6014 : 98          |             TYA                  
+   69 |  1 sort.S     69 | Code        | 11 |         |    1 | 00/6015 : 48          |             PHA                  
+   70 |  1 sort.S     70 | Empty       | 11 |         |    0 | 00/6016               |                                  
+   71 |  1 sort.S     71 | Comment     | 11 |         |    0 | 00/6016               | *
+   72 |  1 sort.S     72 | Comment     | 11 |         |    0 | 00/6016               | * THE SEARCH ITSELF
+   73 |  1 sort.S     73 | Comment     | 11 |         |    0 | 00/6016               | *
+   74 |  1 sort.S     74 | Empty       | 11 |         |    0 | 00/6016               |                                  
+   75 |  1 sort.S     75 | Comment     | 11 |         |    0 | 00/6016               | * CHECK THAT LENGTH IS NOT ZERO
+   76 |  1 sort.S     76 | Code        | 11 |         |    3 | 00/6016 : AE 5A 60    |             LDX   UBND           ; GET LENGTH
+   77 |  1 sort.S     77 | Code        | 11 |         |    2 | 00/6019 : F0 3C       |             BEQ   NOTFND         ; EXIT NOT FOUND IF LENGTH EQUALS 0
+   78 |  1 sort.S     78 | Empty       | 11 |         |    0 | 00/601B               |                                  
+   79 |  1 sort.S     79 | Comment     | 11 |         |    0 | 00/601B               | * SET UPPER AND LOWER SEARCH BOUNDS
+   80 |  1 sort.S     80 | Code        | 11 |         |    1 | 00/601B : CA          |             DEX                  
+   81 |  1 sort.S     81 | Code        | 11 |         |    3 | 00/601C : 8E 5A 60    |             STX   UBND           ; UPPER BOUND EQUALS LENGTH MINUS 1
+   82 |  1 sort.S     82 | Code        | 11 |         |    2 | 00/601F : A9 00       |             LDA   #0             
+   83 |  1 sort.S     83 | Code        | 11 |         |    3 | 00/6021 : 8D 5B 60    |             STA   LBND           ; LOWER BOUND EQUALS 0
+   84 |  1 sort.S     84 | Empty       | 11 |         |    0 | 00/6024               |                                  
+   85 |  1 sort.S     85 | Comment     | 11 |         |    0 | 00/6024               | * COMPUTE NEXT INDEX TO BE HALF WAY BETWEEN UPPER AND
+   86 |  1 sort.S     86 | Comment     | 11 |         |    0 | 00/6024               | * LOWER BOUND
+   87 |  1 sort.S     87 | Code        | 11 |         |    3 | 00/6024 : AD 5A 60    | NXTBYT      LDA   UBND           
+   88 |  1 sort.S     88 | Code        | 11 |         |    1 | 00/6027 : 18          |             CLC                  
+   89 |  1 sort.S     89 | Code        | 11 |         |    3 | 00/6028 : 6D 5B 60    |             ADC   LBND           ; ADD LOWER AND UPPER BOUNDS
+   90 |  1 sort.S     90 | Code        | 11 |         |    1 | 00/602B : 6A          |             ROR                  ; DIVIDE BY 2, LOSE THE FRACTIONAL PART
+   91 |  1 sort.S     91 | Code        | 11 |         |    1 | 00/602C : A8          |             TAY                  ; MAKE Y BE THE INDEX
+   92 |  1 sort.S     92 | Empty       | 11 |         |    0 | 00/602D               |                                  
+   93 |  1 sort.S     93 | Comment     | 11 |         |    0 | 00/602D               | * IF INDEX > UPPER BOUND THEN ELEMENT IS NOT IN ARRAY
+   94 |  1 sort.S     94 | Code        | 11 |         |    3 | 00/602D : CC 5A 60    |             CPY   UBND           
+   95 |  1 sort.S     95 | Code        | 11 |         |    2 | 00/6030 : F0 02       |             BEQ   TSTLB          ; BRANCH IF INDEX == UPPER BOUND
+   96 |  1 sort.S     96 | Code        | 11 |         |    2 | 00/6032 : B0 23       |             BCS   NOTFND         ; BRANCH IF INDEX >  UPPER BOUND
+   97 |  1 sort.S     97 | Empty       | 11 |         |    0 | 00/6034               |                                  
+   98 |  1 sort.S     98 | Comment     | 11 |         |    0 | 00/6034               | * IF INDEX < LOWER BOUND THEN ELEMENT IS NOT IN ARRAY
+   99 |  1 sort.S     99 | Code        | 11 |         |    3 | 00/6034 : CC 5B 60    | TSTLB       CPY   LBND           
+  100 |  1 sort.S    100 | Code        | 11 |         |    2 | 00/6037 : 90 1E       |             BCC   NOTFND         ; BRANCH IF INDEX < LOWER BOUND
+  101 |  1 sort.S    101 | Empty       | 11 |         |    0 | 00/6039               |                                  
+  102 |  1 sort.S    102 | Comment     | 11 |         |    0 | 00/6039               | * TEST IF WE FOUND THE ELEMENT
+  103 |  1 sort.S    103 | Code        | 11 |         |    3 | 00/6039 : AD 59 60    |             LDA   VALUE          
+  104 |  1 sort.S    104 | Code        | 11 |         |    2 | 00/603C : D1 EE       |             CMP   ({$EE}),Y      
+  105 |  1 sort.S    105 | Code        | 11 |         |    2 | 00/603E : 90 0A       |             BCC   SMALL          ; BRANCH IF VALUE < ELEMENT
+  106 |  1 sort.S    106 | Code        | 11 |         |    2 | 00/6040 : F0 12       |             BEQ   FND            ; BRANCH IF FOUND
+  107 |  1 sort.S    107 | Empty       | 11 |         |    0 | 00/6042               |                                  
+  108 |  1 sort.S    108 | Comment     | 11 |         |    0 | 00/6042               | * VALUE IS > ELEMENT SO SET LOWER BOUND
+  109 |  1 sort.S    109 | Comment     | 11 |         |    0 | 00/6042               | * TO Y + 1, VALUE IS HIGHER IN ARRAY
+  110 |  1 sort.S    110 | Code        | 11 |         |    1 | 00/6042 : C8          |             INY                  
+  111 |  1 sort.S    111 | Code        | 11 |         |    3 | 00/6043 : 8C 5B 60    |             STY   LBND           
+  112 |  1 sort.S    112 | Code        | 11 |         |    2 | 00/6046 : D0 DC       |             BNE   NXTBYT         ; CONTINUE SEARCHING IF LOWER BOUND
+  113 |  1 sort.S    113 | Comment     | 11 |         |    0 | 00/6048               |                           ; DOES NOT OVERFLOW
+  114 |  1 sort.S    114 | Code        | 11 |         |    2 | 00/6048 : F0 0D       |             BEQ   NOTFND         ; BRANCH IF LOWER BOUND OVERFLOWS
+  115 |  1 sort.S    115 | Comment     | 11 |         |    0 | 00/604A               |                           ; FROM $FF TO $00
+  116 |  1 sort.S    116 | Empty       | 11 |         |    0 | 00/604A               |                                  
+  117 |  1 sort.S    117 | Comment     | 11 |         |    0 | 00/604A               | * VALUE IS < ELEMENT TO SET UPPER BOUND TO
+  118 |  1 sort.S    118 | Comment     | 11 |         |    0 | 00/604A               | * Y - 1, VALUE IS LOWER IN ARRAY
+  119 |  1 sort.S    119 | Code        | 11 |         |    1 | 00/604A : 88          | SMALL       DEY                  
+  120 |  1 sort.S    120 | Code        | 11 |         |    3 | 00/604B : 8C 5A 60    |             STY   UBND           
+  121 |  1 sort.S    121 | Code        | 11 |         |    2 | 00/604E : C0 FF       |             CPY   #$FF           ; ON DEY WE WRAP TO $FF IF Y WAS 0
+  122 |  1 sort.S    122 | Code        | 11 |         |    2 | 00/6050 : D0 D2       |             BNE   NXTBYT         ; CONTINUE SEARCH IF UPPER BOUND
+  123 |  1 sort.S    123 | Comment     | 11 |         |    0 | 00/6052               |                           ; DOESN'T OVERFLOW
+  124 |  1 sort.S    124 | Code        | 11 |         |    2 | 00/6052 : F0 03       |             BEQ   NOTFND         ; BRANCH IF INDEX UNDERFLOWED
+  125 |  1 sort.S    125 | Empty       | 11 |         |    0 | 00/6054               |                                  
+  126 |  1 sort.S    126 | Comment     | 11 |         |    0 | 00/6054               | * FOUND IT
+  127 |  1 sort.S    127 | Code        | 11 |         |    1 | 00/6054 : 18          | FND         CLC                  ; CLEAR CARRY, WE FOUND IT
+  128 |  1 sort.S    128 | Code        | 11 |         |    1 | 00/6055 : 98          |             TYA                  ; PUT THE INDEX INTO A
+  129 |  1 sort.S    129 | Code        | 11 |         |    1 | 00/6056 : 60          |             RTS                  
+  130 |  1 sort.S    130 | Empty       | 11 |         |    0 | 00/6057               |                                  
+  131 |  1 sort.S    131 | Comment     | 11 |         |    0 | 00/6057               | * DIDN'T FIND IT
+  132 |  1 sort.S    132 | Code        | 11 |         |    1 | 00/6057 : 38          | NOTFND      SEC                  ; SET CARRY, WE DIDN'T FIND IT
+  133 |  1 sort.S    133 | Code        | 11 |         |    1 | 00/6058 : 60          |             RTS                  
+  134 |  1 sort.S    134 | Empty       | 11 |         |    0 | 00/6059               |                                  
+  135 |  1 sort.S    135 | Comment     | 11 |         |    0 | 00/6059               | *
+  136 |  1 sort.S    136 | Comment     | 11 |         |    0 | 00/6059               | * TEMPORARY STORAGE
+  137 |  1 sort.S    137 | Comment     | 11 |         |    0 | 00/6059               | *
+  138 |  1 sort.S    138 | Data        | 11 |         |    1 | 00/6059 : 00          | VALUE       DB    0              
+  139 |  1 sort.S    139 | Data        | 11 |         |    1 | 00/605A : 00          | UBND        DB    0              
+  140 |  1 sort.S    140 | Data        | 11 |         |    1 | 00/605B : 00          | LBND        DB    0              
+  141 |  1 sort.S    141 | Empty       | 11 |         |    0 | 00/605C               |                                  
+  142 |  1 sort.S    142 | Comment     | 11 |         |    0 | 00/605C               | *
+  143 |  1 sort.S    143 | Comment     | 11 |         |    0 | 00/605C               | * TEST PROGRAM FROM HERE DOWN...
+  144 |  1 sort.S    144 | Comment     | 11 |         |    0 | 00/605C               | *
+  145 |  1 sort.S    145 | Code        | 11 |         |    3 | 00/605C : AD 83 60    | POSCASE     LDA   BFADR+1        
+  146 |  1 sort.S    146 | Code        | 11 |         |    1 | 00/605F : 48          |             PHA                  ; PUSH THE HIGH BYTE OF THE ARRAY
+  147 |  1 sort.S    147 | Code        | 11 |         |    3 | 00/6060 : AD 82 60    |             LDA   BFADR          
+  148 |  1 sort.S    148 | Code        | 11 |         |    1 | 00/6063 : 48          |             PHA                  ; PUSH THE LOW BYTE OF THE ARRAY
+  149 |  1 sort.S    149 | Code        | 11 |         |    3 | 00/6064 : AD 84 60    |             LDA   BFSZ           
+  150 |  1 sort.S    150 | Code        | 11 |         |    1 | 00/6067 : 48          |             PHA                  ; PUSH THE LENGTH OF THE ARRAY
+  151 |  1 sort.S    151 | Code        | 11 |         |    2 | 00/6068 : A9 07       |             LDA   #$07           
+  152 |  1 sort.S    152 | Code        | 11 |         |    1 | 00/606A : 48          |             PHA                  ; PUSH THE TARGET VALUE TO FIND
+  153 |  1 sort.S    153 | Code        | 11 |         |    3 | 00/606B : 20 00 60    |             JSR   BINSRCH        ; DO THE THING
+  154 |  1 sort.S    154 | Data        | 11 |         |    1 | 00/606E : 00          |             DB    0              ; (BRK) CARRY FLAG SHOULD BE ZERO AND A == 4
+  155 |  1 sort.S    155 | Empty       | 11 |         |    0 | 00/606F               |                                  
+  156 |  1 sort.S    156 | Empty       | 11 |         |    0 | 00/606F               |                                  
+  157 |  1 sort.S    157 | Comment     | 11 |         |    0 | 00/606F               | * SEARCH IN THE ARRAY FOR A KNOWN-NOT PRESENT VALUE
+  158 |  1 sort.S    158 | Code        | 11 |         |    3 | 00/606F : AD 83 60    | NEGCASE     LDA   BFADR+1        
+  159 |  1 sort.S    159 | Code        | 11 |         |    1 | 00/6072 : 48          |             PHA                  ; PUSH THE HIGH BYTE OF THE ARRAY
+  160 |  1 sort.S    160 | Code        | 11 |         |    3 | 00/6073 : AD 82 60    |             LDA   BFADR          
+  161 |  1 sort.S    161 | Code        | 11 |         |    1 | 00/6076 : 48          |             PHA                  ; PUSH THE LOW BYTE OF THE ARRAY
+  162 |  1 sort.S    162 | Code        | 11 |         |    3 | 00/6077 : AD 84 60    |             LDA   BFSZ           
+  163 |  1 sort.S    163 | Code        | 11 |         |    1 | 00/607A : 48          |             PHA                  ; PUSH THE LENGTH OF THE ARRAY
+  164 |  1 sort.S    164 | Code        | 11 |         |    2 | 00/607B : A9 00       |             LDA   #$00           
+  165 |  1 sort.S    165 | Code        | 11 |         |    1 | 00/607D : 48          |             PHA                  ; PUSH THE TARGET VALUE TO FIND
+  166 |  1 sort.S    166 | Code        | 11 |         |    3 | 00/607E : 20 00 60    |             JSR   BINSRCH        ; DO THE THING
+  167 |  1 sort.S    167 | Data        | 11 |         |    1 | 00/6081 : 00          |             DB    0              ; (BRK)  CARRY FLAG SHOULD BE ONE
+  168 |  1 sort.S    168 | Empty       | 11 |         |    0 | 00/6082               |                                  
+  169 |  1 sort.S    169 | Comment     | 11 |         |    0 | 00/6082               | * SOME DATA
+  170 |  1 sort.S    170 | Data        | 11 |         |    2 | 00/6082 : 85 60       | BFADR       DW    BF             ; START OF THE ARRAY
+  171 |  1 sort.S    171 | Data        | 11 |         |    1 | 00/6084 : 10          | BFSZ        DB    16             ; SIZE OF THE ARRAY
+  172 |  1 sort.S    172 | Data        | 11 |         |    1 | 00/6085 : 01          | BF          DB    #$01           ; THE ARRAY CONTENTS
+  173 |  1 sort.S    173 | Data        | 11 |         |    1 | 00/6086 : 02          |             DB    #$02           
+  174 |  1 sort.S    174 | Data        | 11 |         |    1 | 00/6087 : 04          |             DB    #$04           
+  175 |  1 sort.S    175 | Data        | 11 |         |    1 | 00/6088 : 05          |             DB    #$05           
+  176 |  1 sort.S    176 | Data        | 11 |         |    1 | 00/6089 : 07          |             DB    #$07           
+  177 |  1 sort.S    177 | Data        | 11 |         |    1 | 00/608A : 09          |             DB    #$09           
+  178 |  1 sort.S    178 | Data        | 11 |         |    1 | 00/608B : 0A          |             DB    #$0A           
+  179 |  1 sort.S    179 | Data        | 11 |         |    1 | 00/608C : 0B          |             DB    #$0B           
+  180 |  1 sort.S    180 | Data        | 11 |         |    1 | 00/608D : 17          |             DB    #$17           
+  181 |  1 sort.S    181 | Data        | 11 |         |    1 | 00/608E : 32          |             DB    #$32           
+  182 |  1 sort.S    182 | Data        | 11 |         |    1 | 00/608F : 51          |             DB    #$51           
+  183 |  1 sort.S    183 | Data        | 11 |         |    1 | 00/6090 : 7B          |             DB    #$7B           
+  184 |  1 sort.S    184 | Data        | 11 |         |    1 | 00/6091 : BF          |             DB    #$BF           
+  185 |  1 sort.S    185 | Data        | 11 |         |    1 | 00/6092 : C7          |             DB    #$C7           
+  186 |  1 sort.S    186 | Data        | 11 |         |    1 | 00/6093 : FA          |             DB    #$FA           
+  187 |  1 sort.S    187 | Data        | 11 |         |    1 | 00/6094 : FF          |             DB    #$FF           
+  188 |  1 sort.S    188 | Empty       | 11 |         |    0 | 00/6095               |                                  
+  189 |  1 sort.S    189 | Empty       | 11 |         |    0 | 00/6095               |                                  
+  190 |  1 sort.S    190 | Empty       | 11 |         |    0 | 00/6095               |                                  
+  191 |  1 sort.S    191 | Empty       | 11 |         |    0 | 00/6095               |                                  
+------+------------------+-------------+----+---------+------+-----------------------+-------------------------------------------------------------------
