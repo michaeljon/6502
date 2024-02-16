@@ -24,142 +24,37 @@ namespace InnoWerks.Simulators
         /// <summary>
         /// direct access to the carry flag in the processor status register
         /// </summary>
-        public bool Carry
-        {
-            get => (ProcessorStatus & (byte)ProcessorStatusBit.Carry) != 0;
-
-            private set
-            {
-                if (value == false)
-                {
-                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.Carry);
-                }
-                else
-                {
-                    ProcessorStatus |= (byte)ProcessorStatusBit.Carry;
-                }
-            }
-        }
+        public bool Carry { get; private set; }
 
         /// <summary>
         /// direct access to the zero flag in the processor status register
         /// </summary>
-        public bool Zero
-        {
-            get => (ProcessorStatus & (byte)ProcessorStatusBit.Zero) != 0;
-
-            private set
-            {
-                if (value == false)
-                {
-                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.Zero);
-                }
-                else
-                {
-                    ProcessorStatus |= (byte)ProcessorStatusBit.Zero;
-                }
-            }
-        }
+        public bool Zero { get; private set; }
 
         /// <summary>
         /// direct access to the interrupt flag in the processor status register
         /// </summary>
-        public bool Interrupt
-        {
-            get => (ProcessorStatus & (byte)ProcessorStatusBit.InterruptDisable) != 0;
-
-            private set
-            {
-                if (value == false)
-                {
-                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.InterruptDisable);
-                }
-                else
-                {
-                    ProcessorStatus |= (byte)ProcessorStatusBit.InterruptDisable;
-                }
-            }
-        }
+        public bool Interrupt { get; private set; }
 
         /// <summary>
         /// direct access to the decimal flag in the processor status register
         /// </summary>
 #pragma warning disable CA1720
-        public bool Decimal
-        {
-            get => (ProcessorStatus & (byte)ProcessorStatusBit.DecimalMode) != 0;
-
-            private set
-            {
-                if (value == false)
-                {
-                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.DecimalMode);
-                }
-                else
-                {
-                    ProcessorStatus |= (byte)ProcessorStatusBit.DecimalMode;
-                }
-            }
-        }
+        public bool Decimal { get; private set; }
 
         /// <summary>
         /// direct access to the BRK flag in the processor status register
         /// </summary>
-        public bool Break
-        {
-            get => (ProcessorStatus & (byte)ProcessorStatusBit.BreakCommand) != 0;
-
-            private set
-            {
-                if (value == false)
-                {
-                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.BreakCommand);
-                }
-                else
-                {
-                    ProcessorStatus |= (byte)ProcessorStatusBit.BreakCommand;
-                }
-            }
-        }
+        public bool Break { get; private set; }
 
         /// <summary>
         /// direct access to the overflow flag in the processor status register
         /// </summary>
-        public bool Overflow
-        {
-            get => (ProcessorStatus & (byte)ProcessorStatusBit.Overflow) != 0;
-
-            private set
-            {
-                if (value == false)
-                {
-                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.Overflow);
-                }
-                else
-                {
-                    ProcessorStatus |= (byte)ProcessorStatusBit.Overflow;
-                }
-            }
-        }
+        public bool Overflow { get; private set; }
 
         /// <summary>
         /// direct access to the negative flag in the processor status register
         /// </summary>
-        public bool Negative
-        {
-            get => (ProcessorStatus & (byte)ProcessorStatusBit.Negative) != 0;
-
-            private set
-            {
-                if (value == false)
-                {
-                    ProcessorStatus &= unchecked((byte)~ProcessorStatusBit.Negative);
-                }
-                else
-                {
-                    ProcessorStatus |= (byte)ProcessorStatusBit.Negative;
-                }
-            }
-        }
+        public bool Negative { get; private set; }
     }
 }

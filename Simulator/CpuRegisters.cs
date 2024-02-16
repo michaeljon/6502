@@ -36,6 +36,33 @@ namespace InnoWerks.Simulators
         /// <summary>
         /// Processor status register
         /// </summary>
-        public byte ProcessorStatus { get; private set; }
+        public byte ProcessorStatus
+        {
+            get
+            {
+                byte ps = 0;
+
+                ps |= (byte)(Negative ? ProcessorStatusBit.Negative : 0);
+                ps |= (byte)(Overflow ? ProcessorStatusBit.Overflow : 0);
+                ps |= (byte)(Break ? ProcessorStatusBit.BreakCommand : 0);
+                ps |= (byte)(Decimal ? ProcessorStatusBit.DecimalMode : 0);
+                ps |= (byte)(Interrupt ? ProcessorStatusBit.InterruptDisable : 0);
+                ps |= (byte)(Zero ? ProcessorStatusBit.Zero : 0);
+                ps |= (byte)(Carry ? ProcessorStatusBit.Carry : 0);
+
+                return ps;
+            }
+
+            private set
+            {
+                Negative = (byte)(value & (byte)ProcessorStatusBit.Negative) != 0;
+                Overflow = (byte)(value & (byte)ProcessorStatusBit.Overflow) != 0;
+                Break = (byte)(value & (byte)ProcessorStatusBit.BreakCommand) != 0;
+                Decimal = (byte)(value & (byte)ProcessorStatusBit.DecimalMode) != 0;
+                Interrupt = (byte)(value & (byte)ProcessorStatusBit.InterruptDisable) != 0;
+                Zero = (byte)(value & (byte)ProcessorStatusBit.Zero) != 0;
+                Carry = (byte)(value & (byte)ProcessorStatusBit.Carry) != 0;
+            }
+        }
     }
 }

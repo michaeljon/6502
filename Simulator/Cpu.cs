@@ -17,6 +17,10 @@ namespace InnoWerks.Simulators
 
         private const long TicksPerMicrosecond = 10;    // a tick is 100ns
 
+        private long runningCycles;
+
+        private long instructionsProcessed;
+
         private bool illegalOpCode;
 
         private readonly Func<ushort, byte> read;
@@ -56,6 +60,8 @@ namespace InnoWerks.Simulators
                 }
 
                 Execute(opcode, opCodeDefinition, writeInstructions);
+
+                instructionsProcessed++;
 
                 if (opCodeDefinition.Nmemonic.Equals("BRK", StringComparison.Ordinal) && stopOnBreak)
                 {
@@ -122,9 +128,10 @@ namespace InnoWerks.Simulators
             Console.WriteLine($"PS: {(Negative ? 1 : 0)}{(Overflow ? 1 : 0)}{1}{(Break ? 1 : 0)}{(Decimal ? 1 : 0)}{(Interrupt ? 1 : 0)}{(Zero ? 1 : 0)}{(Carry ? 1 : 0)}");
         }
 
-        private long runningCycles;
-
         public long Cycles => runningCycles;
+
+        public long InstructionsProcessed => instructionsProcessed;
+
 
         private void WaitCycles(long cycles)
         {
