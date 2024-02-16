@@ -11,14 +11,14 @@ namespace InnoWerks.Simulators.Driver
         private static void Main(string[] _)
         {
             var program = new Program();
-            program.Run("sw/sort", 0x6000, 0x605c, (cpu) =>
+            program.Run("../Modules/BinarySearch/binarySearch", 0x6000, 0x605c, (cpu) =>
             {
                 if (cpu.A != 0x04 || cpu.Carry != false)
                 {
                     Console.WriteLine("POSCASE failed");
                 }
             });
-            program.Run("sw/sort", 0x6000, 0x606f, (cpu) =>
+            program.Run("../Modules/BinarySearch/binarySearch", 0x6000, 0x606f, (cpu) =>
             {
                 if (cpu.Carry != true)
                 {
