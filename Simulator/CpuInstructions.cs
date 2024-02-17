@@ -18,30 +18,62 @@ namespace InnoWerks.Simulators
         public void ADC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             byte m = read(addr);
-            int tmp = m + A + (IF_CARRY() ? 1 : 0);
-            SET_ZERO_FROM_VALUE(tmp & 0xff);
+            byte carry = (byte)(Carry ? 0x01 : 0x00);
+
+            SET_OVERFLOW(false);
+            SET_CARRY(false);
+
             if (IF_DECIMAL())
             {
-                cycles++;
+                // decimal mode (credit goes to MAME)
+                SET_NEGATIVE(false);
+                SET_ZERO(false);
 
-                if (((A & 0xF) + (m & 0xF) + (IF_CARRY() ? 1 : 0)) > 9)
-                    tmp += 6;
-                SET_NEGATIVE_FROM_VALUE(tmp);
-                SET_OVERFLOW_FROM_A(m, tmp);
-                if (tmp > 0x99)
+                byte al = (byte)((A & 0x0f) + (m & 0x0f) + carry);
+                if (al > 9)
                 {
-                    tmp += 96;
+                    al += 6;
                 }
-                SET_CARRY(tmp > 0x99);
+
+                byte ah = (byte)((A >> 4) + (m >> 4) + (al > 0x0f ? 1 : 0));
+
+                if ((byte)(A + m + carry) == 0)
+                {
+                    SET_ZERO(true);
+                }
+                else if ((ah & 0x08) != 0)
+                {
+                    SET_NEGATIVE(true);
+                }
+
+                if ((~(A ^ m) & (A ^ (ah << 4)) & 0x80) != 0)
+                {
+                    SET_OVERFLOW(true);
+                }
+
+                if (ah > 9)
+                {
+                    ah += 6;
+                }
+
+                if (ah > 15)
+                {
+                    SET_CARRY(true);
+                }
+
+                A = (byte)((ah << 4) | (al & 0x0f));
             }
             else
             {
-                SET_NEGATIVE_FROM_VALUE(tmp);
-                SET_OVERFLOW_FROM_A(m, tmp);
-                SET_CARRY(tmp > 0xff);
-            }
+                ushort sum = (ushort)(A + m + carry);
 
-            A = (byte)(tmp & 0xff);
+                SET_NEGATIVE_FROM_VALUE(sum);
+                SET_OVERFLOW(((A ^ sum) & (m ^ sum) & 0x80) != 0);
+                SET_CARRY((sum & 0x0100) == 0x100);
+                SET_ZERO_FROM_VALUE(sum);
+
+                A = (byte)(sum & 0xff);
+            }
 
             WaitCycles(cycles);
         }
@@ -286,7 +318,7 @@ namespace InnoWerks.Simulators
 
             // TODO: pass flag indicating immediate mode
             SET_NEGATIVE_FROM_VALUE(m);
-            SET_OVERFLOW_FROM_VALUE(m);
+            SET_OVERFLOW((byte)(m & 0x40) == 0x40);
 
             byte res = (byte)(m & A);
             SET_ZERO_FROM_VALUE(res);
@@ -1251,27 +1283,39 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void SBC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
-            int tmp = A - m - (IF_CARRY() ? 0 : 1);
-
-            SET_NEGATIVE_FROM_VALUE(tmp);
-            SET_ZERO_FROM_VALUE(tmp & 0xff);
-            SET_OVERFLOW_FROM_A(m, tmp);
+            byte m = (byte)(read(addr) ^ 0xff);
+            byte carry = (byte)(Carry ? 0x00 : 0x01);
 
             if (IF_DECIMAL())
             {
                 cycles++;
 
-                if (((A & 0x0F) - (IF_CARRY() ? 0 : 1)) < (m & 0x0F))
-                    tmp -= 6;
-                if (tmp > 0x99)
+                byte al = (byte)((A & 0x0f) - (m & 0x0f) - carry);
+                if ((sbyte)al < 0)
                 {
-                    tmp -= 0x60;
+                    al -= 6;
                 }
+
+                byte ah = (byte)((A >> 4) - (m >> 4) - ((sbyte)al < 0 ? 1 : 0));
+                if ((ah & 0x80) != 0)
+                {
+                    ah -= 6;
+                }
+
+                A = (byte)((ah << 4) | (al & 0x0f));
+            }
+            else
+            {
+                ushort diff = (ushort)(A - m - carry);
+
+                SET_NEGATIVE_FROM_VALUE(diff);
+                SET_OVERFLOW(((A ^ diff) & (m ^ diff) & 0x80) != 0);
+                SET_CARRY((diff & 0x0100) == 0x100);
+                SET_ZERO_FROM_VALUE(diff);
+
+                A = (byte)(diff & 0xff);
             }
 
-            SET_CARRY(tmp < 0x100);
-            A = (byte)(tmp & 0xff);
 
             WaitCycles(cycles);
         }

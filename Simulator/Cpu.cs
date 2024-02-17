@@ -76,7 +76,7 @@ namespace InnoWerks.Simulators
             Y = 0;
             X = 0;
             StackPointer = 0xff;
-            ProcessorStatus = 0x20 | 0x10;
+            ProcessorStatus = 0x00;
 
             // load PC from reset vector
             ushort pcl = read(RstVectorL);
@@ -123,9 +123,11 @@ namespace InnoWerks.Simulators
 
         public void PrintStatus()
         {
-            Console.Write($"PC: 0x{ProgramCounter:X4} ");
-            Console.Write($"A: 0x{A:X2} X: 0x{X:X2} Y: 0x{Y:X2} SP: 0x{StackPointer:X2} PS: 0x{ProcessorStatus:X2} ");
-            Console.WriteLine($"PS: {(Negative ? 1 : 0)}{(Overflow ? 1 : 0)}{1}{(Break ? 1 : 0)}{(Decimal ? 1 : 0)}{(Interrupt ? 1 : 0)}{(Zero ? 1 : 0)}{(Carry ? 1 : 0)}");
+            var save = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.Write($"PC:{ProgramCounter:X4} A:{A:X2} X:{X:X2} Y:{Y:X2} SP:{StackPointer:X2} PS:{ProcessorStatus:X2} ");
+            Console.WriteLine($"PS:{(Negative ? 1 : 0)}{(Overflow ? 1 : 0)}{1}{(Break ? 1 : 0)}{(Decimal ? 1 : 0)}{(Interrupt ? 1 : 0)}{(Zero ? 1 : 0)}{(Carry ? 1 : 0)}");
+            Console.ForegroundColor = save;
         }
 
         public long Cycles => runningCycles;
@@ -147,12 +149,18 @@ namespace InnoWerks.Simulators
 
         private void Execute(byte opcode, OpCodeDefinition opCodeDefinition, bool writeInstructions)
         {
+            // we pulled one byte to decode the instruction, so we'll use that for display
+            ushort savePC = (ushort)(ProgramCounter - 1);
+
+            // decode the operand based on the opcode and addressind mode
             ushort src = opCodeDefinition.DecodeOperand(this);
 
             if (writeInstructions)
             {
-                // for display we need to 'reverse' the auto-increment
-                Console.WriteLine($"{(ushort)(ProgramCounter - 1):X4} {opCodeDefinition.Nmemonic} [{opcode:X2}] {src:X4}");
+                var save = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                Console.WriteLine($"{savePC:X4} {opCodeDefinition.Nmemonic} {src:X4}");
+                Console.ForegroundColor = save;
             }
 
             opCodeDefinition.Execute(this, src);

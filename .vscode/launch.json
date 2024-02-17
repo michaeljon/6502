@@ -9,9 +9,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/bin/Debug/net8.0/InnoWerks.Simulators.dll",
+            "program": "${workspaceFolder}/Driver/bin/Debug/net8.0/InnoWerks.Simulators.Driver.dll",
             "args": [],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/Driver",
             "console": "internalConsole",
             "stopAtEntry": false
         },

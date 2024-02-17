@@ -11,27 +11,27 @@ namespace InnoWerks.Simulators
         /// This can be done either by jumping to a subroutine or by causing
         /// an interrupt.
         /// </summary>
-        public ushort ProgramCounter { get; private set; }
+        public ushort ProgramCounter { get; set; }
 
         /// <summary>
         /// Accumulator
         /// </summary>
-        public byte A { get; private set; }
+        public byte A { get; set; }
 
         /// <summary>
         /// X index register
         /// </summary>
-        public byte X { get; private set; }
+        public byte X { get; set; }
 
         /// <summary>
         /// Y index register
         /// </summary>
-        public byte Y { get; private set; }
+        public byte Y { get; set; }
 
         /// <summary>
         /// Stack pointer
         /// </summary>
-        public byte StackPointer { get; private set; }
+        public byte StackPointer { get; set; }
 
         /// <summary>
         /// Processor status register
@@ -53,7 +53,7 @@ namespace InnoWerks.Simulators
                 return ps;
             }
 
-            private set
+            set
             {
                 Negative = (byte)(value & (byte)ProcessorStatusBit.Negative) != 0;
                 Overflow = (byte)(value & (byte)ProcessorStatusBit.Overflow) != 0;
