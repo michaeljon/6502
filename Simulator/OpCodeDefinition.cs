@@ -27,5 +27,10 @@ namespace InnoWerks.Simulators
         ///
         /// </summary>
         public long PageCrossPenalty { get; init; } = PageCrossPenalty;
+
+        public override string ToString()
+        {
+            return Nmemonic;
+        }
     }
 }

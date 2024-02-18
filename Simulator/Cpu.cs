@@ -134,10 +134,17 @@ namespace InnoWerks.Simulators
 
         public long InstructionsProcessed => instructionsProcessed;
 
+        public bool SkipTimingWait { get; set; }
+
 
         private void WaitCycles(long cycles)
         {
             runningCycles += cycles;
+
+            if (SkipTimingWait == true)
+            {
+                return;
+            }
 
             var t = Task.Run(async delegate
                           {

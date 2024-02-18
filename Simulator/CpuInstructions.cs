@@ -20,60 +20,32 @@ namespace InnoWerks.Simulators
             byte m = read(addr);
             byte carry = (byte)(Carry ? 0x01 : 0x00);
 
-            SET_OVERFLOW(false);
-            SET_CARRY(false);
+            ushort ai = A;
+            ushort bi = m;
+
+            short result = (short)(ai + bi + carry);
 
             if (IF_DECIMAL())
             {
-                // decimal mode (credit goes to MAME)
-                SET_NEGATIVE(false);
-                SET_ZERO(false);
+                cycles++;
 
-                byte al = (byte)((A & 0x0f) + (m & 0x0f) + carry);
-                if (al > 9)
+                if ((ai & 0x0f) + (bi & 0x0f) + carry > 0x09)
                 {
-                    al += 6;
+                    result += 0x06;
                 }
 
-                byte ah = (byte)((A >> 4) + (m >> 4) + (al > 0x0f ? 1 : 0));
-
-                if ((byte)(A + m + carry) == 0)
+                if ((result >> 4) > 0x09)
                 {
-                    SET_ZERO(true);
+                    result += 0x60;
                 }
-                else if ((ah & 0x08) != 0)
-                {
-                    SET_NEGATIVE(true);
-                }
-
-                if ((~(A ^ m) & (A ^ (ah << 4)) & 0x80) != 0)
-                {
-                    SET_OVERFLOW(true);
-                }
-
-                if (ah > 9)
-                {
-                    ah += 6;
-                }
-
-                if (ah > 15)
-                {
-                    SET_CARRY(true);
-                }
-
-                A = (byte)((ah << 4) | (al & 0x0f));
             }
-            else
-            {
-                ushort sum = (ushort)(A + m + carry);
 
-                SET_NEGATIVE_FROM_VALUE(sum);
-                SET_OVERFLOW(((A ^ sum) & (m ^ sum) & 0x80) != 0);
-                SET_CARRY((sum & 0x0100) == 0x100);
-                SET_ZERO_FROM_VALUE(sum);
+            SET_CARRY(result < ai || result < bi || (result & 0xff00) != 0);
+            SET_ZERO((result & 0xff) == 0);
+            SET_NEGATIVE((result & 0x80) == 0x80);
+            SET_OVERFLOW(result < -128 || result > 127);
 
-                A = (byte)(sum & 0xff);
-            }
+            A = (byte)(result & 0xff);
 
             WaitCycles(cycles);
         }
@@ -666,8 +638,10 @@ namespace InnoWerks.Simulators
         {
             byte m = read(addr);
             m--;
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+
+            SET_ZERO((m & 0xff) == 0);
+            SET_NEGATIVE((m & 0x80) == 0x80);
+
             write(addr, m);
 
             WaitCycles(cycles);
@@ -688,8 +662,10 @@ namespace InnoWerks.Simulators
         {
             byte m = X;
             m--;
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+
+            SET_ZERO((m & 0xff) == 0);
+            SET_NEGATIVE((m & 0x80) == 0x80);
+
             X = m;
 
             WaitCycles(cycles);
@@ -710,8 +686,9 @@ namespace InnoWerks.Simulators
         {
             byte m = Y;
             m--;
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+
+            SET_ZERO((m & 0xff) == 0);
+            SET_NEGATIVE((m & 0x80) == 0x80);
             Y = m;
 
             WaitCycles(cycles);
@@ -732,8 +709,10 @@ namespace InnoWerks.Simulators
         {
             byte m = read(addr);
             m ^= A;
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+
+            SET_ZERO((m & 0xff) == 0);
+            SET_NEGATIVE((m & 0x80) == 0x80);
+
             A = m;
 
             WaitCycles(cycles);
@@ -754,8 +733,10 @@ namespace InnoWerks.Simulators
         {
             byte m = read(addr);
             m++;
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+
+            SET_ZERO((m & 0xff) == 0);
+            SET_NEGATIVE((m & 0x80) == 0x80);
+
             write(addr, m);
 
             WaitCycles(cycles);
@@ -776,8 +757,10 @@ namespace InnoWerks.Simulators
         {
             byte m = X;
             m++;
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+
+            SET_ZERO((m & 0xff) == 0);
+            SET_NEGATIVE((m & 0x80) == 0x80);
+
             X = m;
 
             WaitCycles(cycles);
@@ -798,8 +781,10 @@ namespace InnoWerks.Simulators
         {
             byte m = Y;
             m++;
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+
+            SET_ZERO((m & 0xff) == 0);
+            SET_NEGATIVE((m & 0x80) == 0x80);
+
             Y = m;
 
             WaitCycles(cycles);
@@ -870,8 +855,10 @@ namespace InnoWerks.Simulators
         public void LDA(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             byte m = read(addr);
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+
+            SET_ZERO((m & 0xff) == 0);
+            SET_NEGATIVE((m & 0x80) == 0x80);
+
             A = m;
 
             WaitCycles(cycles);
@@ -891,8 +878,10 @@ namespace InnoWerks.Simulators
         public void LDX(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             byte m = read(addr);
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+
+            SET_ZERO((m & 0xff) == 0);
+            SET_NEGATIVE((m & 0x80) == 0x80);
+
             X = m;
 
             WaitCycles(cycles);
@@ -912,8 +901,10 @@ namespace InnoWerks.Simulators
         public void LDY(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             byte m = read(addr);
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+
+            SET_ZERO((m & 0xff) == 0);
+            SET_NEGATIVE((m & 0x80) == 0x80);
+
             Y = m;
 
             WaitCycles(cycles);
@@ -978,8 +969,10 @@ namespace InnoWerks.Simulators
         {
             byte m = read(addr);
             m |= A;
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+
+            SET_ZERO((m & 0xff) == 0);
+            SET_NEGATIVE((m & 0x80) == 0x80);
+
             A = m;
 
             WaitCycles(cycles);
@@ -1067,8 +1060,9 @@ namespace InnoWerks.Simulators
         public void PLA(ushort _, long cycles, long pageCrossPenalty = 0)
         {
             A = StackPop();
-            SET_NEGATIVE_FROM_VALUE(A);
-            SET_ZERO_FROM_VALUE(A);
+
+            SET_ZERO((A & 0xff) == 0);
+            SET_NEGATIVE((A & 0x80) == 0x80);
 
             WaitCycles(cycles);
         }
@@ -1104,8 +1098,9 @@ namespace InnoWerks.Simulators
         public void PLX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
             X = StackPop();
-            SET_NEGATIVE_FROM_VALUE(X);
-            SET_ZERO_FROM_VALUE(X);
+
+            SET_ZERO((X & 0xff) == 0);
+            SET_NEGATIVE((X & 0x80) == 0x80);
 
             WaitCycles(cycles);
         }
@@ -1125,8 +1120,9 @@ namespace InnoWerks.Simulators
         public void PLY(ushort _, long cycles, long pageCrossPenalty = 0)
         {
             Y = StackPop();
-            SET_NEGATIVE_FROM_VALUE(Y);
-            SET_ZERO_FROM_VALUE(Y);
+
+            SET_ZERO((Y & 0xff) == 0);
+            SET_NEGATIVE((Y & 0x80) == 0x80);
 
             WaitCycles(cycles);
         }
@@ -1174,8 +1170,10 @@ namespace InnoWerks.Simulators
             }
             SET_CARRY(m > 0xff);
             m &= 0xff;
+
             SET_NEGATIVE_FROM_VALUE(m);
             SET_ZERO_FROM_VALUE(m);
+
             if (accum == true)
             {
                 A = (byte)m;
@@ -1283,39 +1281,37 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void SBC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = (byte)(read(addr) ^ 0xff);
-            byte carry = (byte)(Carry ? 0x00 : 0x01);
+            byte m = read(addr);
+            byte carry = (byte)(Carry ? 0x01 : 0x00);
+
+            ushort ai = A;
+            ushort bi = IF_DECIMAL() ?
+                (ushort)((0x99 - m) & 0xff) :
+                (ushort)(~m & 0xff);
+
+            short result = (short)(ai + bi + carry);
 
             if (IF_DECIMAL())
             {
                 cycles++;
 
-                byte al = (byte)((A & 0x0f) - (m & 0x0f) - carry);
-                if ((sbyte)al < 0)
+                if ((ai & 0x0f) + (bi & 0x0f) + carry > 0x09)
                 {
-                    al -= 6;
+                    result += 0x06;
                 }
 
-                byte ah = (byte)((A >> 4) - (m >> 4) - ((sbyte)al < 0 ? 1 : 0));
-                if ((ah & 0x80) != 0)
+                if ((result >> 4) > 0x09)
                 {
-                    ah -= 6;
+                    result += 0x60;
                 }
-
-                A = (byte)((ah << 4) | (al & 0x0f));
-            }
-            else
-            {
-                ushort diff = (ushort)(A - m - carry);
-
-                SET_NEGATIVE_FROM_VALUE(diff);
-                SET_OVERFLOW(((A ^ diff) & (m ^ diff) & 0x80) != 0);
-                SET_CARRY((diff & 0x0100) == 0x100);
-                SET_ZERO_FROM_VALUE(diff);
-
-                A = (byte)(diff & 0xff);
             }
 
+            SET_CARRY(result < ai || result < bi || (result & 0xff00) != 0);
+            SET_ZERO((result & 0xff) == 0);
+            SET_NEGATIVE((result & 0x80) == 0x80);
+            SET_OVERFLOW(result < -128 || result > 127);
+
+            A = (byte)(result & 0xff);
 
             WaitCycles(cycles);
         }

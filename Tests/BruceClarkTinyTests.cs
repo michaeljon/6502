@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace InnoWerks.Simulators.Tests
@@ -11,34 +9,6 @@ namespace InnoWerks.Simulators.Tests
     [TestClass]
     public class BruceClarkTinyTests : TestBase
     {
-        private readonly Dictionary<string, ushort> tinyTestEntryPoints = new()
-        {
-            { "TEST1", 0x0000 },
-            { "TEST2", 0x0007 },
-            { "TEST3", 0x000E },
-            { "TEST4", 0x0015 },
-            { "TEST5", 0x001C },
-            { "TEST6", 0x0023 },
-            { "TEST7", 0x002A },
-            { "TEST8", 0x0031 },
-            { "TEST9", 0x0038 },
-            { "TEST10", 0x003F },
-            { "TEST11", 0x0046 },
-            { "TEST12", 0x0055 },
-            { "TEST13", 0x0064 },
-            { "TEST14", 0x006B },
-
-            { "TESTA", 0x0072 },
-            { "TESTB", 0x0079 },
-            { "TESTC", 0x007E },
-            { "TESTD", 0x0085 },
-        };
-
-        private readonly Dictionary<string, ushort> tinyMemoryLocations = new()
-        {
-            { "TESTD", 0xE0 },
-        };
-
         [TestMethod]
         public void BruceClarkExampleTestA()
         {
@@ -122,21 +92,184 @@ namespace InnoWerks.Simulators.Tests
             memory[0x07] = 0x00;
 
             var cpu = RunTinyTest(memory);
-            Assert.AreEqual(0x0a, memory[tinyMemoryLocations["TESTD"]]);
+            Assert.AreEqual(0x0a, memory[0xe0]);
+        }
+
+        [TestMethod]
+        public void FullBinaryModeLoopWithoutCarry()
+        {
+            // D8      CLD                  ; Binary mode
+            // 18      CLC                  ; Note: carry is clear!
+            // A9 xx   LDA   #$xx           ; a
+            // 69 xx   ADC   #$xx           ; b
+            // 00      DB    0
+
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xD8;
+            memory[0x01] = 0x18;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x00;    // a
+            memory[0x04] = 0x69;
+            memory[0x05] = 0x00;    // b
+            memory[0x06] = 0x00;
+
+            for (var a = 0x00; a < 256; a++)
+            {
+                for (var b = 0x00; b < 256; b++)
+                {
+                    memory[0x03] = (byte)a;
+                    memory[0x05] = (byte)b;
+
+                    var cpu = RunTinyTest(memory);
+
+                    ushort expected = (ushort)(a + b);
+                    bool carry = expected > 0xff;
+
+                    Assert.AreEqual(carry, cpu.Carry);
+                    Assert.AreEqual((byte)expected, cpu.A);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void FullDecimalModeLoopWithoutCarry()
+        {
+            // F8      SED                  ; Decimal mode
+            // 18      CLC                  ; Note: carry is clear!
+            // A9 xx   LDA   #$xx           ; a
+            // 69 xx   ADC   #$xx           ; b
+            // 00      DB    0
+
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xF8;
+            memory[0x01] = 0x18;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x00;    // a
+            memory[0x04] = 0x69;
+            memory[0x05] = 0x00;    // b
+            memory[0x06] = 0x00;
+
+            for (var a = 0; a <= 99; a++)
+            {
+                for (var b = 0; b <= 99; b++)
+                {
+                    var A = (byte)((a / 10) << 4) | (a % 10);
+                    var B = (byte)((b / 10) << 4) | (b % 10);
+
+                    memory[0x03] = (byte)A;
+                    memory[0x05] = (byte)B;
+
+                    var cpu = RunTinyTest(memory);
+
+                    // check for a carry
+                    bool carry = (a + b) >= 100;
+                    Assert.AreEqual(carry, cpu.Carry, $"{a} + {b} (Carry)");
+
+                    var expected = (a + b) % 100;
+                    var actual = (ushort)(((cpu.A & 0xf0) >> 4) * 10) + (cpu.A & 0x0f) % 100;
+
+                    Assert.AreEqual(expected, actual, $"{a} + {b} (sum)");
+                }
+            }
+        }
+
+        [TestMethod]
+        public void FullBinaryModeLoopWithCarry()
+        {
+            // D8      CLD                  ; Binary mode
+            // 38      SEC                  ; Note: carry is set
+            // A9 xx   LDA   #$xx           ; a
+            // 69 xx   ADC   #$xx           ; b
+            // 00      DB    0
+
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xD8;
+            memory[0x01] = 0x38;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x00;    // a
+            memory[0x04] = 0x69;
+            memory[0x05] = 0x00;    // b
+            memory[0x06] = 0x00;
+
+            for (var a = 0x00; a < 256; a++)
+            {
+                for (var b = 0x00; b < 256; b++)
+                {
+                    memory[0x03] = (byte)a;
+                    memory[0x05] = (byte)b;
+
+                    var cpu = RunTinyTest(memory);
+
+                    ushort expected = (ushort)(a + b + 1);
+                    bool carry = expected > 0xff;
+
+                    Assert.AreEqual(carry, cpu.Carry);
+                    Assert.AreEqual((byte)expected, cpu.A);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void FullDecimalModeLoopWithCarry()
+        {
+            // F8      SED                  ; Decimal mode
+            // 38      SEC                  ; Note: carry is set
+            // A9 xx   LDA   #$xx           ; a
+            // 69 xx   ADC   #$xx           ; b
+            // 00      DB    0
+
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xF8;
+            memory[0x01] = 0x38;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x00;    // a
+            memory[0x04] = 0x69;
+            memory[0x05] = 0x00;    // b
+            memory[0x06] = 0x00;
+
+            for (var a = 0; a <= 99; a++)
+            {
+                for (var b = 0; b <= 99; b++)
+                {
+                    var A = (byte)((a / 10) << 4) | (a % 10);
+                    var B = (byte)((b / 10) << 4) | (b % 10);
+
+                    memory[0x03] = (byte)A;
+                    memory[0x05] = (byte)B;
+
+                    var cpu = RunTinyTest(memory);
+
+                    // check for a carry
+                    bool carry = (a + b + 1) >= 100;
+                    Assert.AreEqual(carry, cpu.Carry, $"{a} + {b} (Carry)");
+
+                    var expected = (a + b + 1) % 100;
+                    var actual = (ushort)(((cpu.A & 0xf0) >> 4) * 10) + (cpu.A & 0x0f) % 100;
+
+                    Assert.AreEqual(expected, actual, $"{a} + {b} (sum)");
+                }
+            }
         }
 
         [TestMethod]
         public void BruceClarkExample1()
         {
-            byte[] memory = new byte[1024 * 64];
-
             // D8      CLD                  ; Binary mode (binary addition: 88 + 70 + 1 = 159)
             // 38      SEC                  ; Note: carry is set, not clear!
             // A9 58   LDA   #$58           ; 88
             // 69 46   ADC   #$46           ; 70 (after this instruction, C = 0, A = $9F = 159)
             // 00      DB    0
 
-            var cpu = RunTinyTest("TEST1", memory);
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xD8;
+            memory[0x01] = 0x38;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x58;
+            memory[0x04] = 0x69;
+            memory[0x05] = 0x46;
+            memory[0x06] = 0x00;
+
+            var cpu = RunTinyTest(memory);
             Assert.IsFalse(cpu.Carry);
             Assert.AreEqual(0x9f, cpu.A);
         }
@@ -144,15 +277,22 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample2()
         {
-            byte[] memory = new byte[1024 * 64];
-
             // F8      SED                  ; Decimal mode (BCD addition: 58 + 46 + 1 = 105)
             // 38      SEC                  ; Note: carry is set, not clear!
             // A9 58   LDA   #$58
             // 69 46   ADC   #$46           ; After this instruction, C = 1, A = $05
             // 00      DB    0
 
-            var cpu = RunTinyTest("TEST2", memory);
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xF8;
+            memory[0x01] = 0x38;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x58;
+            memory[0x04] = 0x69;
+            memory[0x05] = 0x46;
+            memory[0x06] = 0x00;
+
+            var cpu = RunTinyTest(memory);
             Assert.IsTrue(cpu.Carry);
             Assert.AreEqual(0x05, cpu.A);
         }
@@ -160,15 +300,22 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample3()
         {
-            byte[] memory = new byte[1024 * 64];
-
             // F8      SED                  ; Decimal mode (BCD addition: 12 + 34 = 46)
             // 18      CLC
             // A9 12   LDA   #$12
             // 69 34   ADC   #$34           ; After this instruction, C = 0, A = $46
             // 00      DB    0
 
-            var cpu = RunTinyTest("TEST3", memory);
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xF8;
+            memory[0x01] = 0x18;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x12;
+            memory[0x04] = 0x69;
+            memory[0x05] = 0x34;
+            memory[0x06] = 0x00;
+
+            var cpu = RunTinyTest(memory);
             Assert.IsFalse(cpu.Carry);
             Assert.AreEqual(0x46, cpu.A);
         }
@@ -176,15 +323,22 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample4()
         {
-            byte[] memory = new byte[1024 * 64];
-
             // F8      SED                  ; Decimal mode (BCD addition: 15 + 26 = 41)
             // 18      CLC
             // A9 15   LDA   #$15
             // 69 26   ADC   #$26           ; After this instruction, C = 0, A = $41
             // 00      DB    0
 
-            var cpu = RunTinyTest("TEST4", memory);
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xF8;
+            memory[0x01] = 0x18;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x15;
+            memory[0x04] = 0x69;
+            memory[0x05] = 0x26;
+            memory[0x06] = 0x00;
+
+            var cpu = RunTinyTest(memory);
             Assert.IsFalse(cpu.Carry);
             Assert.AreEqual(0x41, cpu.A);
         }
@@ -192,15 +346,22 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample5()
         {
-            byte[] memory = new byte[1024 * 64];
-
             // F8      SED                  ; Decimal mode (BCD addition: 81 + 92 = 173)
             // 18      CLC
             // A9 81   LDA   #$81
             // 69 92   ADC   #$92           ; After this instruction, C = 1, A = $73
             // 00      DB    0
 
-            var cpu = RunTinyTest("TEST5", memory);
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xF8;
+            memory[0x01] = 0x18;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x81;
+            memory[0x04] = 0x69;
+            memory[0x05] = 0x92;
+            memory[0x06] = 0x00;
+
+            var cpu = RunTinyTest(memory);
             Assert.IsTrue(cpu.Carry);
             Assert.AreEqual(0x73, cpu.A);
         }
@@ -231,15 +392,22 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample7()
         {
-            byte[] memory = new byte[1024 * 64];
-
             // F8      SED                  ; Decimal mode (BCD subtraction: 40 - 13 = 27)
             // 38      SEC
             // A9 40   LDA   #$40
             // E9 13   SBC   #$13           ; After this instruction, C = 1, A = $27)
             // 00      DB    0
 
-            var cpu = RunTinyTest("TEST7", memory);
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xF8;
+            memory[0x01] = 0x38;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x40;
+            memory[0x04] = 0xE9;
+            memory[0x05] = 0x13;
+            memory[0x06] = 0x00;
+
+            var cpu = RunTinyTest(memory);
             Assert.IsTrue(cpu.Carry);
             Assert.AreEqual(0x27, cpu.A);
         }
@@ -247,15 +415,22 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample8()
         {
-            byte[] memory = new byte[1024 * 64];
-
             // F8      SED                  ; Decimal mode (BCD subtraction: 32 - 2 - 1 = 29)
             // 18      CLC                  ; Note: carry is clear, not set!
             // A9 32   LDA   #$32
             // E9 02   SBC   #$02           ; After this instruction, C = 1, A = $29)
             // 00      DB    0
 
-            var cpu = RunTinyTest("TEST8", memory);
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xF8;
+            memory[0x01] = 0x18;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x32;
+            memory[0x04] = 0xE9;
+            memory[0x05] = 0x02;
+            memory[0x06] = 0x00;
+
+            var cpu = RunTinyTest(memory);
             Assert.IsTrue(cpu.Carry);
             Assert.AreEqual(0x29, cpu.A);
         }
@@ -263,15 +438,22 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample9()
         {
-            byte[] memory = new byte[1024 * 64];
-
             // F8      SED                  ; Decimal mode (BCD subtraction: 12 - 21)
             // 38      SEC
             // A9 12   LDA   #$12
             // E9 21   SBC   #$21           ; After this instruction, C = 0, A = $91)
             // 00      DB    0
 
-            var cpu = RunTinyTest("TEST9", memory);
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xF8;
+            memory[0x01] = 0x38;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x12;
+            memory[0x04] = 0xE9;
+            memory[0x05] = 0x21;
+            memory[0x06] = 0x00;
+
+            var cpu = RunTinyTest(memory);
             Assert.IsFalse(cpu.Carry);
             Assert.AreEqual(0x91, cpu.A);
         }
@@ -279,15 +461,22 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample10()
         {
-            byte[] memory = new byte[1024 * 64];
-
             // F8      SED                  ; Decimal mode (BCD subtraction: 21 - 34)
             // 38      SEC
             // A9 21   LDA   #$21
             // E9 34   SBC   #$34           ; After this instruction, C = 0, A = $87)
             // 00      DB    0
 
-            var cpu = RunTinyTest("TEST10", memory);
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xF8;
+            memory[0x01] = 0x38;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x21;
+            memory[0x04] = 0xE9;
+            memory[0x05] = 0x34;
+            memory[0x06] = 0x00;
+
+            var cpu = RunTinyTest(memory);
             Assert.IsFalse(cpu.Carry);
             Assert.AreEqual(0x87, cpu.A);
         }
@@ -295,62 +484,89 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample13()
         {
-            byte[] memory = new byte[1024 * 64];
-
             // F8      SED                  ; Decimal mode
             // 18      CLC
             // A9 90   LDA   #$90
             // 69 90   ADC   #$90
 
-            var cpu = RunTinyTest("TEST13", memory);
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xF8;
+            memory[0x01] = 0x18;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x90;
+            memory[0x04] = 0x69;
+            memory[0x05] = 0x90;
+            memory[0x06] = 0x00;
+
+            var cpu = RunTinyTest(memory);
             Assert.IsTrue(cpu.Overflow);
         }
 
         [TestMethod]
         public void BruceClarkExample14()
         {
-            byte[] memory = new byte[1024 * 64];
-
             // F8      SED                  ; Decimal mode
             // 38      SEC
             // A9 01   LDA   #$01
             // E9 01   SBC   #$01           ; expect A = 0, Z = 1
             // 00      DB    0
 
-            var cpu = RunTinyTest("TEST14", memory);
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xF8;
+            memory[0x01] = 0x38;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x01;
+            memory[0x04] = 0xE9;
+            memory[0x05] = 0x01;
+            memory[0x06] = 0x00;
+
+            var cpu = RunTinyTest(memory);
             Assert.IsTrue(cpu.Zero);
             Assert.AreEqual(0x00, cpu.A);
         }
 
-        private Cpu RunTinyTest(string name, byte[] memory)
+        [TestMethod]
+        public void AppendixA1()
         {
-            const string filename = "Modules/tiny/tiny";
-            ushort origin = 0x0000;
-            ushort initializationVector = tinyTestEntryPoints[name];
+            // D8      CLD                  ; binary mode: 99 + 1
+            // 18      CLC
+            // A9 99   LDA   #$99
+            // 69 01   ADC   #$01
 
-            using (var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
-            {
-                long length = fs.Length;
-                fs.Read(memory, origin, (int)length);
-            }
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xD8;
+            memory[0x01] = 0x18;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x99;
+            memory[0x04] = 0x69;
+            memory[0x05] = 0x01;
+            memory[0x06] = 0x00;
 
-            // power up initialization
-            memory[Cpu.RstVectorH] = (byte)((initializationVector & 0xff00) >> 8);
-            memory[Cpu.RstVectorL] = (byte)(initializationVector & 0xff);
+            var cpu = RunTinyTest(memory);
+            Assert.AreEqual(0x9a, cpu.A);
+            Assert.IsFalse(cpu.Zero);
+        }
 
-            var cpu = new Cpu(
-                (addr) => memory[addr],
-                (addr, b) => memory[addr] = b,
-                (cpu) => LoggerCallback(cpu, memory));
+        [TestMethod]
+        public void AppendixA2()
+        {
+            // F8      SED                  ; decimal mode: 99 + 1
+            // 18      CLC
+            // A9 99   LDA   #$99
+            // 69 01   ADC   #$01
 
-            cpu.Reset();
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xF8;
+            memory[0x01] = 0x18;
+            memory[0x02] = 0xA9;
+            memory[0x03] = 0x99;
+            memory[0x04] = 0x69;
+            memory[0x05] = 0x01;
+            memory[0x06] = 0x00;
 
-            // run
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
-
-            // PrintPage(memory, 0x00);
-
-            return cpu;
+            var cpu = RunTinyTest(memory);
+            Assert.AreEqual(0x00, cpu.A);
+            Assert.IsTrue(cpu.Zero);
         }
 
         private static Cpu RunTinyTest(byte[] memory)
@@ -362,7 +578,10 @@ namespace InnoWerks.Simulators.Tests
             var cpu = new Cpu(
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
-                (cpu) => LoggerCallback(cpu, memory));
+                (cpu) => LoggerCallback(cpu, memory))
+            {
+                SkipTimingWait = true
+            };
 
             cpu.Reset();
             cpu.Run(stopOnBreak: true, writeInstructions: false);

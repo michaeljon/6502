@@ -133,6 +133,17 @@ TESTD
          INC   NUM
          DB    0
 
+APPENDIX_A1
+         CLD              ; binary mode: 99 + 1
+         CLC
+         LDA   #$99
+         ADC   #$01
+
+APPENDIX_A2
+         SED              ; decimal mode: 99 + 1
+         CLC
+         LDA   #$99
+         ADC   #$01
 
 NUM      EQU   $E0
 
