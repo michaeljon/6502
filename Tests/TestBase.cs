@@ -8,9 +8,8 @@ namespace InnoWerks.Simulators.Tests
     {
         public TestContext TestContext { get; set; }
 
-        protected static void DummyLoggerCallback(Cpu cpu, byte[] memory)
+        protected static void DummyLoggerCallback(Cpu _1, byte[] _2)
         {
-            return;
         }
 
         protected static void LoggerCallback(Cpu cpu, byte[] memory)

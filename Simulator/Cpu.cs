@@ -59,7 +59,7 @@ namespace InnoWerks.Simulators
                     break;
                 }
 
-                Execute(opcode, opCodeDefinition, writeInstructions);
+                Execute(opCodeDefinition, writeInstructions);
 
                 instructionsProcessed++;
 
@@ -136,7 +136,6 @@ namespace InnoWerks.Simulators
 
         public bool SkipTimingWait { get; set; }
 
-
         private void WaitCycles(long cycles)
         {
             runningCycles += cycles;
@@ -154,7 +153,7 @@ namespace InnoWerks.Simulators
             t.Wait();
         }
 
-        private void Execute(byte opcode, OpCodeDefinition opCodeDefinition, bool writeInstructions)
+        private void Execute(OpCodeDefinition opCodeDefinition, bool writeInstructions)
         {
             // we pulled one byte to decode the instruction, so we'll use that for display
             ushort savePC = (ushort)(ProgramCounter - 1);

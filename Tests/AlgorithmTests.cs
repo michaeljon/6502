@@ -9,21 +9,21 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BinarySearchPositiveCase()
         {
-            const string filename = "Modules/BinarySearch/binarySearch";
-            const ushort origin = 0x6000;
-            const ushort initializationVector = 0x605c;
+            const string Filename = "Modules/BinarySearch/binarySearch";
+            const ushort Origin = 0x6000;
+            const ushort InitializationVector = 0x605c;
 
             byte[] memory = new byte[1024 * 64];
 
-            using (var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
+            using (var fs = new FileStream(Filename, FileMode.Open, FileAccess.Read))
             {
                 long length = fs.Length;
-                fs.Read(memory, origin, (int)length);
+                fs.Read(memory, Origin, (int)length);
             }
 
             // power up initialization
-            memory[Cpu.RstVectorH] = (initializationVector & 0xff00) >> 8;
-            memory[Cpu.RstVectorL] = initializationVector & 0xff;
+            memory[Cpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
+            memory[Cpu.RstVectorL] = InitializationVector & 0xff;
 
             var cpu = new Cpu(
                 (addr) => memory[addr],
@@ -42,21 +42,21 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BinarySearchNegativeCase()
         {
-            const string filename = "Modules/BinarySearch/binarySearch";
-            const ushort origin = 0x6000;
-            const ushort initializationVector = 0x606f;
+            const string Filename = "Modules/BinarySearch/binarySearch";
+            const ushort Origin = 0x6000;
+            const ushort InitializationVector = 0x606f;
 
             byte[] memory = new byte[1024 * 64];
 
-            using (var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
+            using (var fs = new FileStream(Filename, FileMode.Open, FileAccess.Read))
             {
                 long length = fs.Length;
-                fs.Read(memory, origin, (int)length);
+                fs.Read(memory, Origin, (int)length);
             }
 
             // power up initialization
-            memory[Cpu.RstVectorH] = (initializationVector & 0xff00) >> 8;
-            memory[Cpu.RstVectorL] = initializationVector & 0xff;
+            memory[Cpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
+            memory[Cpu.RstVectorL] = InitializationVector & 0xff;
 
             var cpu = new Cpu(
                 (addr) => memory[addr],

@@ -91,7 +91,7 @@ namespace InnoWerks.Simulators.Tests
             memory[0x06] = 0xE0;
             memory[0x07] = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            RunTinyTest(memory);
             Assert.AreEqual(0x0a, memory[0xe0]);
         }
 
@@ -153,11 +153,11 @@ namespace InnoWerks.Simulators.Tests
             {
                 for (var b = 0; b <= 99; b++)
                 {
-                    var A = (byte)((a / 10) << 4) | (a % 10);
-                    var B = (byte)((b / 10) << 4) | (b % 10);
+                    var decimalA = (byte)((a / 10) << 4) | (a % 10);
+                    var decimalB = (byte)((b / 10) << 4) | (b % 10);
 
-                    memory[0x03] = (byte)A;
-                    memory[0x05] = (byte)B;
+                    memory[0x03] = (byte)decimalA;
+                    memory[0x05] = (byte)decimalB;
 
                     var cpu = RunTinyTest(memory);
 
@@ -231,11 +231,11 @@ namespace InnoWerks.Simulators.Tests
             {
                 for (var b = 0; b <= 99; b++)
                 {
-                    var A = (byte)((a / 10) << 4) | (a % 10);
-                    var B = (byte)((b / 10) << 4) | (b % 10);
+                    var decimalA = (byte)((a / 10) << 4) | (a % 10);
+                    var decimalB = (byte)((b / 10) << 4) | (b % 10);
 
-                    memory[0x03] = (byte)A;
-                    memory[0x05] = (byte)B;
+                    memory[0x03] = (byte)decimalA;
+                    memory[0x05] = (byte)decimalB;
 
                     var cpu = RunTinyTest(memory);
 

@@ -1,5 +1,7 @@
 namespace InnoWerks.Simulators
 {
+#pragma warning disable RCS1163
+
     public partial class Cpu
     {
         /// <summary>
@@ -115,20 +117,20 @@ namespace InnoWerks.Simulators
         /// PC ← PC + sign-extend(near)
         /// </code>
         ///
-        /// The specified bit in the zero page location specified in the
+        /// <para>The specified bit in the zero page location specified in the
         /// operand is tested. If it is clear (reset), a branch is taken; if it is
         /// set, the instruction immediately following the two-byte BBRx instruction
         /// is executed. The bit is specified by a number (0 through 7)
-        /// concatenated to the end of the mnemonic.
+        /// concatenated to the end of the mnemonic.</para>
         ///
-        /// If the branch is performed, the third byte of the instruction is used
+        /// <para>If the branch is performed, the third byte of the instruction is used
         /// as a signed displacement from the program counter; that is, it is added
         /// to the program counter: a positive value(numbers less than or equal to
         /// $80; that is, numbers with the high-order bit clear) results in a branch
         /// to a higher location; a negative value(greater than $80, with the
         /// high-order bit set) results in a branch to a lower location.Once the branch
         /// address is calculated, the result is loaded into the program counter,
-        /// transferring control to that location.
+        /// transferring control to that location.</para>
         /// </summary>
         public void BBR(ushort addr, byte bit, long cycles, long pageCrossPenalty = 0)
         {
@@ -159,13 +161,13 @@ namespace InnoWerks.Simulators
         /// PC ← PC + sign-extend(near)
         /// </code>
         ///
-        /// The specified bit in the zero page location specified in the
+        /// <para>The specified bit in the zero page location specified in the
         /// operand is tested. If it is set, a branch is taken; if it is
         /// clear (reset), the instructions immediately following the
         /// two-byte BBSx instruction is executed. The bit is specified
-        /// by a number (0 through 7) concatenated to the end of the mnemonic.
+        /// by a number (0 through 7) concatenated to the end of the mnemonic.</para>
         ///
-        /// If the branch is performed, the third byte of the instruction
+        /// <para>If the branch is performed, the third byte of the instruction
         /// is used as a signed displacement from the program counter; that
         /// is, it is added to the program counter: a positive value (numbers
         /// less than or equal to $80; that is, numbers with the high order
@@ -173,7 +175,7 @@ namespace InnoWerks.Simulators
         /// value (greater than $80, with the high- order bit set) results in
         /// a branch to a lower location. Once the branch address is calculated,
         /// the result is loaded into the program counter, transferring control
-        /// to that location.
+        /// to that location.</para>
         /// </summary>
         public void BBS(ushort addr, byte bit, long cycles, long pageCrossPenalty = 0)
         {
@@ -1486,19 +1488,19 @@ namespace InnoWerks.Simulators
         /// Flags affected: ------z-
         /// </code>
         ///
-        /// Logically AND together the complement of the value in the
+        /// <para>Logically AND together the complement of the value in the
         /// accumulator with the data at the effective address specified
-        /// by the operand. Store the result at the memory location.
+        /// by the operand. Store the result at the memory location.</para>
         ///
-        /// This has the effect of clearing each memory bit for which the
+        /// <para>This has the effect of clearing each memory bit for which the
         /// corresponding accumulator bit is set, while leaving unchanged
-        /// all memory bits in which the corresponding accumulator bits are zeroes.
+        /// all memory bits in which the corresponding accumulator bits are zeroes.</para>
         ///
-        /// The z zero flag is set based on a second and different operation
+        /// <para>The z zero flag is set based on a second and different operation
         /// the ANDing of the accumulator value (not its complement) with
         /// the memory value (the same way the BIT instruction affects the
         /// zero flag). The result of this second operation is not saved;
-        /// only the zero flag is affected by it.
+        /// only the zero flag is affected by it.</para>
         /// </summary>
         public void TRB(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
@@ -1515,22 +1517,22 @@ namespace InnoWerks.Simulators
         /// <para>TSB - Test and Set Memory Bits Against Accumulator</para>
         /// <code>
         /// Flags affected: ------z-
+        /// </code>
         ///
-        /// Logically OR together the value in the accumulator with the data
+        /// <para>Logically OR together the value in the accumulator with the data
         /// at the effective address specified by the operand. Store the result
-        /// at the memory location.
+        /// at the memory location.</para>
         ///
-        /// This has the effect of setting each memory bit for which the
+        /// <para>This has the effect of setting each memory bit for which the
         /// corresponding accumulator bit is set, while leaving unchanged
         /// all memory bits in which the corresponding accumulator bits are
-        /// zeroes.
+        /// zeroes.</para>
         ///
-        /// The z zero flag is set based on a second different operation,
+        /// <para>The z zero flag is set based on a second different operation,
         /// the ANDing of the accumulator value with the memory value (the
         /// same way the BIT instruction affects the zero flag). The result
         /// of this second operation is not saved; only the zero flag is
-        /// affected by it.
-        /// </code>
+        /// affected by it.</para>
         /// </summary>
         public void TSB(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
