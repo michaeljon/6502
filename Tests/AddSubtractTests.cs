@@ -119,8 +119,8 @@ namespace InnoWerks.Simulators.Tests
             }
         }
 
-        //[TestMethod]
-        public static void SbcFullDecimalModeLoopWithoutCarry()
+        [TestMethod]
+        public void SbcFullDecimalModeLoopWithoutCarry()
         {
             // F8      SED                  ; Decimal mode
             // 18      CLC                  ; Note: carry is clear!
@@ -137,26 +137,62 @@ namespace InnoWerks.Simulators.Tests
             memory[0x05] = 0x00;    // b
             memory[0x06] = 0x00;
 
-            for (var a = 0; a <= 99; a++)
+            for (var a = 1; a <= 99; a++)
             {
                 for (var b = 0; b <= 99; b++)
                 {
-                    var decimalA = (byte)((a / 10) << 4) | (a % 10);
-                    var decimalB = (byte)((b / 10) << 4) | (b % 10);
+                    var decimalA = (byte)(((a / 10) << 4) | (a % 10));
+                    var decimalB = (byte)(((b / 10) << 4) | (b % 10));
 
-                    memory[0x03] = (byte)decimalA;
-                    memory[0x05] = (byte)decimalB;
+                    memory[0x03] = decimalA;
+                    memory[0x05] = decimalB;
 
                     var cpu = RunTinyTest(memory);
 
-                    // check for a carry
-                    bool carry = (0xff + a - b + 0) >= 0x100;
-                    Assert.AreEqual(carry, cpu.Registers.Carry, $"{a} - {b} (Carry)");
+                    bool carryFlag;
+                    bool overflowFlag = ((decimalA ^ decimalB) & 0x0080) != 0;
+                    const int carry = 0;
 
-                    var expected = (a - b + 1) % 100;
-                    var actual = (ushort)(((cpu.Registers.A & 0xf0) >> 4) * 10) + (cpu.Registers.A & 0x0f) % 100;
+                    int result;
 
-                    Assert.AreEqual(expected, actual, $"{a} - {b} (sum)");
+                    // lo nibble
+                    int temp = 0x0f + (decimalA & 0x0f) - (decimalB & 0x0f) + carry;
+                    if (temp < 0x10)
+                    {
+                        result = 0;
+                        temp -= 0x06;
+                    }
+                    else
+                    {
+                        result = 0x10;
+                        temp -= 0x10;
+                    }
+
+                    // hi nibble
+                    result += 0x00f0 + (decimalA & 0x00f0) - (decimalB & 0x00f0);
+                    if (result < 0x0100)
+                    {
+                        carryFlag = false;
+                        if (overflowFlag == true && result < 0x0080)
+                        {
+                            overflowFlag = false;
+                        }
+                        result -= 0x60;
+                    }
+                    else
+                    {
+                        carryFlag = true;
+                        if (overflowFlag == true && result >= 0x0180)
+                        {
+                            overflowFlag = false;
+                        }
+                    }
+                    result += temp;
+                    result &= 0xff;
+
+                    Assert.AreEqual(result, cpu.Registers.A, $"{a} - {b} (sum)");
+                    Assert.AreEqual(carryFlag, cpu.Registers.Carry, $"{a} - {b} (Carry)");
+                    Assert.AreEqual(overflowFlag, cpu.Registers.Overflow, $"{a} - {b} (Overflow)");
                 }
             }
         }
@@ -275,8 +311,8 @@ namespace InnoWerks.Simulators.Tests
             }
         }
 
-        //[TestMethod]
-        public static void SbcFullDecimalModeLoopWithCarry()
+        [TestMethod]
+        public void SbcFullDecimalModeLoopWithCarry()
         {
             // F8      SED                  ; Decimal mode
             // 38      SEC                  ; Note: carry is set
@@ -305,14 +341,50 @@ namespace InnoWerks.Simulators.Tests
 
                     var cpu = RunTinyTest(memory);
 
-                    // check for a carry
-                    bool carry = (0xff + a - b + 1) >= 0x100;
-                    Assert.AreEqual(carry, cpu.Registers.Carry, $"{a} - {b} (Carry)");
+                    bool carryFlag;
+                    bool overflowFlag = ((decimalA ^ decimalB) & 0x0080) != 0;
+                    const int carry = 1;
 
-                    var expected = (a - b + 0) % 100;
-                    var actual = (ushort)(((cpu.Registers.A & 0xf0) >> 4) * 10) + (cpu.Registers.A & 0x0f) % 100;
+                    int result;
 
-                    Assert.AreEqual(expected, actual, $"{a} - {b} (sum)");
+                    // lo nibble
+                    int temp = 0x0f + (decimalA & 0x0f) - (decimalB & 0x0f) + carry;
+                    if (temp < 0x10)
+                    {
+                        result = 0;
+                        temp -= 0x06;
+                    }
+                    else
+                    {
+                        result = 0x10;
+                        temp -= 0x10;
+                    }
+
+                    // hi nibble
+                    result += 0x00f0 + (decimalA & 0x00f0) - (decimalB & 0x00f0);
+                    if (result < 0x0100)
+                    {
+                        carryFlag = false;
+                        if (overflowFlag == true && result < 0x0080)
+                        {
+                            overflowFlag = false;
+                        }
+                        result -= 0x60;
+                    }
+                    else
+                    {
+                        carryFlag = true;
+                        if (overflowFlag == true && result >= 0x0180)
+                        {
+                            overflowFlag = false;
+                        }
+                    }
+                    result += temp;
+                    result &= 0xff;
+
+                    Assert.AreEqual(result, cpu.Registers.A, $"{a} - {b} (sum)");
+                    Assert.AreEqual(carryFlag, cpu.Registers.Carry, $"{a} - {b} (Carry)");
+                    Assert.AreEqual(overflowFlag, cpu.Registers.Overflow, $"{a} - {b} (Overflow)");
                 }
             }
         }
