@@ -7,7 +7,7 @@ namespace InnoWerks.Simulators
             A = 0;
             Y = 0;
             X = 0;
-            StackPointer = 0xff;
+            StackPointer = 0xfd;
             ProcessorStatus = 0x00;
         }
 
@@ -91,7 +91,7 @@ namespace InnoWerks.Simulators
              $"A:{A:X2} X:{X:X2} Y:{Y:X2} SP:{StackPointer:X2} PS:{ProcessorStatus:X2}";
 
         public string GetFlagsDisplay =>
-            $"PS:{(Negative ? 1 : 0)}{(Overflow ? 1 : 0)}{1}{(Break ? 1 : 0)}{(Decimal ? 1 : 0)}{(Interrupt ? 1 : 0)}{(Zero ? 1 : 0)}{(Carry ? 1 : 0)}";
+            $"PS:{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}-{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
 
         /// <summary>
         /// direct access to the carry flag in the processor status register
