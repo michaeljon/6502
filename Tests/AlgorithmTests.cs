@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -14,12 +15,9 @@ namespace InnoWerks.Simulators.Tests
             const ushort InitializationVector = 0x605c;
 
             byte[] memory = new byte[1024 * 64];
+            byte[] program = File.ReadAllBytes(Filename);
 
-            using (var fs = new FileStream(Filename, FileMode.Open, FileAccess.Read))
-            {
-                long length = fs.Length;
-                fs.Read(memory, Origin, (int)length);
-            }
+            Array.Copy(program, 0, memory, Origin, program.Length);
 
             // power up initialization
             memory[Cpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
@@ -28,15 +26,15 @@ namespace InnoWerks.Simulators.Tests
             var cpu = new Cpu(
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
-                (cpu) => LoggerCallback(cpu, memory));
+                (cpu) => DummyLoggerCallback(cpu, memory));
 
             cpu.Reset();
 
             // run
             cpu.Run(stopOnBreak: true, writeInstructions: false);
 
-            Assert.AreEqual(0x04, cpu.A);
-            Assert.IsFalse(cpu.Carry);
+            Assert.AreEqual(0x04, cpu.Registers.A);
+            Assert.IsFalse(cpu.Registers.Carry);
         }
 
         [TestMethod]
@@ -47,12 +45,9 @@ namespace InnoWerks.Simulators.Tests
             const ushort InitializationVector = 0x606f;
 
             byte[] memory = new byte[1024 * 64];
+            byte[] program = File.ReadAllBytes(Filename);
 
-            using (var fs = new FileStream(Filename, FileMode.Open, FileAccess.Read))
-            {
-                long length = fs.Length;
-                fs.Read(memory, Origin, (int)length);
-            }
+            Array.Copy(program, 0, memory, Origin, program.Length);
 
             // power up initialization
             memory[Cpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
@@ -61,14 +56,14 @@ namespace InnoWerks.Simulators.Tests
             var cpu = new Cpu(
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
-                (cpu) => LoggerCallback(cpu, memory));
+                (cpu) => DummyLoggerCallback(cpu, memory));
 
             cpu.Reset();
 
             // run
             cpu.Run(stopOnBreak: true, writeInstructions: false);
 
-            Assert.IsTrue(cpu.Carry);
+            Assert.IsTrue(cpu.Registers.Carry);
         }
     }
 }

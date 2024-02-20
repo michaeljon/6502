@@ -59,7 +59,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeZeroPageIndexedX()
         {
-            return (ushort)((read(ProgramCounter++) + X) & 0x00ff);
+            return (ushort)((read(ProgramCounter++) + Registers.X) & 0x00ff);
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeZeroPageIndexedY()
         {
-            return (ushort)((read(ProgramCounter++) + Y) & 0xff);
+            return (ushort)((read(ProgramCounter++) + Registers.Y) & 0xff);
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace InnoWerks.Simulators
             ushort addrL = read(ProgramCounter++);
             ushort addrH = read(ProgramCounter++);
 
-            return (ushort)((addrH << 8) + addrL + X);
+            return (ushort)((addrH << 8) + addrL + Registers.X);
         }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace InnoWerks.Simulators
             ushort addrL = read(ProgramCounter++);
             ushort addrH = read(ProgramCounter++);
 
-            return (ushort)((addrH << 8) + addrL + Y);
+            return (ushort)((addrH << 8) + addrL + Registers.Y);
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace InnoWerks.Simulators
             ushort addrL = read(ProgramCounter++);
             ushort addrH = read(ProgramCounter++);
 
-            return read((ushort)((addrH << 8) + addrL + X));
+            return read((ushort)((addrH << 8) + addrL + Registers.X));
         }
 
         /// <summary>
@@ -178,7 +178,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeIndexedIndirect()
         {
-            ushort zeroL = (ushort)((read(ProgramCounter++) + X) & 0xff);
+            ushort zeroL = (ushort)((read(ProgramCounter++) + Registers.X) & 0xff);
             ushort zeroH = (ushort)((zeroL + 1) & 0xff);
 
             return (ushort)((read(zeroH) << 8) | read(zeroL));
@@ -198,7 +198,7 @@ namespace InnoWerks.Simulators
             ushort zeroL = read(ProgramCounter++);
             ushort zeroH = (ushort)((zeroL + 1) & 0xff);
 
-            return (ushort)(((read(zeroH) << 8) | read(zeroL)) + Y);
+            return (ushort)(((read(zeroH) << 8) | read(zeroL)) + Registers.Y);
         }
 
         /// <summary>

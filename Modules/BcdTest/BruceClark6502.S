@@ -53,7 +53,7 @@ N1H      EQU   $0D
 N2L      EQU   $0E
 N2H      EQU   $0F
 
-
+         ORG   $8000
                           ; The test
 TEST     LDY   #1         ; initialize Y (used to loop through carry flag values)
          STY   ERROR      ; store 1 in ERROR until the test passes
@@ -99,6 +99,7 @@ NEXT2    INC   N2         ; [6] see text
          LDA   #0         ; test passed, so store 0 in ERROR
          STA   ERROR
 DONE     RTS
+         DB    0          ; short-term exit strategry
 
                           ; Calculate the actual decimal mode accumulator and flags, the accumulator
                           ; and flag results when N1 is added to N2 using binary arithmetic, the

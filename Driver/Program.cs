@@ -16,11 +16,9 @@ namespace InnoWerks.Simulators.Driver
 
         private void Run(string filename, ushort org, ushort startAddr, Action<Cpu> test = null)
         {
-            using (var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
-            {
-                long length = fs.Length;
-                fs.Read(memory, org, (int)length);
-            }
+            byte[] program = File.ReadAllBytes(filename);
+
+            Array.Copy(program, 0, memory, org, program.Length);
 
             var cpu = new Cpu(Read, Write, (cpu) =>
             {
@@ -41,7 +39,7 @@ namespace InnoWerks.Simulators.Driver
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: true);
+            cpu.Run(stopOnBreak: true, writeInstructions: false);
             test?.Invoke(cpu);
 
             Console.WriteLine($"Ticks: {cpu.Cycles}");

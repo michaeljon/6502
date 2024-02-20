@@ -29,17 +29,44 @@ namespace InnoWerks.Simulators
 
         private readonly Action<Cpu> callback;
 
-        public Cpu(Func<ushort, byte> read, Action<ushort, byte> write, Action<Cpu> callback)
+        private readonly Func<Cpu, bool> stepHandler;
+
+        private readonly Func<Cpu, bool> interruptHandler;
+
+        private readonly Func<Cpu, bool> breakHandler;
+
+        /// <summary>
+        /// This register points the address from which the next instruction
+        /// byte (opcode or parameter) will be fetched. Unlike other
+        /// registers, this one is 16 bits in length. The low and high 8-bit
+        /// halves of the register are called PCL and PCH, respectively. The
+        /// Program Counter may be read by pushing its value on the stack.
+        /// This can be done either by jumping to a subroutine or by causing
+        /// an interrupt.
+        /// </summary>
+        public ushort ProgramCounter { get; set; }
+
+        public Registers Registers { get; private set; }
+
+        public Cpu(
+            Func<ushort, byte> read,
+            Action<ushort, byte> write,
+            Action<Cpu> callback,
+            Func<Cpu, bool> stepHandler = null,
+            Func<Cpu, bool> interruptHandler = null,
+            Func<Cpu, bool> breakHandler = null)
         {
+            Registers = new();
+
             this.read = read;
             this.write = write;
             this.callback = callback;
 
-            A = 0;
-            Y = 0;
-            X = 0;
-            StackPointer = 0xff;
-            ProcessorStatus = 0x20;
+            this.stepHandler = stepHandler;
+            this.interruptHandler = interruptHandler;
+            this.breakHandler = breakHandler;
+
+            Registers.Reset();
         }
 
         public void Run(bool stopOnBreak, bool writeInstructions)
@@ -59,24 +86,20 @@ namespace InnoWerks.Simulators
                     break;
                 }
 
-                Execute(opCodeDefinition, writeInstructions);
-
-                instructionsProcessed++;
-
                 if (opCodeDefinition.Nmemonic.Equals("BRK", StringComparison.Ordinal) && stopOnBreak)
                 {
                     return;
                 }
+
+                Execute(opCodeDefinition, writeInstructions);
+
+                instructionsProcessed++;
             }
         }
 
         public void Reset()
         {
-            A = 0;
-            Y = 0;
-            X = 0;
-            StackPointer = 0xff;
-            ProcessorStatus = 0x00;
+            Registers.Reset();
 
             // load PC from reset vector
             ushort pcl = read(RstVectorL);
@@ -90,10 +113,10 @@ namespace InnoWerks.Simulators
         {
             StackPush((byte)((ProgramCounter >> 8) & 0xff));
             StackPush((byte)(ProgramCounter & 0xff));
-            StackPush((byte)((ProcessorStatus & 0xef) | 0x10));
+            StackPush((byte)((Registers.ProcessorStatus & 0xef) | 0x10));
 
-            SET_INTERRUPT(true);
-            SET_DECIMAL(false);
+            Registers.Interrupt = true;
+            Registers.Decimal = false;
 
             // load PC from reset vector
             ushort pcl = read(NmiVectorL);
@@ -104,14 +127,14 @@ namespace InnoWerks.Simulators
 
         public void IRQ()
         {
-            if (IF_INTERRUPT())
+            if (Registers.Interrupt == true)
             {
                 StackPush((byte)((ProgramCounter >> 8) & 0xff));
                 StackPush((byte)(ProgramCounter & 0xff));
-                StackPush((byte)((ProcessorStatus & 0xef) | 0x10));
+                StackPush((byte)((Registers.ProcessorStatus & 0xef) | 0x10));
 
-                SET_INTERRUPT(true);
-                SET_DECIMAL(false);
+                Registers.Interrupt = true;
+                Registers.Decimal = false;
 
                 // load PC from reset vector
                 ushort pcl = read(IrqVectorL);
@@ -125,8 +148,8 @@ namespace InnoWerks.Simulators
         {
             var save = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.Write($"PC:{ProgramCounter:X4} A:{A:X2} X:{X:X2} Y:{Y:X2} SP:{StackPointer:X2} PS:{ProcessorStatus:X2} ");
-            Console.WriteLine($"PS:{(Negative ? 1 : 0)}{(Overflow ? 1 : 0)}{1}{(Break ? 1 : 0)}{(Decimal ? 1 : 0)}{(Interrupt ? 1 : 0)}{(Zero ? 1 : 0)}{(Carry ? 1 : 0)}");
+            Console.Write($"PC:{ProgramCounter:X4} {Registers.GetRegisterDisplay} ");
+            Console.WriteLine(Registers.GetFlagsDisplay);
             Console.ForegroundColor = save;
         }
 
@@ -175,14 +198,14 @@ namespace InnoWerks.Simulators
 
         private void StackPush(byte b)
         {
-            write((ushort)(0x0100 + StackPointer), b);
-            StackPointer = (byte)((StackPointer == 0x00) ? 0xff : (StackPointer - 1));
+            write((ushort)(0x0100 + Registers.StackPointer), b);
+            Registers.StackPointer = (byte)((Registers.StackPointer == 0x00) ? 0xff : (Registers.StackPointer - 1));
         }
 
         private byte StackPop()
         {
-            StackPointer = (byte)((StackPointer == 0xff) ? 0x00 : (StackPointer + 1));
-            return read((ushort)(0x0100 + StackPointer));
+            Registers.StackPointer = (byte)((Registers.StackPointer == 0xff) ? 0x00 : (Registers.StackPointer + 1));
+            return read((ushort)(0x0100 + Registers.StackPointer));
         }
     }
 }

@@ -19,35 +19,63 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ADC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
-            byte carry = (byte)(Carry ? 0x01 : 0x00);
+            byte value = read(addr);
+            byte carry = (byte)(Registers.Carry ? 0x01 : 0x00);
 
-            ushort ai = A;
-            ushort bi = m;
-
-            short result = (short)(ai + bi + carry);
-
-            if (IF_DECIMAL())
+            int w;
+            Registers.Overflow = ((Registers.A ^ value) & 0x0080) == 0;
+            if (Registers.Decimal == true)
             {
                 cycles++;
 
-                if ((ai & 0x0f) + (bi & 0x0f) + carry > 0x09)
+                w = (Registers.A & 0x0f) + (value & 0x0f) + carry;
+                if (w >= 10)
                 {
-                    result += 0x06;
+                    w = 0x0010 | ((w + 0x06) & 0x0f);
                 }
-
-                if ((result >> 4) > 0x09)
+                w += (Registers.A & 0x00f0) + (value & 0x00f0);
+                if (w >= 0x00a0)
                 {
-                    result += 0x60;
+                    Registers.Carry = true;
+                    if (Registers.Overflow == true && w >= 0x0180)
+                    {
+                        Registers.Overflow = false;
+                    }
+                    w += 0x0060;
+                }
+                else
+                {
+                    Registers.Carry = false;
+                    if (Registers.Overflow == true && w < 0x0080)
+                    {
+                        Registers.Overflow = false;
+                    }
+                }
+            }
+            else
+            {
+                w = Registers.A + value + carry;
+                if (w >= 0x0100)
+                {
+                    Registers.Carry = true;
+                    if (Registers.Overflow == true && w > 0x0180)
+                    {
+                        Registers.Overflow = false;
+                    }
+                }
+                else
+                {
+                    Registers.Carry = false;
+                    if (Registers.Overflow == true && w < 0x0080)
+                    {
+                        Registers.Overflow = false;
+                    }
                 }
             }
 
-            SET_CARRY(result < ai || result < bi || (result & 0xff00) != 0);
-            SET_ZERO((result & 0xff) == 0);
-            SET_NEGATIVE((result & 0x80) == 0x80);
-            SET_OVERFLOW(result < -128 || result > 127);
-
-            A = (byte)(result & 0xff);
+            Registers.A = (byte)(w & 0x00ff);
+            Registers.Zero = Registers.A == 0x00;
+            Registers.Negative = (Registers.A & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -65,11 +93,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void AND(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
-            byte res = (byte)(m & A);
-            SET_NEGATIVE_FROM_VALUE(res);
-            SET_ZERO_FROM_VALUE(res);
-            A = res;
+            Registers.A &= read(addr);
+
+            Registers.Zero = Registers.A == 0x00;
+            Registers.Negative = (byte)(Registers.A & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -88,19 +115,22 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ASL(ushort addr, bool accum, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = accum ? A : read(addr);
-            SET_CARRY_ON_SHIFT(m);
-            m <<= 1;
-            m &= 0xff;
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+            byte value = accum ? Registers.A : read(addr);
+
+            Registers.Carry = ((byte)(value & 0x80)) == 0x80;
+
+            value = (byte)(0xfe & (value << 1));
+
+            Registers.Zero = value == 0x00;
+            Registers.Negative = ((byte)(value & 0x80)) == 0x80;
+
             if (accum == true)
             {
-                A = m;
+                Registers.A = value;
             }
             else
             {
-                write(addr, m);
+                write(addr, value);
             }
 
             WaitCycles(cycles);
@@ -208,7 +238,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void BCC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            if (IF_CARRY() == false)
+            if (Registers.Carry == false)
             {
                 if ((addr & 0xff00) != (ProgramCounter & 0xff00))
                 {
@@ -234,7 +264,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void BCS(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            if (IF_CARRY())
+            if (Registers.Carry == true)
             {
                 if ((addr & 0xff00) != (ProgramCounter & 0xff00))
                 {
@@ -260,7 +290,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void BEQ(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            if (IF_ZERO())
+            if (Registers.Zero == true)
             {
                 if ((addr & 0xff00) != (ProgramCounter & 0xff00))
                 {
@@ -286,16 +316,18 @@ namespace InnoWerks.Simulators
         /// z ← Set if logical AND of memory and Accumulator is zero
         /// </code>
         /// </summary>
-        public void BIT(ushort addr, long cycles, long pageCrossPenalty = 0)
+        public void BIT(ushort addr, long cycles, bool immediateMode, long pageCrossPenalty = 0)
         {
             byte m = read(addr);
 
-            // TODO: pass flag indicating immediate mode
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_OVERFLOW((byte)(m & 0x40) == 0x40);
+            Registers.Negative = ((byte)(m & 0x80)) == 0x80;
+            Registers.Zero = (byte)(m & Registers.A) == 0x00;
 
-            byte res = (byte)(m & A);
-            SET_ZERO_FROM_VALUE(res);
+            if (immediateMode == true)
+            {
+                // see http://www.6502.org/tutorials/vflag.html
+                Registers.Overflow = ((byte)(m & 0x40)) == 0x40;
+            }
 
             WaitCycles(cycles);
         }
@@ -309,14 +341,11 @@ namespace InnoWerks.Simulators
         ///
         /// Branch taken:
         /// PC ← PC + sign-extend(near)
-        ///
-        /// Branch taken (BRL):
-        /// PC ← PC + label
         /// </code>
         /// </summary>
         public void BMI(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            if (IF_NEGATIVE())
+            if (Registers.Negative == true)
             {
                 if ((addr & 0xff00) != (ProgramCounter & 0xff00))
                 {
@@ -330,7 +359,7 @@ namespace InnoWerks.Simulators
         }
 
         /// <summary>
-        /// <para>BNE - Branch on Negative</para>
+        /// <para>BNE - Branch on Not Equal</para>
         /// <code>
         /// Flags affected: --------
         /// Branch not taken:
@@ -338,14 +367,11 @@ namespace InnoWerks.Simulators
         ///
         /// Branch taken:
         /// PC ← PC + sign-extend(near)
-        ///
-        /// Branch taken (BRL):
-        /// PC ← PC + label
         /// </code>
         /// </summary>
         public void BNE(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            if (IF_ZERO() == false)
+            if (Registers.Zero == false)
             {
                 if ((addr & 0xff00) != (ProgramCounter & 0xff00))
                 {
@@ -371,7 +397,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void BPL(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            if (IF_NEGATIVE() == false)
+            if (Registers.Negative == false)
             {
                 if ((addr & 0xff00) != (ProgramCounter & 0xff00))
                 {
@@ -445,11 +471,14 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void BRK(ushort _, long cycles, long pageCrossPenalty = 0)
         {
+            // this should probably be delegated "up" so it can
+            // be reported out to the caller
+
             ProgramCounter++;
             StackPush((byte)(ProgramCounter >> 8));
             StackPush((byte)(ProgramCounter & 0xff));
-            StackPush((byte)(ProcessorStatus | (byte)ProcessorStatusBit.BreakCommand));
-            SET_INTERRUPT(true);
+            StackPush((byte)(Registers.ProcessorStatus | (byte)ProcessorStatusBit.BreakCommand | (byte)ProcessorStatusBit.Unused));
+            Registers.Interrupt = true;
             ProgramCounter = (ushort)((read(IrqVectorH) << 8) + read(IrqVectorL));
 
             WaitCycles(cycles);
@@ -468,7 +497,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void BVC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            if (IF_OVERFLOW() == false)
+            if (Registers.Overflow == false)
             {
                 ProgramCounter = addr;
             }
@@ -489,7 +518,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void BVS(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            if (IF_OVERFLOW())
+            if (Registers.Overflow == true)
             {
                 ProgramCounter = addr;
             }
@@ -507,7 +536,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CLC(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            SET_CARRY(false);
+            Registers.Carry = false;
 
             WaitCycles(cycles);
         }
@@ -522,7 +551,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CLD(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            SET_DECIMAL(false);
+            Registers.Decimal = false;
 
             WaitCycles(cycles);
         }
@@ -537,7 +566,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CLI(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            SET_INTERRUPT(false);
+            Registers.Interrupt = false;
+
+            // this should probably be reported "up" so that a
+            // subsequent interrupt is handled properly
 
             WaitCycles(cycles);
         }
@@ -552,7 +584,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CLV(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            SET_OVERFLOW(false);
+            Registers.Overflow = false;
 
             WaitCycles(cycles);
         }
@@ -570,11 +602,11 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CMP(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
+            int value = read(addr);
 
-            SET_CARRY(A >= m);
-            SET_ZERO(A == m);
-            SET_NEGATIVE_FROM_VALUE(A - m);
+            Registers.Carry = Registers.A >= value;
+            Registers.Zero = Registers.A == value;
+            Registers.Negative = (byte)((Registers.A - value) & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -593,11 +625,11 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CPX(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
+            int value = read(addr);
 
-            SET_CARRY(X >= m);
-            SET_ZERO(X == m);
-            SET_NEGATIVE_FROM_VALUE(X - m);
+            Registers.Carry = Registers.X >= value;
+            Registers.Zero = Registers.X == value;
+            Registers.Negative = (byte)((Registers.X - value) & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -616,11 +648,11 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CPY(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
+            int value = read(addr);
 
-            SET_CARRY(Y >= m);
-            SET_ZERO(Y == m);
-            SET_NEGATIVE_FROM_VALUE(Y - m);
+            Registers.Carry = Registers.Y >= value;
+            Registers.Zero = Registers.Y == value;
+            Registers.Negative = (byte)((Registers.Y - value) & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -638,13 +670,12 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void DEC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
-            m--;
+            byte value = (byte)(read(addr) - 1);
 
-            SET_ZERO((m & 0xff) == 0);
-            SET_NEGATIVE((m & 0x80) == 0x80);
+            Registers.Zero = value == 0x00;
+            Registers.Negative = (value & 0x80) == 0x80;
 
-            write(addr, m);
+            write(addr, value);
 
             WaitCycles(cycles);
         }
@@ -654,7 +685,7 @@ namespace InnoWerks.Simulators
         /// <code>
         /// Flags affected: n-----z-
         ///
-        /// R ← R - 1
+        /// X ← X - 1
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
@@ -662,13 +693,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void DEX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = X;
-            m--;
+            Registers.X--;
 
-            SET_ZERO((m & 0xff) == 0);
-            SET_NEGATIVE((m & 0x80) == 0x80);
-
-            X = m;
+            Registers.Zero = Registers.X == 0x00;
+            Registers.Negative = (Registers.X & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -678,7 +706,7 @@ namespace InnoWerks.Simulators
         /// <code>
         /// Flags affected: n-----z-
         ///
-        /// R ← R - 1
+        /// Y ← Y - 1
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
@@ -686,12 +714,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void DEY(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = Y;
-            m--;
+            Registers.Y--;
 
-            SET_ZERO((m & 0xff) == 0);
-            SET_NEGATIVE((m & 0x80) == 0x80);
-            Y = m;
+            Registers.Zero = Registers.Y == 0x00;
+            Registers.Negative = (Registers.Y & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -709,13 +735,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void EOR(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
-            m ^= A;
+            Registers.A ^= read(addr);
 
-            SET_ZERO((m & 0xff) == 0);
-            SET_NEGATIVE((m & 0x80) == 0x80);
-
-            A = m;
+            Registers.Zero = Registers.A == 0x00;
+            Registers.Negative = (Registers.A & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -733,11 +756,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void INC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
-            m++;
+            byte m = (byte)(read(addr) + 1);
 
-            SET_ZERO((m & 0xff) == 0);
-            SET_NEGATIVE((m & 0x80) == 0x80);
+            Registers.Zero = m == 0x00;
+            Registers.Negative = (m & 0x80) == 0x80;
 
             write(addr, m);
 
@@ -749,7 +771,7 @@ namespace InnoWerks.Simulators
         /// <code>
         /// Flags affected: n-----z-
         ///
-        /// R ← R + 1
+        /// X ← X + 1
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
@@ -757,13 +779,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void INX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = X;
-            m++;
+            Registers.X++;
 
-            SET_ZERO((m & 0xff) == 0);
-            SET_NEGATIVE((m & 0x80) == 0x80);
-
-            X = m;
+            Registers.Zero = Registers.X == 0x00;
+            Registers.Negative = (Registers.X & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -773,7 +792,7 @@ namespace InnoWerks.Simulators
         /// <code>
         /// Flags affected: n-----z-
         ///
-        /// R ← R + 1
+        /// Y ← Y + 1
         ///
         /// n ← Most significant bit of result
         /// z ← Set if the result is zero
@@ -781,13 +800,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void INY(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = Y;
-            m++;
+            Registers.Y++;
 
-            SET_ZERO((m & 0xff) == 0);
-            SET_NEGATIVE((m & 0x80) == 0x80);
-
-            Y = m;
+            Registers.Zero = Registers.Y == 0x00;
+            Registers.Negative = (Registers.Y & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -856,12 +872,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void LDA(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
+            Registers.A = read(addr);
 
-            SET_ZERO((m & 0xff) == 0);
-            SET_NEGATIVE((m & 0x80) == 0x80);
-
-            A = m;
+            Registers.Zero = Registers.A == 0x00;
+            Registers.Negative = (Registers.A & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -879,12 +893,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void LDX(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
+            Registers.X = read(addr);
 
-            SET_ZERO((m & 0xff) == 0);
-            SET_NEGATIVE((m & 0x80) == 0x80);
-
-            X = m;
+            Registers.Zero = Registers.X == 0x00;
+            Registers.Negative = (Registers.X & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -902,12 +914,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void LDY(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
+            Registers.Y = read(addr);
 
-            SET_ZERO((m & 0xff) == 0);
-            SET_NEGATIVE((m & 0x80) == 0x80);
-
-            Y = m;
+            Registers.Zero = Registers.Y == 0x00;
+            Registers.Negative = (Registers.Y & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -928,19 +938,23 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void LSR(ushort addr, bool accum, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = accum ? A : read(addr);
-            SET_CARRY_ON_SHIFT(m);
+            byte m = accum ? Registers.A : read(addr);
+
+            Registers.Carry = (m & 0x01) != 0;
+
             m >>= 1;
-            SET_NEGATIVE(false);
-            SET_ZERO_FROM_VALUE(m);
+
             if (accum == true)
             {
-                A = m;
+                Registers.A = m;
             }
             else
             {
                 write(addr, m);
             }
+
+            Registers.Zero = m == 0x00;
+            Registers.Negative = false;
 
             WaitCycles(cycles);
         }
@@ -969,13 +983,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ORA(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
-            m |= A;
+            Registers.A |= read(addr);
 
-            SET_ZERO((m & 0xff) == 0);
-            SET_NEGATIVE((m & 0x80) == 0x80);
-
-            A = m;
+            Registers.Zero = Registers.A == 0x00;
+            Registers.Negative = (Registers.A & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -992,7 +1003,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void PHA(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            StackPush(A);
+            StackPush(Registers.A);
 
             WaitCycles(cycles);
         }
@@ -1009,7 +1020,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void PHP(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            StackPush(ProcessorStatus);
+            StackPush(Registers.ProcessorStatus);
 
             WaitCycles(cycles);
         }
@@ -1026,7 +1037,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void PHX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            StackPush(X);
+            StackPush(Registers.X);
 
             WaitCycles(cycles);
         }
@@ -1042,7 +1053,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void PHY(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            StackPush(Y);
+            StackPush(Registers.Y);
 
             WaitCycles(cycles);
         }
@@ -1061,10 +1072,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void PLA(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            A = StackPop();
+            Registers.A = StackPop();
 
-            SET_ZERO((A & 0xff) == 0);
-            SET_NEGATIVE((A & 0x80) == 0x80);
+            Registers.Zero = Registers.A == 0x00;
+            Registers.Negative = (Registers.A & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -1080,7 +1091,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void PLP(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            ProcessorStatus = StackPop();
+            Registers.ProcessorStatus = StackPop();
 
             WaitCycles(cycles);
         }
@@ -1099,10 +1110,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void PLX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            X = StackPop();
+            Registers.X = StackPop();
 
-            SET_ZERO((X & 0xff) == 0);
-            SET_NEGATIVE((X & 0x80) == 0x80);
+            Registers.Zero = Registers.X == 0x00;
+            Registers.Negative = (Registers.X & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -1121,10 +1132,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void PLY(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            Y = StackPop();
+            Registers.Y = StackPop();
 
-            SET_ZERO((Y & 0xff) == 0);
-            SET_NEGATIVE((Y & 0x80) == 0x80);
+            Registers.Zero = Registers.Y == 0x00;
+            Registers.Negative = (Registers.Y & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -1164,26 +1175,30 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ROL(ushort addr, bool accum, long cycles, long pageCrossPenalty = 0)
         {
-            ushort m = accum ? A : read(addr);
+            ushort m = accum ? Registers.A : read(addr);
+
             m <<= 1;
-            if (IF_CARRY())
+
+            if (Registers.Carry)
             {
                 m |= 0x01;
             }
-            SET_CARRY(m > 0xff);
-            m &= 0xff;
 
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+            Registers.Carry = m > 0xff;
+
+            m &= 0xff;
 
             if (accum == true)
             {
-                A = (byte)m;
+                Registers.A = (byte)m;
             }
             else
             {
                 write(addr, (byte)m);
             }
+
+            Registers.Zero = m == 0x00;
+            Registers.Negative = (m & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -1202,24 +1217,29 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ROR(ushort addr, bool accum, long cycles, long pageCrossPenalty = 0)
         {
-            ushort m = accum ? A : read(addr);
-            if (IF_CARRY())
+            ushort m = accum ? Registers.A : read(addr);
+
+            if (Registers.Carry)
             {
                 m |= 0x100;
             }
-            SET_CARRY_ON_SHIFT(m);
+
+            Registers.Carry = ((byte)m & 0x01) != 0;
+
             m >>= 1;
             m &= 0xff;
-            SET_NEGATIVE_FROM_VALUE(m);
-            SET_ZERO_FROM_VALUE(m);
+
             if (accum == true)
             {
-                A = (byte)m;
+                Registers.A = (byte)m;
             }
             else
             {
                 write(addr, (byte)m);
             }
+
+            Registers.Zero = m == 0x00;
+            Registers.Negative = (m & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -1237,7 +1257,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void RTI(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            ProcessorStatus = StackPop();
+            // this should probably be delegated "up" so that
+            // the cpu can notify the caller
+
+            Registers.ProcessorStatus = StackPop();
 
             byte lo = StackPop();
             byte hi = StackPop();
@@ -1283,37 +1306,71 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void SBC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = read(addr);
-            byte carry = (byte)(Carry ? 0x01 : 0x00);
+            byte value = read(addr);
+            byte carry = (byte)(Registers.Carry ? 0x01 : 0x00);
 
-            ushort ai = A;
-            ushort bi = IF_DECIMAL() ?
-                (ushort)((0x99 - m) & 0xff) :
-                (ushort)(~m & 0xff);
+            Registers.Overflow = ((Registers.A ^ value) & 0x0080) != 0;
+            int w;
 
-            short result = (short)(ai + bi + carry);
-
-            if (IF_DECIMAL())
+            if (Registers.Decimal == true)
             {
                 cycles++;
 
-                if ((ai & 0x0f) + (bi & 0x0f) + carry > 0x09)
+                int temp = 0x0f + (Registers.A & 0x0f) - (value & 0x0f) + carry;
+                if (temp < 0x10)
                 {
-                    result += 0x06;
+                    w = 0;
+                    temp -= 0x06;
                 }
-
-                if ((result >> 4) > 0x09)
+                else
                 {
-                    result += 0x60;
+                    w = 0x10;
+                    temp -= 0x10;
+                }
+                w += 0x00f0 + (Registers.A & 0x00f0) - (value & 0x00f0);
+                if (w < 0x0100)
+                {
+                    Registers.Carry = false;
+                    if (Registers.Overflow == true && w < 0x0080)
+                    {
+                        Registers.Overflow = false;
+                    }
+                    w -= 0x60;
+                }
+                else
+                {
+                    Registers.Carry = true;
+                    if (Registers.Overflow == true && w >= 0x0180)
+                    {
+                        Registers.Overflow = false;
+                    }
+                }
+                w += temp;
+            }
+            else
+            {
+                w = 0x00ff + Registers.A - value + carry;
+                if (w < 0x100)
+                {
+                    Registers.Carry = false;
+                    if (Registers.Overflow == true && (w < 0x0080))
+                    {
+                        Registers.Overflow = false;
+                    }
+                }
+                else
+                {
+                    Registers.Carry = true;
+                    if (Registers.Overflow == true && (w >= 0x0180))
+                    {
+                        Registers.Overflow = false;
+                    }
                 }
             }
 
-            SET_CARRY(result < ai || result < bi || (result & 0xff00) != 0);
-            SET_ZERO((result & 0xff) == 0);
-            SET_NEGATIVE((result & 0x80) == 0x80);
-            SET_OVERFLOW(result < -128 || result > 127);
-
-            A = (byte)(result & 0xff);
+            Registers.A = (byte)(w & 0x00ff);
+            Registers.Zero = Registers.A == 0x00;
+            Registers.Negative = (Registers.A & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -1328,7 +1385,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void SEC(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            SET_CARRY(true);
+            Registers.Carry = true;
 
             WaitCycles(cycles);
         }
@@ -1343,7 +1400,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void SED(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            SET_DECIMAL(true);
+            Registers.Decimal = true;
 
             WaitCycles(cycles);
         }
@@ -1358,7 +1415,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void SEI(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            SET_INTERRUPT(true);
+            Registers.Interrupt = true;
 
             WaitCycles(cycles);
         }
@@ -1394,7 +1451,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void STA(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            write(addr, A);
+            write(addr, Registers.A);
 
             WaitCycles(cycles);
         }
@@ -1409,7 +1466,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void STX(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            write(addr, X);
+            write(addr, Registers.X);
 
             WaitCycles(cycles);
         }
@@ -1424,7 +1481,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void STY(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            write(addr, Y);
+            write(addr, Registers.Y);
 
             WaitCycles(cycles);
         }
@@ -1456,9 +1513,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TAX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            X = A;
-            SET_NEGATIVE_FROM_VALUE(X);
-            SET_ZERO_FROM_VALUE(X);
+            Registers.X = Registers.A;
+
+            Registers.Zero = Registers.X == 0x00;
+            Registers.Negative = (Registers.X & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -1475,9 +1533,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TAY(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            Y = A;
-            SET_NEGATIVE_FROM_VALUE(Y);
-            SET_ZERO_FROM_VALUE(Y);
+            Registers.Y = Registers.A;
+
+            Registers.Zero = Registers.Y == 0x00;
+            Registers.Negative = (Registers.Y & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -1505,10 +1564,11 @@ namespace InnoWerks.Simulators
         public void TRB(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             byte value = read(addr);
-            value = (byte)(value & (byte)~A);
+
+            value = (byte)(value & (byte)~Registers.A);
             write(addr, value);
 
-            SET_ZERO_FROM_VALUE(value & A);
+            Registers.Zero = (value & Registers.A) == 0x00;
 
             WaitCycles(cycles);
         }
@@ -1537,10 +1597,10 @@ namespace InnoWerks.Simulators
         public void TSB(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             byte value = read(addr);
-            value = (byte)(value | A);
+            value = (byte)(value | Registers.A);
             write(addr, value);
 
-            SET_ZERO_FROM_VALUE(value & A);
+            Registers.Zero = (value & Registers.A) == 0x00;
 
             WaitCycles(cycles);
         }
@@ -1557,9 +1617,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TSX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            X = StackPointer;
-            SET_NEGATIVE_FROM_VALUE(StackPointer);
-            SET_ZERO_FROM_VALUE(StackPointer);
+            Registers.X = Registers.StackPointer;
+
+            Registers.Zero = Registers.X == 0x00;
+            Registers.Negative = (Registers.X & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -1576,9 +1637,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TXA(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            A = X;
-            SET_NEGATIVE_FROM_VALUE(A);
-            SET_ZERO_FROM_VALUE(A);
+            Registers.A = Registers.X;
+
+            Registers.Zero = Registers.A == 0x00;
+            Registers.Negative = (Registers.A & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -1595,7 +1657,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TXS(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            StackPointer = X;
+            Registers.StackPointer = Registers.X;
 
             WaitCycles(cycles);
         }
@@ -1612,9 +1674,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TYA(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            A = Y;
-            SET_NEGATIVE_FROM_VALUE(A);
-            SET_ZERO_FROM_VALUE(A);
+            Registers.A = Registers.Y;
+
+            Registers.Zero = Registers.A == 0x00;
+            Registers.Negative = (Registers.A & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }

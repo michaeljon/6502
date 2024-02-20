@@ -17,8 +17,8 @@ namespace InnoWerks.Simulators.Tests
             ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(memory);
 
-            Console.Write($"PC: 0x{cpu.ProgramCounter:X4} A: 0x{cpu.A:X2} X: 0x{cpu.X:X2} Y: 0x{cpu.Y:X2} SP: 0x{cpu.StackPointer:X2} PS: 0x{cpu.ProcessorStatus:X2} ");
-            Console.WriteLine($"PS: {(cpu.Negative ? 1 : 0)}{(cpu.Overflow ? 1 : 0)}{1}{(cpu.Break ? 1 : 0)}{(cpu.Decimal ? 1 : 0)}{(cpu.Interrupt ? 1 : 0)}{(cpu.Zero ? 1 : 0)}{(cpu.Carry ? 1 : 0)}");
+            Console.Write($"PC:{cpu.ProgramCounter:X4} {cpu.Registers.GetRegisterDisplay} ");
+            Console.WriteLine(cpu.Registers.GetFlagsDisplay);
 
             for (var l = 0; l < 2; l++)
             {
@@ -40,6 +40,28 @@ namespace InnoWerks.Simulators.Tests
             }
 
             Console.WriteLine("");
+        }
+
+        protected static Cpu RunTinyTest(byte[] memory)
+        {
+            ArgumentNullException.ThrowIfNull(memory);
+
+            // power up initialization
+            memory[Cpu.RstVectorH] = 0x00;
+            memory[Cpu.RstVectorL] = 0x00;
+
+            var cpu = new Cpu(
+                (addr) => memory[addr],
+                (addr, b) => memory[addr] = b,
+                (cpu) => DummyLoggerCallback(cpu, memory))
+            {
+                SkipTimingWait = true
+            };
+
+            cpu.Reset();
+            cpu.Run(stopOnBreak: true, writeInstructions: false);
+
+            return cpu;
         }
 
         protected void PrintPage(byte[] memory, byte page)
