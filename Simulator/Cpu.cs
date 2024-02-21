@@ -15,6 +15,8 @@ namespace InnoWerks.Simulators
         public const ushort NmiVectorH = 0xFFFB;
         public const ushort NmiVectorL = 0xFFFA;
 
+        public const ushort StackBase = 0x0100;
+
         private const long TicksPerMicrosecond = 10;    // a tick is 100ns
 
         private long runningCycles;
@@ -47,6 +49,8 @@ namespace InnoWerks.Simulators
         public ushort ProgramCounter { get; set; }
 
         public Registers Registers { get; private set; }
+
+        public string OperandDisplay { get; private set; }
 
         public Cpu(
             Func<ushort, byte> read,
@@ -113,7 +117,7 @@ namespace InnoWerks.Simulators
         {
             StackPush((byte)((ProgramCounter >> 8) & 0xff));
             StackPush((byte)(ProgramCounter & 0xff));
-            StackPush((byte)((Registers.ProcessorStatus & 0xef) | 0x10));
+            StackPush((byte)((Registers.ProcessorStatus & 0xef) | (byte)ProcessorStatusBit.Unused));
 
             Registers.Interrupt = true;
             Registers.Decimal = false;
@@ -129,18 +133,7 @@ namespace InnoWerks.Simulators
         {
             if (Registers.Interrupt == true)
             {
-                StackPush((byte)((ProgramCounter >> 8) & 0xff));
-                StackPush((byte)(ProgramCounter & 0xff));
-                StackPush((byte)((Registers.ProcessorStatus & 0xef) | 0x10));
-
-                Registers.Interrupt = true;
-                Registers.Decimal = false;
-
-                // load PC from reset vector
-                ushort pcl = read(IrqVectorL);
-                ushort pch = read(IrqVectorH);
-
-                ProgramCounter = (ushort)((pch << 8) + pcl);
+                NMI();
             }
         }
 
@@ -181,31 +174,37 @@ namespace InnoWerks.Simulators
             // we pulled one byte to decode the instruction, so we'll use that for display
             ushort savePC = (ushort)(ProgramCounter - 1);
 
-            // decode the operand based on the opcode and addressind mode
+            // decode the operand based on the opcode and addressing mode
             ushort src = opCodeDefinition.DecodeOperand(this);
 
+            var save = Console.ForegroundColor;
             if (writeInstructions)
             {
-                var save = Console.ForegroundColor;
                 Console.ForegroundColor = ConsoleColor.DarkGreen;
-                Console.WriteLine($"{savePC:X4} {opCodeDefinition.Nmemonic} {src:X4}");
-                Console.ForegroundColor = save;
+                Console.Write($"{savePC:X4} {opCodeDefinition.Nmemonic}   {OperandDisplay,-8}");
             }
 
             opCodeDefinition.Execute(this, src);
+
+            if (writeInstructions)
+            {
+                Console.WriteLine($"  {Registers.InternalGetFlagsDisplay,-8}");
+                Console.ForegroundColor = save;
+            }
+
             callback?.Invoke(this);
         }
 
         private void StackPush(byte b)
         {
-            write((ushort)(0x0100 + Registers.StackPointer), b);
-            Registers.StackPointer = (byte)((Registers.StackPointer == 0x00) ? 0xff : (Registers.StackPointer - 1));
+            write((ushort)(StackBase + Registers.StackPointer), b);
+            Registers.StackPointer--;
         }
 
         private byte StackPop()
         {
-            Registers.StackPointer = (byte)((Registers.StackPointer == 0xff) ? 0x00 : (Registers.StackPointer + 1));
-            return read((ushort)(0x0100 + Registers.StackPointer));
+            Registers.StackPointer++;
+            return read((ushort)(StackBase + Registers.StackPointer));
         }
     }
 }

@@ -26,12 +26,12 @@ namespace InnoWerks.Simulators.Tests
             var cpu = new Cpu(
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
-                (cpu) => DummyLoggerCallback(cpu, memory));
+                (cpu) => LoggerCallback(cpu, memory));
 
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            cpu.Run(stopOnBreak: true, writeInstructions: true);
 
             Assert.AreEqual(0x04, cpu.Registers.A);
             Assert.IsFalse(cpu.Registers.Carry);
@@ -56,12 +56,12 @@ namespace InnoWerks.Simulators.Tests
             var cpu = new Cpu(
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
-                (cpu) => DummyLoggerCallback(cpu, memory));
+                (cpu) => LoggerCallback(cpu, memory));
 
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            cpu.Run(stopOnBreak: true, writeInstructions: true);
 
             Assert.IsTrue(cpu.Registers.Carry);
         }

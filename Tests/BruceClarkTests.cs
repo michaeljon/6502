@@ -36,7 +36,7 @@ namespace InnoWerks.Simulators.Tests
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            cpu.Run(stopOnBreak: true, writeInstructions: true);
 
             if (memory[ERROR] != 0x00)
             {
@@ -77,7 +77,7 @@ namespace InnoWerks.Simulators.Tests
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            cpu.Run(stopOnBreak: true, writeInstructions: true);
 
             if (memory[ERROR] != 0x00)
             {
@@ -89,7 +89,7 @@ namespace InnoWerks.Simulators.Tests
             Assert.AreEqual(0x00, memory[ERROR]);
         }
 
-        // [TestMethod]
+        [TestMethod]
         public void BruceClark6502All()
         {
             const string Filename = "Modules/BcdTest/BruceClark6502_All";
@@ -118,7 +118,7 @@ namespace InnoWerks.Simulators.Tests
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            cpu.Run(stopOnBreak: true, writeInstructions: true);
 
             if (memory[ERROR] != 0x00)
             {
@@ -159,7 +159,7 @@ namespace InnoWerks.Simulators.Tests
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            cpu.Run(stopOnBreak: true, writeInstructions: true);
 
             if (memory[ERROR] != 0x00)
             {

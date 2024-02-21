@@ -9,6 +9,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeAccumulator()
         {
+            OperandDisplay = "";
+
             return 0;
         }
 
@@ -18,6 +20,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeImmediate()
         {
+            OperandDisplay = $"#${read(ProgramCounter):X2}";
+
             return ProgramCounter++;
         }
 
@@ -30,6 +34,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeAbsolute()
         {
+            OperandDisplay = $"${read((ushort)(ProgramCounter + 1)):X2}{read(ProgramCounter):X2}";
+
             ushort addrLo = read(ProgramCounter++);
             ushort addrHi = read(ProgramCounter++);
 
@@ -44,6 +50,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeZeroPage()
         {
+            OperandDisplay = $"{{${read(ProgramCounter):X2}}}";
+
             return read(ProgramCounter++);
         }
 
@@ -59,6 +67,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeZeroPageIndexedX()
         {
+            OperandDisplay = $"{{${read(ProgramCounter):X2}}},X";
+
             return (ushort)((read(ProgramCounter++) + Registers.X) & 0x00ff);
         }
 
@@ -74,6 +84,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeZeroPageIndexedY()
         {
+            OperandDisplay = $"{{${read(ProgramCounter):X2}}},Y";
+
             return (ushort)((read(ProgramCounter++) + Registers.Y) & 0xff);
         }
 
@@ -89,6 +101,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeAbsoluteIndexedX()
         {
+            OperandDisplay = $"${read((ushort)(ProgramCounter + 1)):X2}{read(ProgramCounter):X2},X";
+
             ushort addrL = read(ProgramCounter++);
             ushort addrH = read(ProgramCounter++);
 
@@ -107,6 +121,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeAbsoluteIndexedY()
         {
+            OperandDisplay = $"${read((ushort)(ProgramCounter + 1)):X2}{read(ProgramCounter):X2},Y";
+
             ushort addrL = read(ProgramCounter++);
             ushort addrH = read(ProgramCounter++);
 
@@ -120,6 +136,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeIndexedAbsolute()
         {
+            OperandDisplay = $"(${read((ushort)(ProgramCounter + 1)):X2}{read(ProgramCounter):X2},X)";
+
             ushort addrL = read(ProgramCounter++);
             ushort addrH = read(ProgramCounter++);
 
@@ -132,6 +150,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeImplied()
         {
+            OperandDisplay = "";
+
             return 0;
         }
 
@@ -146,25 +166,14 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeRelative()
         {
+            OperandDisplay = $"${read(ProgramCounter):X2}";
+
             ushort offset = read(ProgramCounter++);
 
             if ((offset & 0x80) != 0) { offset |= 0xff00; }
 
             return (ushort)(ProgramCounter + offset);
         }
-
-        // /// <summary>
-        // /// ZP REL - This mode bit tests the zero page location specified for
-        // /// bit set/reset per the mask and performs a conditional relative branch
-        // /// based on the results of the bit test.
-        // /// </summary>
-        // public ushort DecodeZeroPageRelative()
-        // {
-        //     ushort addr = Read(PC++);
-        //     ushort offset = Read(PC++);
-
-        //     return (ushort)((addr << 8) | offset);
-        // }
 
         /// <summary>
         /// (IND,X) - In indexed indirect addressing (referred to ad (Indirect,X)),
@@ -178,6 +187,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeIndexedIndirect()
         {
+            OperandDisplay = $"({{${read(ProgramCounter):X2}}},X)";
+
             ushort zeroL = (ushort)((read(ProgramCounter++) + Registers.X) & 0xff);
             ushort zeroH = (ushort)((zeroL + 1) & 0xff);
 
@@ -195,6 +206,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeIndirectIndexed()
         {
+            OperandDisplay = $"({{${read(ProgramCounter):X2}}}),Y";
+
             ushort zeroL = read(ProgramCounter++);
             ushort zeroH = (ushort)((zeroL + 1) & 0xff);
 
@@ -212,6 +225,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeAbsoluteIndirect()
         {
+            OperandDisplay = $"${read((ushort)(ProgramCounter + 1)):X2}{read(ProgramCounter):X2}";
+
             ushort addrL = read(ProgramCounter++);
             ushort addrH = read(ProgramCounter++);
 
@@ -232,11 +247,18 @@ namespace InnoWerks.Simulators
         /// (IND) - The second byte of the instruction contains a zero page address
         /// serving as the indirect pointer.
         /// </summary>
-        public ushort DecodeIndirect() { return 0; }
+        public ushort DecodeIndirect()
+        {
+            OperandDisplay = "";
+
+            return 0;
+        }
 
         public ushort DecodeUndefined()
         {
             illegalOpCode = true;
+
+            OperandDisplay = "";
 
             return 0;
         }

@@ -73,7 +73,6 @@ namespace InnoWerks.Simulators
                 ps |= (byte)(Zero ? ProcessorStatusBit.Zero : 0);
                 ps |= (byte)(Carry ? ProcessorStatusBit.Carry : 0);
 
-
                 return ps;
             }
 
@@ -94,6 +93,9 @@ namespace InnoWerks.Simulators
 
         public string GetFlagsDisplay =>
             $"PS:{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}-{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
+
+        public string InternalGetFlagsDisplay =>
+            $"{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}-{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
 
         /// <summary>
         /// direct access to the carry flag in the processor status register

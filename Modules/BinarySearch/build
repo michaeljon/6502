@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+merlin32 -v /usr/local/lib/merlin binarySearch.S
