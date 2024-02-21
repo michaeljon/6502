@@ -26,7 +26,7 @@ namespace InnoWerks.Simulators.Tests
             var cpu = new Cpu(
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
-                (cpu) => LoggerCallback(cpu, memory));
+                (cpu) => DummyLoggerCallback(cpu, memory));
 
             cpu.Reset();
 
@@ -56,7 +56,7 @@ namespace InnoWerks.Simulators.Tests
             var cpu = new Cpu(
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
-                (cpu) => LoggerCallback(cpu, memory));
+                (cpu) => DummyLoggerCallback(cpu, memory));
 
             cpu.Reset();
 

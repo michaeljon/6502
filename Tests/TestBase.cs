@@ -10,7 +10,7 @@ namespace InnoWerks.Simulators.Tests
     {
         public TestContext TestContext { get; set; }
 
-        protected static void DummyLoggerCallback(Cpu _1, byte[] _2, int _3 = 0) {}
+        protected static void DummyLoggerCallback(Cpu _1, byte[] _2, int _3 = 0) { }
 
         protected static void LoggerCallback(Cpu cpu, byte[] memory, int lines = 1)
         {
@@ -53,7 +53,7 @@ namespace InnoWerks.Simulators.Tests
             var cpu = new Cpu(
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
-                (cpu) => LoggerCallback(cpu, memory, lines))
+                (cpu) => DummyLoggerCallback(cpu, memory, lines))
             {
                 SkipTimingWait = true
             };

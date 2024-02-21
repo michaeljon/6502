@@ -22,31 +22,31 @@ namespace InnoWerks.Simulators
             byte value = read(addr);
             byte carry = (byte)(Registers.Carry ? 0x01 : 0x00);
 
-            int w;
+            int working;
             Registers.Overflow = ((Registers.A ^ value) & 0x0080) == 0;
             if (Registers.Decimal == true)
             {
                 cycles++;
 
-                w = (Registers.A & 0x0f) + (value & 0x0f) + carry;
-                if (w >= 10)
+                working = (Registers.A & 0x0f) + (value & 0x0f) + carry;
+                if (working >= 10)
                 {
-                    w = 0x0010 | ((w + 0x06) & 0x0f);
+                    working = 0x0010 | ((working + 0x06) & 0x0f);
                 }
-                w += (Registers.A & 0x00f0) + (value & 0x00f0);
-                if (w >= 0x00a0)
+                working += (Registers.A & 0x00f0) + (value & 0x00f0);
+                if (working >= 0x00a0)
                 {
                     Registers.Carry = true;
-                    if (Registers.Overflow == true && w >= 0x0180)
+                    if (Registers.Overflow == true && working >= 0x0180)
                     {
                         Registers.Overflow = false;
                     }
-                    w += 0x0060;
+                    working += 0x0060;
                 }
                 else
                 {
                     Registers.Carry = false;
-                    if (Registers.Overflow == true && w < 0x0080)
+                    if (Registers.Overflow == true && working < 0x0080)
                     {
                         Registers.Overflow = false;
                     }
@@ -54,11 +54,11 @@ namespace InnoWerks.Simulators
             }
             else
             {
-                w = Registers.A + value + carry;
-                if (w >= 0x0100)
+                working = Registers.A + value + carry;
+                if (working >= 0x0100)
                 {
                     Registers.Carry = true;
-                    if (Registers.Overflow == true && w > 0x0180)
+                    if (Registers.Overflow == true && working > 0x0180)
                     {
                         Registers.Overflow = false;
                     }
@@ -66,14 +66,14 @@ namespace InnoWerks.Simulators
                 else
                 {
                     Registers.Carry = false;
-                    if (Registers.Overflow == true && w < 0x0080)
+                    if (Registers.Overflow == true && working < 0x0080)
                     {
                         Registers.Overflow = false;
                     }
                 }
             }
 
-            Registers.A = (byte)(w & 0x00ff);
+            Registers.A = (byte)(working & 0x00ff);
             Registers.Zero = Registers.A == 0x00;
             Registers.Negative = (Registers.A & 0x80) == 0x80;
 
@@ -113,9 +113,9 @@ namespace InnoWerks.Simulators
         /// c ← Most significant bit of original Memory
         /// </code>
         /// </summary>
-        public void ASL(ushort addr, bool accum, long cycles, long pageCrossPenalty = 0)
+        public void ASL(ushort addr, bool accumulator, long cycles, long pageCrossPenalty = 0)
         {
-            byte value = accum ? Registers.A : read(addr);
+            byte value = accumulator ? Registers.A : read(addr);
 
             Registers.Carry = ((byte)(value & 0x80)) == 0x80;
 
@@ -124,7 +124,7 @@ namespace InnoWerks.Simulators
             Registers.Zero = value == 0x00;
             Registers.Negative = ((byte)(value & 0x80)) == 0x80;
 
-            if (accum == true)
+            if (accumulator == true)
             {
                 Registers.A = value;
             }
@@ -602,11 +602,11 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CMP(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            int value = read(addr);
+            int value = Registers.A - read(addr);
 
-            Registers.Carry = Registers.A >= value;
-            Registers.Zero = Registers.A == value;
-            Registers.Negative = (byte)((Registers.A - value) & 0x80) == 0x80;
+            Registers.Carry = value >= 0;
+            Registers.Zero = value == 0;
+            Registers.Negative = (byte)(value & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -625,11 +625,11 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CPX(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            int value = read(addr);
+            int value = Registers.X - read(addr);
 
-            Registers.Carry = Registers.X >= value;
-            Registers.Zero = Registers.X == value;
-            Registers.Negative = (byte)((Registers.X - value) & 0x80) == 0x80;
+            Registers.Carry = value >= 0;
+            Registers.Zero = value == 0;
+            Registers.Negative = (byte)(value & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -648,11 +648,11 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CPY(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            int value = read(addr);
+            int value = Registers.Y - read(addr);
 
-            Registers.Carry = Registers.Y >= value;
-            Registers.Zero = Registers.Y == value;
-            Registers.Negative = (byte)((Registers.Y - value) & 0x80) == 0x80;
+            Registers.Carry = value >= 0;
+            Registers.Zero = value == 0;
+            Registers.Negative = (byte)(value & 0x80) == 0x80;
 
             WaitCycles(cycles);
         }
@@ -936,15 +936,15 @@ namespace InnoWerks.Simulators
         ///
         /// NOTE: This is an unsigned operation, the MSB of the result is always 0.
         /// </summary>
-        public void LSR(ushort addr, bool accum, long cycles, long pageCrossPenalty = 0)
+        public void LSR(ushort addr, bool accumulator, long cycles, long pageCrossPenalty = 0)
         {
-            byte m = accum ? Registers.A : read(addr);
+            byte m = accumulator ? Registers.A : read(addr);
 
             Registers.Carry = (m & 0x01) != 0;
 
             m >>= 1;
 
-            if (accum == true)
+            if (accumulator == true)
             {
                 Registers.A = m;
             }
@@ -1173,9 +1173,9 @@ namespace InnoWerks.Simulators
         /// c ← Most significant bit of original Memory
         /// </code>
         /// </summary>
-        public void ROL(ushort addr, bool accum, long cycles, long pageCrossPenalty = 0)
+        public void ROL(ushort addr, bool accumulator, long cycles, long pageCrossPenalty = 0)
         {
-            ushort m = accum ? Registers.A : read(addr);
+            ushort m = accumulator ? Registers.A : read(addr);
 
             m <<= 1;
 
@@ -1188,7 +1188,7 @@ namespace InnoWerks.Simulators
 
             m &= 0xff;
 
-            if (accum == true)
+            if (accumulator == true)
             {
                 Registers.A = (byte)m;
             }
@@ -1215,9 +1215,9 @@ namespace InnoWerks.Simulators
         /// c ← Bit 0 of original memory
         /// </code>
         /// </summary>
-        public void ROR(ushort addr, bool accum, long cycles, long pageCrossPenalty = 0)
+        public void ROR(ushort addr, bool accumulator, long cycles, long pageCrossPenalty = 0)
         {
-            ushort m = accum ? Registers.A : read(addr);
+            ushort m = accumulator ? Registers.A : read(addr);
 
             if (Registers.Carry)
             {
@@ -1229,7 +1229,7 @@ namespace InnoWerks.Simulators
             m >>= 1;
             m &= 0xff;
 
-            if (accum == true)
+            if (accumulator == true)
             {
                 Registers.A = (byte)m;
             }
@@ -1310,7 +1310,7 @@ namespace InnoWerks.Simulators
             byte carry = (byte)(Registers.Carry ? 0x01 : 0x00);
 
             Registers.Overflow = ((Registers.A ^ value) & 0x0080) != 0;
-            int w;
+            int working;
 
             if (Registers.Decimal == true)
             {
@@ -1319,41 +1319,41 @@ namespace InnoWerks.Simulators
                 int temp = 0x0f + (Registers.A & 0x0f) - (value & 0x0f) + carry;
                 if (temp < 0x10)
                 {
-                    w = 0;
+                    working = 0;
                     temp -= 0x06;
                 }
                 else
                 {
-                    w = 0x10;
+                    working = 0x10;
                     temp -= 0x10;
                 }
-                w += 0x00f0 + (Registers.A & 0x00f0) - (value & 0x00f0);
-                if (w < 0x0100)
+                working += 0x00f0 + (Registers.A & 0x00f0) - (value & 0x00f0);
+                if (working < 0x0100)
                 {
                     Registers.Carry = false;
-                    if (Registers.Overflow == true && w < 0x0080)
+                    if (Registers.Overflow == true && working < 0x0080)
                     {
                         Registers.Overflow = false;
                     }
-                    w -= 0x60;
+                    working -= 0x60;
                 }
                 else
                 {
                     Registers.Carry = true;
-                    if (Registers.Overflow == true && w >= 0x0180)
+                    if (Registers.Overflow == true && working >= 0x0180)
                     {
                         Registers.Overflow = false;
                     }
                 }
-                w += temp;
+                working += temp;
             }
             else
             {
-                w = 0x00ff + Registers.A - value + carry;
-                if (w < 0x100)
+                working = 0x00ff + Registers.A - value + carry;
+                if (working < 0x100)
                 {
                     Registers.Carry = false;
-                    if (Registers.Overflow == true && (w < 0x0080))
+                    if (Registers.Overflow == true && (working < 0x0080))
                     {
                         Registers.Overflow = false;
                     }
@@ -1361,14 +1361,14 @@ namespace InnoWerks.Simulators
                 else
                 {
                     Registers.Carry = true;
-                    if (Registers.Overflow == true && (w >= 0x0180))
+                    if (Registers.Overflow == true && (working >= 0x0180))
                     {
                         Registers.Overflow = false;
                     }
                 }
             }
 
-            Registers.A = (byte)(w & 0x00ff);
+            Registers.A = (byte)(working & 0x00ff);
             Registers.Zero = Registers.A == 0x00;
             Registers.Negative = (Registers.A & 0x80) == 0x80;
 
