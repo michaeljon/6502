@@ -477,7 +477,7 @@ namespace InnoWerks.Simulators
             ProgramCounter++;
             StackPush((byte)(ProgramCounter >> 8));
             StackPush((byte)(ProgramCounter & 0xff));
-            StackPush((byte)(Registers.ProcessorStatus | (byte)ProcessorStatusBit.BreakCommand | (byte)ProcessorStatusBit.Unused));
+            StackPush((byte)(Registers.ProcessorStatus | (byte)ProcessorStatusBit.BreakCommand));
             Registers.Interrupt = true;
             ProgramCounter = (ushort)((read(IrqVectorH) << 8) + read(IrqVectorL));
 

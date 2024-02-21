@@ -8,7 +8,7 @@ namespace InnoWerks.Simulators
             Y = 0;
             X = 0;
             StackPointer = 0xfd;
-            ProcessorStatus = 0x00;
+            ProcessorStatus = (byte)ProcessorStatusBit.Unused;
         }
 
         /// <summary>
@@ -67,10 +67,12 @@ namespace InnoWerks.Simulators
                 ps |= (byte)(Negative ? ProcessorStatusBit.Negative : 0);
                 ps |= (byte)(Overflow ? ProcessorStatusBit.Overflow : 0);
                 ps |= (byte)(Break ? ProcessorStatusBit.BreakCommand : 0);
+                ps |= (byte)ProcessorStatusBit.Unused;
                 ps |= (byte)(Decimal ? ProcessorStatusBit.DecimalMode : 0);
                 ps |= (byte)(Interrupt ? ProcessorStatusBit.InterruptDisable : 0);
                 ps |= (byte)(Zero ? ProcessorStatusBit.Zero : 0);
                 ps |= (byte)(Carry ? ProcessorStatusBit.Carry : 0);
+
 
                 return ps;
             }
