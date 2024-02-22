@@ -19,7 +19,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ADC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte value = read(addr);
+            int value = read(addr);
             byte carry = (byte)(Registers.Carry ? 0x01 : 0x00);
 
             Registers.Overflow = ((Registers.A ^ value) & 0x0080) == 0;
@@ -58,7 +58,7 @@ namespace InnoWerks.Simulators
             {
                 working = Registers.A + value + carry;
 
-                Registers.Carry = working >= 0x100;
+                Registers.Carry = working >= 0x0100;
                 Registers.Overflow = Registers.Overflow && (working < -128 || working > 127);
             }
 
@@ -1303,7 +1303,6 @@ namespace InnoWerks.Simulators
             byte carry = (byte)(Registers.Carry ? 0x01 : 0x00);
 
             Registers.Overflow = ((Registers.A ^ value) & 0x0080) != 0;
-
             int working;
 
             if (Registers.Decimal == true)
@@ -1348,7 +1347,7 @@ namespace InnoWerks.Simulators
             {
                 working = 0x00ff + Registers.A - value + carry;
 
-                Registers.Carry = working >= 0x100;
+                Registers.Carry = working >= 0x0100;
                 Registers.Overflow = Registers.Overflow && (working < -128 || working > 127);
             }
 

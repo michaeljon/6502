@@ -113,7 +113,7 @@ namespace InnoWerks.Simulators.Tests
                 CpuClass.WDC6502,
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
-                (cpu) => LoggerCallback(cpu, memory, lines: 2))
+                (cpu) => DummyLoggerCallback(cpu, memory, 2))
             {
                 SkipTimingWait = true
             };
@@ -197,7 +197,7 @@ namespace InnoWerks.Simulators.Tests
                 CpuClass.WDC65C02,
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
-                (cpu) => LoggerCallback(cpu, memory, lines: 1))
+                (cpu) => DummyLoggerCallback(cpu, memory, 1))
             {
                 SkipTimingWait = true
             };

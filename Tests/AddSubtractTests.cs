@@ -68,7 +68,7 @@ namespace InnoWerks.Simulators.Tests
 
                     var cpu = RunTinyTest(memory);
 
-                    int expected = a - b + 0 - 1;
+                    int expected = 0x00ff + a - b + 0;
                     bool carry = expected >= 0x100;
 
                     Assert.AreEqual(carry, cpu.Registers.Carry, $"{a} - {b} (Carry)");
@@ -260,7 +260,7 @@ namespace InnoWerks.Simulators.Tests
 
                     var cpu = RunTinyTest(memory);
 
-                    int expected = a - b + 1 - 1;
+                    int expected = 0x00ff + a - b + 1;
                     bool carry = expected >= 0x100;
 
                     Assert.AreEqual(carry, cpu.Registers.Carry, $"{a} + {b} (Carry)");
