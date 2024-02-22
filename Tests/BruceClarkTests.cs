@@ -8,7 +8,7 @@ namespace InnoWerks.Simulators.Tests
     public class BruceClarkTests : TestBase
     {
         [TestMethod]
-        public void BruceClark6502()
+        public void BruceClark6502ValidOperands()
         {
             const string Filename = "Modules/BcdTest/BruceClark6502";
             const ushort Origin = 0x8000;
@@ -50,7 +50,7 @@ namespace InnoWerks.Simulators.Tests
         }
 
         [TestMethod]
-        public void BruceClark65C02()
+        public void BruceClark65C02ValidOperands()
         {
             const string Filename = "Modules/BcdTest/BruceClark65C02";
             const ushort Origin = 0x8000;

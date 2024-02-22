@@ -27,12 +27,18 @@ namespace InnoWerks.Simulators.Tests
                 CpuClass.WDC65C02,
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
-                (cpu) => DummyLoggerCallback(cpu, memory));
+                (cpu) =>
+                {
+                    Console.WriteLine($"value  {memory[0x6059]:X2} ");
+                    Console.WriteLine($"ubnd   {memory[0x605A]:X2} ");
+                    Console.WriteLine($"lbnd   {memory[0x605B]:X2} ");
+                    Console.WriteLine($"aryadr {memory[0xef]:X2}{memory[0xee]:X2} ");
+                });
 
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            cpu.Run(stopOnBreak: true, writeInstructions: true);
 
             Assert.AreEqual(0x04, cpu.Registers.A);
             Assert.IsFalse(cpu.Registers.Carry);
@@ -58,12 +64,18 @@ namespace InnoWerks.Simulators.Tests
                 CpuClass.WDC65C02,
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
-                (cpu) => DummyLoggerCallback(cpu, memory));
+                (cpu) =>
+                {
+                    Console.WriteLine($"value  {memory[0x6059]:X2} ");
+                    Console.WriteLine($"ubnd   {memory[0x605A]:X2} ");
+                    Console.WriteLine($"lbnd   {memory[0x605B]:X2} ");
+                    Console.WriteLine($"aryadr {memory[0xef]:X2}{memory[0xee]:X2} ");
+                });
 
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            cpu.Run(stopOnBreak: true, writeInstructions: true);
 
             Assert.IsTrue(cpu.Registers.Carry);
         }

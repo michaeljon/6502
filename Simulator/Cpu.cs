@@ -186,7 +186,7 @@ namespace InnoWerks.Simulators
             if (writeInstructions)
             {
                 // Console.ForegroundColor = ConsoleColor.DarkGreen;
-                Console.Write($"{savePC:X4} {opCodeDefinition.Nmemonic}   {OperandDisplay,-8}");
+                Console.Write($"{savePC:X4} {opCodeDefinition.Nmemonic}   {OperandDisplay,-10}");
             }
 
             opCodeDefinition.Execute(this, src);
