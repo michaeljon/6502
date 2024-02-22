@@ -24,6 +24,7 @@ namespace InnoWerks.Simulators.Tests
             memory[Cpu.RstVectorL] = InitializationVector & 0xff;
 
             var cpu = new Cpu(
+                CpuClass.WDC65C02,
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
                 (cpu) => DummyLoggerCallback(cpu, memory));
@@ -31,7 +32,7 @@ namespace InnoWerks.Simulators.Tests
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: true);
+            cpu.Run(stopOnBreak: true, writeInstructions: false);
 
             Assert.AreEqual(0x04, cpu.Registers.A);
             Assert.IsFalse(cpu.Registers.Carry);
@@ -54,6 +55,7 @@ namespace InnoWerks.Simulators.Tests
             memory[Cpu.RstVectorL] = InitializationVector & 0xff;
 
             var cpu = new Cpu(
+                CpuClass.WDC65C02,
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
                 (cpu) => DummyLoggerCallback(cpu, memory));
@@ -61,7 +63,7 @@ namespace InnoWerks.Simulators.Tests
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: true);
+            cpu.Run(stopOnBreak: true, writeInstructions: false);
 
             Assert.IsTrue(cpu.Registers.Carry);
         }

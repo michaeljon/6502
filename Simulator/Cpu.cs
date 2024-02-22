@@ -52,7 +52,10 @@ namespace InnoWerks.Simulators
 
         public string OperandDisplay { get; private set; }
 
+        public CpuClass CpuClass { get; private set; }
+
         public Cpu(
+            CpuClass cpuClass,
             Func<ushort, byte> read,
             Action<ushort, byte> write,
             Action<Cpu> callback,
@@ -60,6 +63,8 @@ namespace InnoWerks.Simulators
             Func<Cpu, bool> interruptHandler = null,
             Func<Cpu, bool> breakHandler = null)
         {
+            CpuClass = cpuClass;
+
             Registers = new();
 
             this.read = read;
@@ -90,14 +95,14 @@ namespace InnoWerks.Simulators
                     break;
                 }
 
+                Execute(opCodeDefinition, writeInstructions);
+
+                instructionsProcessed++;
+
                 if (opCodeDefinition.Nmemonic.Equals("BRK", StringComparison.Ordinal) && stopOnBreak)
                 {
                     return;
                 }
-
-                Execute(opCodeDefinition, writeInstructions);
-
-                instructionsProcessed++;
             }
         }
 
@@ -139,11 +144,11 @@ namespace InnoWerks.Simulators
 
         public void PrintStatus()
         {
-            var save = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.DarkRed;
+            // var save = Console.ForegroundColor;
+            // Console.ForegroundColor = ConsoleColor.DarkRed;
             Console.Write($"PC:{ProgramCounter:X4} {Registers.GetRegisterDisplay} ");
             Console.WriteLine(Registers.GetFlagsDisplay);
-            Console.ForegroundColor = save;
+            // Console.ForegroundColor = save;
         }
 
         public long Cycles => runningCycles;
@@ -177,10 +182,10 @@ namespace InnoWerks.Simulators
             // decode the operand based on the opcode and addressing mode
             ushort src = opCodeDefinition.DecodeOperand(this);
 
-            var save = Console.ForegroundColor;
+            // var save = Console.ForegroundColor;
             if (writeInstructions)
             {
-                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                // Console.ForegroundColor = ConsoleColor.DarkGreen;
                 Console.Write($"{savePC:X4} {opCodeDefinition.Nmemonic}   {OperandDisplay,-8}");
             }
 
@@ -188,8 +193,9 @@ namespace InnoWerks.Simulators
 
             if (writeInstructions)
             {
+                Console.Write($"  {Registers.GetRegisterDisplay} ");
                 Console.WriteLine($"  {Registers.InternalGetFlagsDisplay,-8}");
-                Console.ForegroundColor = save;
+                // Console.ForegroundColor = save;
             }
 
             callback?.Invoke(this);

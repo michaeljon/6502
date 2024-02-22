@@ -278,36 +278,5 @@ namespace InnoWerks.Simulators
             { 0xfe, new OpCodeDefinition("INC", (cpu, addr) => cpu.INC(addr, cycles: 7), (cpu) => cpu.DecodeAbsoluteIndexedX()) },
             { 0xff, new OpCodeDefinition("BBS", (cpu, addr) => cpu.BBS(addr, bit: 7, cycles: 5), (cpu) => cpu.DecodeZeroPage()) },
         };
-
-        //
-        // the plan here is to create per-cpu opcode sets and return the opcode
-        // definition specific to that cpu. for now, well, we'll just return any
-        // opcode that matches
-        //
-
-        // public static OpCodeDefinition Get6502(byte opcode)
-        // {
-        //     return OpCode6502[opcode];
-        // }
-
-        // public static OpCodeDefinition GetR65C02(byte opcode)
-        // {
-        //     return OpCode6502[opcode];
-        // }
-
-        // public static OpCodeDefinition Get65C02(byte opcode)
-        // {
-        //     return OpCode6502[opcode];
-        // }
-
-        // public static OpCodeDefinition Get65802(byte opcode)
-        // {
-        //     return OpCode6502[opcode];
-        // }
-
-        // public static OpCodeDefinition Get65816(byte opcode)
-        // {
-        //     return OpCode6502[opcode];
-        // }
     }
 }

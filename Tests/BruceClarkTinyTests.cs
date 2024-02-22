@@ -19,15 +19,17 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0              ; the accumulator is $10
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0xA9;
-            memory[0x02] = 0x05;
-            memory[0x03] = 0x18;
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x05;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x05;
+            memory[addr++] = 0x18;
+            memory[addr++] = 0x69;
+            memory[addr++] = 0x05;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(0x10, cpu.Registers.A);
         }
 
@@ -40,13 +42,15 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0              ; the accumulator is $0A
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0xA9;
-            memory[0x02] = 0x05;
-            memory[0x03] = 0x0A;
-            memory[0x04] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x05;
+            memory[addr++] = 0x0A;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(0x0A, cpu.Registers.A);
         }
 
@@ -60,15 +64,17 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0              ; the accumulator is $10
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0xA9;
-            memory[0x02] = 0x09;
-            memory[0x03] = 0x18;
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x01;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x09;
+            memory[addr++] = 0x18;
+            memory[addr++] = 0x69;
+            memory[addr++] = 0x01;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(0x10, cpu.Registers.A);
         }
 
@@ -82,16 +88,18 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0              ; NUM (assuming it is an ordinary RAM location) will contain $0A.
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0xA9;
-            memory[0x02] = 0x09;
-            memory[0x03] = 0x85;
-            memory[0x04] = 0xE0;
-            memory[0x05] = 0xE6;
-            memory[0x06] = 0xE0;
-            memory[0x07] = 0x00;
+            byte addr = 0x00;
 
-            RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x09;
+            memory[addr++] = 0x85;
+            memory[addr++] = 0xE0;
+            memory[addr++] = 0xE6;
+            memory[addr++] = 0xE0;
+            memory[addr++] = 0x00;
+
+            RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(0x0a, memory[0xe0]);
         }
 
@@ -105,15 +113,17 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xD8;
-            memory[0x01] = 0x38;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x58;
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x46;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xD8;
+            memory[addr++] = 0x38;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x58;
+            memory[addr++] = 0x69;
+            memory[addr++] = 0x46;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
             Assert.AreEqual(0x9f, cpu.Registers.A);
         }
@@ -128,15 +138,17 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x38;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x58;
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x46;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0x38;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x58;
+            memory[addr++] = 0x69;
+            memory[addr++] = 0x46;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
             Assert.AreEqual(0x05, cpu.Registers.A);
         }
@@ -151,15 +163,17 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x18;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x12;
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x34;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0x18;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x12;
+            memory[addr++] = 0x69;
+            memory[addr++] = 0x34;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
             Assert.AreEqual(0x46, cpu.Registers.A);
         }
@@ -174,15 +188,17 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x18;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x15;
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x26;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0x18;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x15;
+            memory[addr++] = 0x69;
+            memory[addr++] = 0x26;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
             Assert.AreEqual(0x41, cpu.Registers.A);
         }
@@ -197,15 +213,17 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x18;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x81;
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x92;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0x18;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x81;
+            memory[addr++] = 0x69;
+            memory[addr++] = 0x92;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
             Assert.AreEqual(0x73, cpu.Registers.A);
         }
@@ -220,15 +238,17 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x38;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x46;
-            memory[0x04] = 0xE9;
-            memory[0x05] = 0x12;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0x38;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x46;
+            memory[addr++] = 0xE9;
+            memory[addr++] = 0x12;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
             Assert.AreEqual(0x34, cpu.Registers.A);
         }
@@ -243,15 +263,17 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x38;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x40;
-            memory[0x04] = 0xE9;
-            memory[0x05] = 0x13;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0x38;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x40;
+            memory[addr++] = 0xE9;
+            memory[addr++] = 0x13;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
             Assert.AreEqual(0x27, cpu.Registers.A);
         }
@@ -266,15 +288,17 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x18;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x32;
-            memory[0x04] = 0xE9;
-            memory[0x05] = 0x02;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0x18;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x32;
+            memory[addr++] = 0xE9;
+            memory[addr++] = 0x02;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
             Assert.AreEqual(0x29, cpu.Registers.A);
         }
@@ -289,15 +313,17 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x38;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x12;
-            memory[0x04] = 0xE9;
-            memory[0x05] = 0x21;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0x38;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x12;
+            memory[addr++] = 0xE9;
+            memory[addr++] = 0x21;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
             Assert.AreEqual(0x91, cpu.Registers.A);
         }
@@ -312,15 +338,17 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x38;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x21;
-            memory[0x04] = 0xE9;
-            memory[0x05] = 0x34;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0x38;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x21;
+            memory[addr++] = 0xE9;
+            memory[addr++] = 0x34;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
             Assert.AreEqual(0x87, cpu.Registers.A);
         }
@@ -334,15 +362,17 @@ namespace InnoWerks.Simulators.Tests
             // 69 90   ADC   #$90
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x18;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x90;
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x90;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0x18;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x90;
+            memory[addr++] = 0x69;
+            memory[addr++] = 0x90;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Overflow);
         }
 
@@ -356,15 +386,17 @@ namespace InnoWerks.Simulators.Tests
             // 00      DB    0
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x38;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x01;
-            memory[0x04] = 0xE9;
-            memory[0x05] = 0x01;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0x38;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x01;
+            memory[addr++] = 0xE9;
+            memory[addr++] = 0x01;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Zero);
             Assert.AreEqual(0x00, cpu.Registers.A);
         }
@@ -378,15 +410,17 @@ namespace InnoWerks.Simulators.Tests
             // 69 01   ADC   #$01
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xD8;
-            memory[0x01] = 0x18;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x99;
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x01;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xD8;
+            memory[addr++] = 0x18;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x99;
+            memory[addr++] = 0x69;
+            memory[addr++] = 0x01;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(0x9a, cpu.Registers.A);
             Assert.IsFalse(cpu.Registers.Zero);
         }
@@ -400,17 +434,155 @@ namespace InnoWerks.Simulators.Tests
             // 69 01   ADC   #$01
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x18;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x99;
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x01;
-            memory[0x06] = 0x00;
+            byte addr = 0x00;
 
-            var cpu = RunTinyTest(memory);
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0x18;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x99;
+            memory[addr++] = 0x69;
+            memory[addr++] = 0x01;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(0x00, cpu.Registers.A);
             Assert.IsTrue(cpu.Registers.Zero);
+        }
+
+        [TestMethod]
+        public void BruceClarkExample99()
+        {
+            // F8      SED
+            // 38      SEC
+            // A9 00   LDA   #$00
+            // E9 00   SBC   #$00
+
+            byte[] memory = new byte[1024 * 64];
+            byte addr = 0x00;
+
+            memory[addr++] = 0xF8;
+            memory[addr++] = 0x38;
+            memory[addr++] = 0xA9;
+            memory[addr++] = 0x00;
+            memory[addr++] = 0xE9;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            Assert.IsTrue(cpu.Registers.Zero);
+            Assert.AreEqual(0x00, cpu.Registers.A);
+        }
+
+        [DataTestMethod]
+        [DataRow((byte)0x01, (byte)0x01, (byte)0x02, false, false, false)]
+        [DataRow((byte)0x01, (byte)0xFF, (byte)0x00, true, true, false)]
+        [DataRow((byte)0x7f, (byte)0x01, (byte)0x80, false, false, true)]
+        [DataRow((byte)0x80, (byte)0xff, (byte)0x7f, true, false, true)]
+        public void ClcAdcOverflowFlagTests(byte xx, byte yy, byte accum, bool c, bool z, bool v)
+        {
+            // D8      CLD
+            // 18      CLC
+            // A9 xx   LDA   #$xx
+            // 69 yy   ADC   #$yy
+
+            byte[] memory = new byte[1024 * 64];
+            byte addr = 0x00;
+
+            memory[addr++] = 0xD8;
+            memory[addr++] = 0x18;
+            memory[addr++] = 0xA9;
+            memory[addr++] = xx;
+            memory[addr++] = 0x69;
+            memory[addr++] = yy;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            Assert.AreEqual(c, cpu.Registers.Carry);
+            Assert.AreEqual(z, cpu.Registers.Zero);
+            Assert.AreEqual(v, cpu.Registers.Overflow);
+
+            Assert.AreEqual(accum, cpu.Registers.A);
+        }
+
+        [DataTestMethod]
+        [DataRow((byte)0x00, (byte)0x01, (byte)0xff, false, false, false)]
+        [DataRow((byte)0x80, (byte)0x01, (byte)0x7f, true, false, true)]
+        [DataRow((byte)0x7f, (byte)0xff, (byte)0x80, false, false, true)]
+        public void SecSbcOverflowFlagTests(byte xx, byte yy, byte accum, bool c, bool z, bool v)
+        {
+            // D8      CLD
+            // 38      SEC
+            // A9 xx   LDA   #$xx
+            // E9 yy   SBC   #$yy
+
+            byte[] memory = new byte[1024 * 64];
+            byte addr = 0x00;
+
+            memory[addr++] = 0xD8;
+            memory[addr++] = 0x38;
+            memory[addr++] = 0xA9;
+            memory[addr++] = xx;
+            memory[addr++] = 0xE9;
+            memory[addr++] = yy;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            Assert.AreEqual(c, cpu.Registers.Carry);
+            Assert.AreEqual(z, cpu.Registers.Zero);
+            Assert.AreEqual(v, cpu.Registers.Overflow);
+
+            Assert.AreEqual(accum, cpu.Registers.A);
+        }
+
+        [DataTestMethod]
+        [DataRow((byte)0x3f, (byte)0x40, (byte)0x80, false, false, true)]
+        public void SecAdcOverflowFlagTests(byte xx, byte yy, byte accum, bool c, bool z, bool v)
+        {
+            // D8      CLD
+            // 38      SEC
+            // A9 xx   LDA   #$xx
+            // 69 yy   ADC   #$yy
+
+            byte[] memory = new byte[1024 * 64];
+            byte addr = 0x00;
+
+            memory[addr++] = 0xD8;
+            memory[addr++] = 0x38;
+            memory[addr++] = 0xA9;
+            memory[addr++] = xx;
+            memory[addr++] = 0x69;
+            memory[addr++] = yy;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            Assert.AreEqual(c, cpu.Registers.Carry);
+            Assert.AreEqual(z, cpu.Registers.Zero);
+            Assert.AreEqual(v, cpu.Registers.Overflow);
+
+            Assert.AreEqual(accum, cpu.Registers.A);
+        }
+
+        [DataTestMethod]
+        [DataRow((byte)0xc0, (byte)0x40, (byte)0x7f, true, false, true)]
+        public void ClcSbcOverflowFlagTests(byte xx, byte yy, byte accum, bool c, bool z, bool v)
+        {
+            // D8      CLD
+            // 18      CLC
+            // A9 xx   LDA   #$xx
+            // E9 yy   SBC   #$yy
+
+            byte[] memory = new byte[1024 * 64];
+            byte addr = 0x00;
+
+            memory[addr++] = 0xD8;
+            memory[addr++] = 0x18;
+            memory[addr++] = 0xA9;
+            memory[addr++] = xx;
+            memory[addr++] = 0xE9;
+            memory[addr++] = yy;
+
+            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            Assert.AreEqual(c, cpu.Registers.Carry);
+            Assert.AreEqual(z, cpu.Registers.Zero);
+            Assert.AreEqual(v, cpu.Registers.Overflow);
+
+            Assert.AreEqual(accum, cpu.Registers.A);
         }
     }
 }

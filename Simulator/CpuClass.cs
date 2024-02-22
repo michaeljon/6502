@@ -5,12 +5,8 @@ namespace InnoWerks.Simulators
 {
     public enum CpuClass
     {
-        R6502,
+        WDC6502,
 
-        R65C02,
-
-        R65802,
-
-        R65816
+        WDC65C02,
     }
 }

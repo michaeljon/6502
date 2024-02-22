@@ -74,10 +74,10 @@ LOOP2    LDA   N1         ; N1L = N1 & $0F
          LDA   N1         ; N1H = N1 & $F0
          AND   #$F0       ; [4] see text
          STA   N1H
-*         JSR   ADD
-*         JSR   A6502
-*         JSR   COMPARE
-*         BNE   DONE
+*  JSR   ADD
+*  JSR   A6502
+*  JSR   COMPARE
+*  BNE   DONE
          JSR   SUB
          JSR   S6502
          JSR   COMPARE

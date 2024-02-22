@@ -20,17 +20,21 @@ namespace InnoWerks.Simulators.Driver
 
             Array.Copy(program, 0, memory, org, program.Length);
 
-            var cpu = new Cpu(Read, Write, (cpu) =>
-            {
-                cpu.PrintStatus();
+            var cpu = new Cpu(
+                CpuClass.WDC65C02,
+                Read,
+                Write,
+                (cpu) =>
+                {
+                    cpu.PrintStatus();
 
-                Console.WriteLine();
-                PrintPage(0x00, 0x02);
+                    Console.WriteLine();
+                    PrintPage(0x00, 0x02);
 
-                Console.Write("<enter> to continue ");
-                Console.ReadLine();
-                Console.WriteLine();
-            });
+                    Console.Write("<enter> to continue ");
+                    Console.ReadLine();
+                    Console.WriteLine();
+                });
 
             // power up initialization
             Write(Cpu.RstVectorH, (byte)((startAddr & 0xff00) >> 8));

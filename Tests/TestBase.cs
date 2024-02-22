@@ -17,8 +17,8 @@ namespace InnoWerks.Simulators.Tests
             ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(memory);
 
-            Console.Write($"PC:{cpu.ProgramCounter:X4} {cpu.Registers.GetRegisterDisplay} ");
-            Console.WriteLine(cpu.Registers.GetFlagsDisplay);
+            // Console.Write($"PC:{cpu.ProgramCounter:X4} {cpu.Registers.GetRegisterDisplay} ");
+            // Console.WriteLine(cpu.Registers.GetFlagsDisplay);
 
             for (var l = 0; l < lines; l++)
             {
@@ -42,7 +42,7 @@ namespace InnoWerks.Simulators.Tests
             Console.WriteLine("");
         }
 
-        protected Cpu RunTinyTest(byte[] memory, int lines = 1)
+        protected Cpu RunTinyTest(byte[] memory, CpuClass cpuClass = CpuClass.WDC65C02, int lines = 1)
         {
             ArgumentNullException.ThrowIfNull(memory);
 
@@ -51,6 +51,7 @@ namespace InnoWerks.Simulators.Tests
             memory[Cpu.RstVectorL] = 0x00;
 
             var cpu = new Cpu(
+                cpuClass,
                 (addr) => memory[addr],
                 (addr, b) => memory[addr] = b,
                 (cpu) => DummyLoggerCallback(cpu, memory, lines))

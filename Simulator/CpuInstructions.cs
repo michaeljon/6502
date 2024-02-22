@@ -22,8 +22,9 @@ namespace InnoWerks.Simulators
             byte value = read(addr);
             byte carry = (byte)(Registers.Carry ? 0x01 : 0x00);
 
-            int working;
             Registers.Overflow = ((Registers.A ^ value) & 0x0080) == 0;
+            int working;
+
             if (Registers.Decimal == true)
             {
                 cycles++;
@@ -33,6 +34,7 @@ namespace InnoWerks.Simulators
                 {
                     working = 0x0010 | ((working + 0x06) & 0x0f);
                 }
+
                 working += (Registers.A & 0x00f0) + (value & 0x00f0);
                 if (working >= 0x00a0)
                 {
@@ -55,22 +57,9 @@ namespace InnoWerks.Simulators
             else
             {
                 working = Registers.A + value + carry;
-                if (working >= 0x0100)
-                {
-                    Registers.Carry = true;
-                    if (Registers.Overflow == true && working > 0x0180)
-                    {
-                        Registers.Overflow = false;
-                    }
-                }
-                else
-                {
-                    Registers.Carry = false;
-                    if (Registers.Overflow == true && working < 0x0080)
-                    {
-                        Registers.Overflow = false;
-                    }
-                }
+
+                Registers.Carry = working >= 0x100;
+                Registers.Overflow = Registers.Overflow && (working < -128 || working > 127);
             }
 
             Registers.A = (byte)(working & 0x00ff);
@@ -477,8 +466,12 @@ namespace InnoWerks.Simulators
             ProgramCounter++;
             StackPush((byte)(ProgramCounter >> 8));
             StackPush((byte)(ProgramCounter & 0xff));
-            StackPush((byte)(Registers.ProcessorStatus | (byte)ProcessorStatusBit.BreakCommand));
+            StackPush(Registers.ProcessorStatus);
+
+            Registers.Decimal = false;
+            Registers.Break = true;
             Registers.Interrupt = true;
+
             ProgramCounter = (ushort)((read(IrqVectorH) << 8) + read(IrqVectorL));
 
             WaitCycles(cycles);
@@ -1306,28 +1299,31 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void SBC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            byte value = read(addr);
+            int value = read(addr);
             byte carry = (byte)(Registers.Carry ? 0x01 : 0x00);
 
             Registers.Overflow = ((Registers.A ^ value) & 0x0080) != 0;
+
             int working;
 
             if (Registers.Decimal == true)
             {
                 cycles++;
 
-                int temp = 0x0f + (Registers.A & 0x0f) - (value & 0x0f) + carry;
-                if (temp < 0x10)
+                int al = 0x0f + (Registers.A & 0x0f) - (value & 0x0f) + carry;
+                if (al < 0x10)
                 {
                     working = 0;
-                    temp -= 0x06;
+                    al -= 0x06;
                 }
                 else
                 {
                     working = 0x10;
-                    temp -= 0x10;
+                    al -= 0x10;
                 }
+
                 working += 0x00f0 + (Registers.A & 0x00f0) - (value & 0x00f0);
+
                 if (working < 0x0100)
                 {
                     Registers.Carry = false;
@@ -1345,27 +1341,15 @@ namespace InnoWerks.Simulators
                         Registers.Overflow = false;
                     }
                 }
-                working += temp;
+
+                working += al;
             }
             else
             {
                 working = 0x00ff + Registers.A - value + carry;
-                if (working < 0x100)
-                {
-                    Registers.Carry = false;
-                    if (Registers.Overflow == true && (working < 0x0080))
-                    {
-                        Registers.Overflow = false;
-                    }
-                }
-                else
-                {
-                    Registers.Carry = true;
-                    if (Registers.Overflow == true && (working >= 0x0180))
-                    {
-                        Registers.Overflow = false;
-                    }
-                }
+
+                Registers.Carry = working >= 0x100;
+                Registers.Overflow = Registers.Overflow && (working < -128 || working > 127);
             }
 
             Registers.A = (byte)(working & 0x00ff);

@@ -68,8 +68,8 @@ namespace InnoWerks.Simulators.Tests
 
                     var cpu = RunTinyTest(memory);
 
-                    int expected = (ushort)(0xff + a - b + 0);
-                    bool carry = expected >= 0x0100;
+                    int expected = a - b + 0 - 1;
+                    bool carry = expected >= 0x100;
 
                     Assert.AreEqual(carry, cpu.Registers.Carry, $"{a} - {b} (Carry)");
                     Assert.AreEqual((byte)expected, cpu.Registers.A, $"{a} - {b} (sum)");
@@ -78,7 +78,7 @@ namespace InnoWerks.Simulators.Tests
         }
 
         [TestMethod]
-        public void AdcFullDecimalModeLoopWithoutCarry()
+        public void AdcPartialDecimalModeLoopWithoutCarry()
         {
             // F8      SED                  ; Decimal mode
             // 18      CLC                  ; Note: carry is clear!
@@ -120,7 +120,7 @@ namespace InnoWerks.Simulators.Tests
         }
 
         [TestMethod]
-        public void SbcFullDecimalModeLoopWithoutCarry()
+        public void SbcPartialDecimalModeLoopWithoutCarry()
         {
             // F8      SED                  ; Decimal mode
             // 18      CLC                  ; Note: carry is clear!
@@ -260,8 +260,8 @@ namespace InnoWerks.Simulators.Tests
 
                     var cpu = RunTinyTest(memory);
 
-                    int expected = (ushort)(0xff + a - b + 1);
-                    bool carry = expected >= 0x0100;
+                    int expected = a - b + 1 - 1;
+                    bool carry = expected >= 0x100;
 
                     Assert.AreEqual(carry, cpu.Registers.Carry, $"{a} + {b} (Carry)");
                     Assert.AreEqual((byte)expected, cpu.Registers.A, $"{a} + {b} (sum)");
@@ -270,7 +270,7 @@ namespace InnoWerks.Simulators.Tests
         }
 
         [TestMethod]
-        public void AdcFullDecimalModeLoopWithCarry()
+        public void AdcPartialDecimalModeLoopWithCarry()
         {
             // F8      SED                  ; Decimal mode
             // 38      SEC                  ; Note: carry is set
@@ -312,7 +312,7 @@ namespace InnoWerks.Simulators.Tests
         }
 
         [TestMethod]
-        public void SbcFullDecimalModeLoopWithCarry()
+        public void SbcPartialDecimalModeLoopWithCarry()
         {
             // F8      SED                  ; Decimal mode
             // 38      SEC                  ; Note: carry is set
