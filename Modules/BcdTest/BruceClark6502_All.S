@@ -74,14 +74,17 @@ LOOP2    LDA   N1         ; N1L = N1 & $0F
          LDA   N1         ; N1H = N1 & $F0
          AND   #$F0       ; [4] see text
          STA   N1H
-*  JSR   ADD
-*  JSR   A6502
-*  JSR   COMPARE
-*  BNE   DONE
-         JSR   SUB
-         JSR   S6502
+
+         JSR   ADD
+         JSR   A6502
          JSR   COMPARE
          BNE   DONE
+
+*  JSR   SUB
+*  JSR   S6502
+*  JSR   COMPARE
+*  BNE   DONE
+
          INC   N1         ; [5] see text
          BNE   LOOP2      ; loop through all 256 values of N1
          INC   N2         ; [6] see text

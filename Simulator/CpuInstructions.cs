@@ -58,8 +58,22 @@ namespace InnoWerks.Simulators
             {
                 working = Registers.A + value + carry;
 
-                Registers.Carry = working >= 0x0100;
-                Registers.Overflow = Registers.Overflow && (working < -128 || working > 127);
+                if (working >= 0x0100)
+                {
+                    Registers.Carry = true;
+                    if (Registers.Overflow && (working >= 0x0180))
+                    {
+                        Registers.Overflow = false;
+                    }
+                }
+                else
+                {
+                    Registers.Carry = false;
+                    if (Registers.Overflow && (working < 0x0080))
+                    {
+                        Registers.Overflow = false;
+                    }
+                }
             }
 
             Registers.A = (short)(working & 0x00ff);
@@ -82,7 +96,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void AND(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            Registers.A = (short)((Registers.A & read(addr)) & 0x00ff);
+            Registers.A = (short)(Registers.A & read(addr) & 0x00ff);
 
             Registers.Zero = Registers.A == 0x00;
             Registers.Negative = (byte)(Registers.A & 0x80) == 0x80;
@@ -1347,8 +1361,22 @@ namespace InnoWerks.Simulators
             {
                 working = 0x00ff + Registers.A - value + carry;
 
-                Registers.Carry = working >= 0x0100;
-                Registers.Overflow = Registers.Overflow && (working < -128 || working > 127);
+                if (working < 0x0100)
+                {
+                    Registers.Carry = false;
+                    if (Registers.Overflow && (working < 0x0080))
+                    {
+                        Registers.Overflow = false;
+                    }
+                }
+                else
+                {
+                    Registers.Carry = true;
+                    if (Registers.Overflow && (working >= 0x0180))
+                    {
+                        Registers.Overflow = false;
+                    }
+                }
             }
 
             Registers.A = (byte)(working & 0x00ff);

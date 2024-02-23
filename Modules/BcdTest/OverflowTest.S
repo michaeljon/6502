@@ -14,7 +14,6 @@ S2       EQU   $01
 U1       EQU   $02
 U2       EQU   $03
 
-STEP     EQU   $08
 ERROR    EQU   $0B
 
 
@@ -32,17 +31,13 @@ TEST     CLD              ; Clear decimal mode (just in case) for test
          LDY   #1         ; Initialize Y (used to set and clear the carry flag) to 1
 
 LOOP
-         LDA   #1
-         STA   STEP
          JSR   ADD        ; Test ADC
          CPX   #1
          BEQ   DONE       ; End if V and unsigned result do not agree (X = 1)
 
-*  LDA   #2
-*  STA   STEP
-*  JSR   SUB        ; Test SBC
-*  CPX   #1
-*  BEQ   DONE       ; End if V and unsigned result do not agree (X = 1)
+         JSR   SUB        ; Test SBC
+         CPX   #1
+         BEQ   DONE       ; End if V and unsigned result do not agree (X = 1)
 
          INC   S1
          INC   U1

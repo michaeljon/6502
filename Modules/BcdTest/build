@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
 merlin32 -v /usr/local/lib/merlin BruceClark6502.S
-merlin32 -v /usr/local/lib/merlin BruceClark65C02.S
-
 merlin32 -v /usr/local/lib/merlin BruceClark6502_All.S
-merlin32 -v /usr/local/lib/merlin BruceClark65C02_All.S
+
+merlin32 -v /usr/local/lib/merlin BruceClark65C02.S
 
 merlin32 -v /usr/local/lib/merlin OverflowTest.S
