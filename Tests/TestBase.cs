@@ -60,7 +60,7 @@ namespace InnoWerks.Simulators.Tests
             };
 
             cpu.Reset();
-            cpu.Run(stopOnBreak: true, writeInstructions: true);
+            cpu.Run(stopOnBreak: true, writeInstructions: false);
 
             return cpu;
         }

@@ -86,7 +86,7 @@ namespace InnoWerks.Simulators
             while (illegalOpCode == false)
             {
                 opcode = read(ProgramCounter++);
-                opCodeDefinition = OpCodes.OpCode6502[opcode];
+                opCodeDefinition = OpCodes.OpCode65C02[opcode];
 
                 if (opCodeDefinition.Nmemonic == null)
                 {

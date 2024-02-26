@@ -5,7 +5,7 @@ namespace InnoWerks.Simulators
     public partial class Cpu
     {
         /// <summary>
-        /// <para>ADC - Add with Carry</para>
+        /// <para>ADC - Add with Carry 65C02</para>
         /// <code>
         /// Flags affected: nv----zc
         ///
@@ -17,7 +17,7 @@ namespace InnoWerks.Simulators
         /// c ← Carry from ALU (bit 8/16 of result)
         /// </code>
         /// </summary>
-        public void ADC(ushort addr, long cycles, long pageCrossPenalty = 0)
+        public void ADCCMOS(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             int value = read(addr);
             byte carry = (byte)(Registers.Carry ? 0x01 : 0x00);
@@ -79,6 +79,69 @@ namespace InnoWerks.Simulators
             Registers.A = (short)(working & 0x00ff);
             Registers.Zero = Registers.A == 0x00;
             Registers.Negative = (Registers.A & 0x80) == 0x80;
+
+            WaitCycles(cycles);
+        }
+
+        /// <summary>
+        /// <para>ADC - Add with Carry 6502</para>
+        /// <code>
+        /// Flags affected: nv----zc
+        ///
+        /// A ← A + M + c
+        ///
+        /// n ← Most significant bit of result
+        /// v ← Signed overflow of result
+        /// z ← Set if the result is zero
+        /// c ← Carry from ALU (bit 8/16 of result)
+        /// </code>
+        /// </summary>
+        public void ADCNMOS(ushort addr, long cycles, long pageCrossPenalty = 0)
+        {
+            int value = read(addr);
+            byte carry = (byte)(Registers.Carry ? 0x01 : 0x00);
+            int working;
+
+            if (Registers.Decimal == true)
+            {
+                cycles++;
+
+                working = (Registers.A & 0x0f) + (value & 0x0f) + carry;
+                if (working > 0x09)
+                {
+                    working += 0x06;
+                }
+                if (working <= 0x0f)
+                {
+                    working = (working & 0x0f) + (Registers.A & 0xf0) + (value & 0xf0);
+                }
+                else
+                {
+                    working = (working & 0x0f) + (Registers.A & 0xf0) + (value & 0xf0) + 0x10;
+                }
+
+                Registers.Zero = ((Registers.A + value + carry) & 0xff) == 0;
+                Registers.Negative = (working & 0x80) != 0;
+                Registers.Overflow = ((Registers.A ^ working) & 0x80) != 0 && ((Registers.A ^ value) & 0x80) == 0;
+
+                if ((working & 0x01f0) > 0x90)
+                {
+                    working += 0x60;
+                }
+
+                Registers.Carry = (working & 0x0ff0) > 0xf0;
+                Registers.A = (short)(working & 0x00ff);
+            }
+            else
+            {
+                working = Registers.A + value + carry;
+                Registers.Carry = working > 0xff;
+                Registers.Overflow = ((Registers.A & 0x80) == (value & 0x80)) && ((Registers.A & 0x80) != (working & 0x80));
+
+                Registers.A = (short)(working & 0x00ff);
+                Registers.Zero = Registers.A == 0x00;
+                Registers.Negative = (Registers.A & 0x80) == 0x80;
+            }
 
             WaitCycles(cycles);
         }
@@ -1299,7 +1362,7 @@ namespace InnoWerks.Simulators
         }
 
         /// <summary>
-        /// <para>SBC - Subtract with Borrow from Accumulator</para>
+        /// <para>SBC - Subtract with Borrow from Accumulator 6502</para>
         /// <code>
         /// Flags affected: nv----zc
         ///
@@ -1311,7 +1374,67 @@ namespace InnoWerks.Simulators
         /// c ← Carry from ALU(bit 8/16 of result) (set if borrow not required)
         /// </code>
         /// </summary>
-        public void SBC(ushort addr, long cycles, long pageCrossPenalty = 0)
+        public void SBCNMOS(ushort addr, long cycles, long pageCrossPenalty = 0)
+        {
+            int value = read(addr);
+            byte carry = (byte)(Registers.Carry ? 0x00 : 0x01);
+
+            int working;
+            int precalc = Registers.A - value - carry;
+
+            if (Registers.Decimal == true)
+            {
+                cycles++;
+
+                working = (Registers.A & 0x0f) - (value & 0x0f) - carry;
+                if ((working & 0x0010) != 0)
+                {
+                    working = ((working - 0x06) & 0x0f) | ((Registers.A & 0xf0) - (value & 0xf0) - 0x10);
+                }
+                else
+                {
+                    working = (working & 0x0f) | ((Registers.A & 0xf0) - (value & 0xf0));
+                }
+                if ((working & 0x100) != 0)
+                {
+                    working -= 0x60;
+                }
+
+                Registers.Carry = precalc < 0x0100;
+                Registers.Zero = (precalc & 0xff) == 0x00;
+                Registers.Negative = (precalc & 0xff & 0x80) == 0x80;
+                Registers.Overflow = ((Registers.A ^ precalc) & 0x80) != 0 && ((Registers.A ^ value) & 0x80) != 0;
+                Registers.A = (byte)(working & 0x00ff);
+            }
+            else
+            {
+                working = precalc;
+
+                Registers.Carry = working < 0x0100;
+                Registers.Overflow = ((Registers.A & 0x80) != (value & 0x80)) && ((Registers.A & 0x80) != (working & 0x80));
+
+                Registers.A = (byte)(working & 0x00ff);
+                Registers.Zero = Registers.A == 0x00;
+                Registers.Negative = (Registers.A & 0x80) == 0x80;
+            }
+
+            WaitCycles(cycles);
+        }
+
+        /// <summary>
+        /// <para>SBC - Subtract with Borrow from Accumulator 65C02</para>
+        /// <code>
+        /// Flags affected: nv----zc
+        ///
+        /// A ← A + (~M) + c
+        ///
+        /// n ← Most significant bit of result
+        /// v ← Signed overflow of result
+        /// z ← Set if the Accumulator is zero
+        /// c ← Carry from ALU(bit 8/16 of result) (set if borrow not required)
+        /// </code>
+        /// </summary>
+        public void SBCCMOS(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             int value = read(addr);
             byte carry = (byte)(Registers.Carry ? 0x01 : 0x00);
@@ -1340,7 +1463,7 @@ namespace InnoWerks.Simulators
                 if (working < 0x0100)
                 {
                     Registers.Carry = false;
-                    if (Registers.Overflow == true && working < 0x0080)
+                    if (working < 0x0080)
                     {
                         Registers.Overflow = false;
                     }
@@ -1349,7 +1472,7 @@ namespace InnoWerks.Simulators
                 else
                 {
                     Registers.Carry = true;
-                    if (Registers.Overflow == true && working >= 0x0180)
+                    if (working >= 0x0180)
                     {
                         Registers.Overflow = false;
                     }
@@ -1364,7 +1487,7 @@ namespace InnoWerks.Simulators
                 if (working < 0x0100)
                 {
                     Registers.Carry = false;
-                    if (Registers.Overflow && (working < 0x0080))
+                    if (working < 0x0080)
                     {
                         Registers.Overflow = false;
                     }
@@ -1372,7 +1495,7 @@ namespace InnoWerks.Simulators
                 else
                 {
                     Registers.Carry = true;
-                    if (Registers.Overflow && (working >= 0x0180))
+                    if (working >= 0x0180)
                     {
                         Registers.Overflow = false;
                     }
