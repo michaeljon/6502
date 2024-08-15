@@ -18,14 +18,14 @@ namespace InnoWerks.Simulators
         /// many operations are only available for the accumulator, not the
         /// index registers.
         /// </summary>
-        public short A { get; set; }
+        public int A { get; set; }
 
         /// <summary>
         /// This is the main register for addressing data with indices. It has
         /// a special addressing mode, indexed indirect, which lets you to
         /// have a vector table on the zero page.
         /// </summary>
-        public short X { get; set; }
+        public int X { get; set; }
 
         /// <summary>
         /// The Y register has the least operations available. On the other
@@ -33,7 +33,7 @@ namespace InnoWerks.Simulators
         /// enables access to any memory place without having to use
         /// self-modifying code.
         /// </summary>
-        public short Y { get; set; }
+        public int Y { get; set; }
 
         /// <summary>
         /// <para>The NMOS 65xx processors have 256 bytes of stack memory, ranging

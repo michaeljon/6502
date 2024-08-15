@@ -81,11 +81,11 @@ namespace InnoWerks.Simulators.Tests
             // run
             cpu.Run(stopOnBreak: true, writeInstructions: false);
 
-            // if (memory[ERROR] != 0x00)
-            // {
-            //     PrintPage(memory, 0x00);
-            //     cpu.PrintStatus();
-            // }
+            if (memory[ERROR] != 0x00)
+            {
+                PrintPage(memory, 0x00);
+                cpu.PrintStatus();
+            }
 
             TestContext.WriteLine($"INST: {cpu.InstructionsProcessed}");
             Assert.AreEqual(0x00, memory[ERROR]);

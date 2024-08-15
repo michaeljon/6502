@@ -4,6 +4,12 @@ namespace InnoWerks.Simulators
 
     public partial class Cpu
     {
+        private void SetNZ(int val)
+        {
+            Registers.Zero = (val & 0xff) != 0x00;
+            Registers.Negative = (val & 0x80) == 0x80;
+        }
+
         /// <summary>
         /// <para>ADC - Add with Carry 65C02</para>
         /// <code>
@@ -39,7 +45,7 @@ namespace InnoWerks.Simulators
                 if (working >= 0x00a0)
                 {
                     Registers.Carry = true;
-                    if (Registers.Overflow == true && working >= 0x0180)
+                    if (working >= 0x0180)
                     {
                         Registers.Overflow = false;
                     }
@@ -48,7 +54,7 @@ namespace InnoWerks.Simulators
                 else
                 {
                     Registers.Carry = false;
-                    if (Registers.Overflow == true && working < 0x0080)
+                    if (working < 0x0080)
                     {
                         Registers.Overflow = false;
                     }
@@ -61,7 +67,7 @@ namespace InnoWerks.Simulators
                 if (working >= 0x0100)
                 {
                     Registers.Carry = true;
-                    if (Registers.Overflow && (working >= 0x0180))
+                    if (working >= 0x0180)
                     {
                         Registers.Overflow = false;
                     }
@@ -69,16 +75,15 @@ namespace InnoWerks.Simulators
                 else
                 {
                     Registers.Carry = false;
-                    if (Registers.Overflow && (working < 0x0080))
+                    if (working < 0x0080)
                     {
                         Registers.Overflow = false;
                     }
                 }
             }
 
-            Registers.A = (short)(working & 0x00ff);
-            Registers.Zero = Registers.A == 0x00;
-            Registers.Negative = (Registers.A & 0x80) == 0x80;
+            Registers.A = working & 0x00ff;
+            SetNZ(Registers.A);
 
             WaitCycles(cycles);
         }
@@ -130,7 +135,7 @@ namespace InnoWerks.Simulators
                 }
 
                 Registers.Carry = (working & 0x0ff0) > 0xf0;
-                Registers.A = (short)(working & 0x00ff);
+                Registers.A = working & 0x00ff;
             }
             else
             {
@@ -138,9 +143,8 @@ namespace InnoWerks.Simulators
                 Registers.Carry = working > 0xff;
                 Registers.Overflow = ((Registers.A & 0x80) == (value & 0x80)) && ((Registers.A & 0x80) != (working & 0x80));
 
-                Registers.A = (short)(working & 0x00ff);
-                Registers.Zero = Registers.A == 0x00;
-                Registers.Negative = (Registers.A & 0x80) == 0x80;
+                Registers.A = working & 0x00ff;
+                SetNZ(Registers.A);
             }
 
             WaitCycles(cycles);
@@ -159,7 +163,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void AND(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            Registers.A = (short)(Registers.A & read(addr) & 0x00ff);
+            Registers.A = Registers.A & read(addr) & 0x00ff;
 
             Registers.Zero = Registers.A == 0x00;
             Registers.Negative = (byte)(Registers.A & 0x80) == 0x80;
@@ -181,7 +185,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ASL(ushort addr, bool accumulator, long cycles, long pageCrossPenalty = 0)
         {
-            short value = accumulator ? Registers.A : read(addr);
+            int value = accumulator ? Registers.A : read(addr);
 
             Registers.Carry = ((byte)(value & 0x80)) == 0x80;
 
@@ -192,7 +196,7 @@ namespace InnoWerks.Simulators
 
             if (accumulator == true)
             {
-                Registers.A = (short)(value & 0x00ff);
+                Registers.A = value & 0x00ff;
             }
             else
             {
@@ -763,7 +767,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void DEX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            Registers.X = (short)((Registers.X - 1) & 0x00ff);
+            Registers.X = (Registers.X - 1) & 0x00ff;
 
             Registers.Zero = Registers.X == 0x00;
             Registers.Negative = (Registers.X & 0x80) == 0x80;
@@ -784,7 +788,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void DEY(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            Registers.Y = (short)((Registers.Y - 1) & 0x00ff);
+            Registers.Y = (Registers.Y - 1) & 0x00ff;
 
             Registers.Zero = Registers.Y == 0x00;
             Registers.Negative = (Registers.Y & 0x80) == 0x80;
@@ -805,7 +809,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void EOR(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            Registers.A = (short)((Registers.A ^ read(addr)) & 0x00ff);
+            Registers.A = (Registers.A ^ read(addr)) & 0x00ff;
 
             Registers.Zero = Registers.A == 0x00;
             Registers.Negative = (Registers.A & 0x80) == 0x80;
@@ -849,7 +853,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void INX(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            Registers.X = (short)((Registers.X + 1) & 0x00ff);
+            Registers.X = (Registers.X + 1) & 0x00ff;
 
             Registers.Zero = Registers.X == 0x00;
             Registers.Negative = (Registers.X & 0x80) == 0x80;
@@ -870,7 +874,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void INY(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            Registers.Y = (short)((Registers.Y + 1) & 0x00ff);
+            Registers.Y = (Registers.Y + 1) & 0x00ff;
 
             Registers.Zero = Registers.Y == 0x00;
             Registers.Negative = (Registers.Y & 0x80) == 0x80;
@@ -1008,7 +1012,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void LSR(ushort addr, bool accumulator, long cycles, long pageCrossPenalty = 0)
         {
-            short value = accumulator ? Registers.A : read(addr);
+            int value = accumulator ? Registers.A : read(addr);
 
             Registers.Carry = (value & 0x01) != 0;
 
@@ -1016,7 +1020,7 @@ namespace InnoWerks.Simulators
 
             if (accumulator == true)
             {
-                Registers.A = (short)(value & 0x00ff);
+                Registers.A = value & 0x00ff;
             }
             else
             {
@@ -1053,7 +1057,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ORA(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            Registers.A = (short)(((byte)Registers.A | read(addr)) & 0x00ff);
+            Registers.A = (Registers.A | read(addr)) & 0x00ff;
 
             Registers.Zero = Registers.A == 0x00;
             Registers.Negative = (Registers.A & 0x80) == 0x80;
@@ -1245,7 +1249,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ROL(ushort addr, bool accumulator, long cycles, long pageCrossPenalty = 0)
         {
-            short m = accumulator ? Registers.A : read(addr);
+            int m = accumulator ? Registers.A : read(addr);
 
             m <<= 1;
 
@@ -1260,7 +1264,7 @@ namespace InnoWerks.Simulators
 
             if (accumulator == true)
             {
-                Registers.A = (short)(m & 0x00ff);
+                Registers.A = m & 0x00ff;
             }
             else
             {
@@ -1287,7 +1291,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ROR(ushort addr, bool accumulator, long cycles, long pageCrossPenalty = 0)
         {
-            short m = accumulator ? Registers.A : read(addr);
+            int m = accumulator ? Registers.A : read(addr);
 
             if (Registers.Carry)
             {
@@ -1301,7 +1305,7 @@ namespace InnoWerks.Simulators
 
             if (accumulator == true)
             {
-                Registers.A = (short)(m & 0x00ff);
+                Registers.A = m & 0x00ff;
             }
             else
             {
@@ -1380,11 +1384,12 @@ namespace InnoWerks.Simulators
             byte carry = (byte)(Registers.Carry ? 0x00 : 0x01);
 
             int working;
-            int precalc = Registers.A - value - carry;
 
             if (Registers.Decimal == true)
             {
                 cycles++;
+
+                int precalc = Registers.A - value - carry;
 
                 working = (Registers.A & 0x0f) - (value & 0x0f) - carry;
                 if ((working & 0x0010) != 0)
@@ -1402,17 +1407,16 @@ namespace InnoWerks.Simulators
 
                 Registers.Carry = precalc < 0x0100;
                 Registers.Zero = (precalc & 0xff) == 0x00;
-                Registers.Negative = (precalc & 0xff & 0x80) == 0x80;
+                Registers.Negative = (precalc & 0x80) == 0x80;
                 Registers.Overflow = ((Registers.A ^ precalc) & 0x80) != 0 && ((Registers.A ^ value) & 0x80) != 0;
                 Registers.A = (byte)(working & 0x00ff);
             }
             else
             {
-                working = precalc;
+                working = Registers.A - value - carry;
 
                 Registers.Carry = working < 0x0100;
                 Registers.Overflow = ((Registers.A & 0x80) != (value & 0x80)) && ((Registers.A & 0x80) != (working & 0x80));
-
                 Registers.A = (byte)(working & 0x00ff);
                 Registers.Zero = Registers.A == 0x00;
                 Registers.Negative = (Registers.A & 0x80) == 0x80;
@@ -1730,7 +1734,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TSB(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            short value = read(addr);
+            int value = read(addr);
             value |= Registers.A;
             write(addr, (byte)(value & 0x00ff));
 

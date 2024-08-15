@@ -323,7 +323,7 @@ namespace InnoWerks.Simulators.Tests
             memory[addr++] = 0x21;
             memory[addr++] = 0x00;
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, CpuClass.WDC65C02);
             Assert.IsFalse(cpu.Registers.Carry);
             Assert.AreEqual(0x91, cpu.Registers.A);
         }
@@ -348,7 +348,7 @@ namespace InnoWerks.Simulators.Tests
             memory[addr++] = 0x34;
             memory[addr++] = 0x00;
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, CpuClass.WDC65C02);
             Assert.IsFalse(cpu.Registers.Carry);
             Assert.AreEqual(0x87, cpu.Registers.A);
         }
@@ -444,7 +444,7 @@ namespace InnoWerks.Simulators.Tests
             memory[addr++] = 0x01;
             memory[addr++] = 0x00;
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, CpuClass.WDC65C02);
             Assert.AreEqual(0x00, cpu.Registers.A);
             Assert.IsTrue(cpu.Registers.Zero);
         }
@@ -523,7 +523,7 @@ namespace InnoWerks.Simulators.Tests
             memory[addr++] = 0xE9;
             memory[addr++] = yy;
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, CpuClass.WDC65C02);
             Assert.AreEqual(c, cpu.Registers.Carry);
             Assert.AreEqual(z, cpu.Registers.Zero);
             Assert.AreEqual(v, cpu.Registers.Overflow);

@@ -86,7 +86,15 @@ namespace InnoWerks.Simulators
             while (illegalOpCode == false)
             {
                 opcode = read(ProgramCounter++);
-                opCodeDefinition = OpCodes.OpCode65C02[opcode];
+
+                if (CpuClass == CpuClass.WDC6502)
+                {
+                    opCodeDefinition = OpCodes.OpCode6502[opcode];
+                }
+                else
+                {
+                    opCodeDefinition = OpCodes.OpCode65C02[opcode];
+                }
 
                 if (opCodeDefinition.Nmemonic == null)
                 {
