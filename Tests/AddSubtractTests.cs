@@ -23,12 +23,12 @@ namespace InnoWerks.Simulators.Tests
             memory[0x05] = 0x00;    // b
             memory[0x06] = 0x00;
 
-            for (var a = 0x00; a < 256; a++)
+            for (short a = 0x00; a < 256; a++)
             {
-                for (var b = 0x00; b < 256; b++)
+                for (short b = 0x00; b < 256; b++)
                 {
-                    memory[0x03] = (byte)a;
-                    memory[0x05] = (byte)b;
+                    memory[0x03] = (byte)(a & 0xff);
+                    memory[0x05] = (byte)(b & 0xff);
 
                     var cpu = RunTinyTest(memory);
 
