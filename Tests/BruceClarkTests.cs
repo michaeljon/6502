@@ -163,7 +163,7 @@ namespace InnoWerks.Simulators.Tests
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            cpu.Run(stopOnBreak: true, writeInstructions: true);
 
             if (memory[ERROR] != 0x00)
             {

@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnoWerks.Simulators.Driver
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnoWerks.Simulators.Tests", "Tests\InnoWerks.Simulators.Tests.csproj", "{30A6DBCF-CC6B-46C0-862E-B8231215DF92}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnoWerks.Simulators.MathTester", "MathTester\InnoWerks.Simulators.MathTester.csproj", "{5554C67E-5188-481F-AD0D-FFC129DBF6A0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{30A6DBCF-CC6B-46C0-862E-B8231215DF92}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30A6DBCF-CC6B-46C0-862E-B8231215DF92}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30A6DBCF-CC6B-46C0-862E-B8231215DF92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5554C67E-5188-481F-AD0D-FFC129DBF6A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5554C67E-5188-481F-AD0D-FFC129DBF6A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5554C67E-5188-481F-AD0D-FFC129DBF6A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5554C67E-5188-481F-AD0D-FFC129DBF6A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

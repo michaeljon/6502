@@ -1,3 +1,4 @@
+
 namespace InnoWerks.Simulators
 {
     public class Registers
@@ -11,6 +12,12 @@ namespace InnoWerks.Simulators
             ProcessorStatus = (byte)ProcessorStatusBit.Unused;
         }
 
+        public void SetNZ(int val)
+        {
+            Zero = RegisterMath.IsZero(val);
+            Negative = RegisterMath.IsHighBitSet(val);
+        }
+
         /// <summary>
         /// The accumulator is the main register for arithmetic and logic
         /// operations. Unlike the index registers X and Y, it has a direct
@@ -18,14 +25,14 @@ namespace InnoWerks.Simulators
         /// many operations are only available for the accumulator, not the
         /// index registers.
         /// </summary>
-        public int A { get; set; }
+        public byte A { get; set; }
 
         /// <summary>
         /// This is the main register for addressing data with indices. It has
         /// a special addressing mode, indexed indirect, which lets you to
         /// have a vector table on the zero page.
         /// </summary>
-        public int X { get; set; }
+        public byte X { get; set; }
 
         /// <summary>
         /// The Y register has the least operations available. On the other
@@ -33,7 +40,7 @@ namespace InnoWerks.Simulators
         /// enables access to any memory place without having to use
         /// self-modifying code.
         /// </summary>
-        public int Y { get; set; }
+        public byte Y { get; set; }
 
         /// <summary>
         /// <para>The NMOS 65xx processors have 256 bytes of stack memory, ranging
@@ -46,6 +53,17 @@ namespace InnoWerks.Simulators
         ///  instructions.</para>
         /// </summary>
         public byte StackPointer { get; set; }
+
+        /// <summary>
+        /// This register points the address from which the next instruction
+        /// byte (opcode or parameter) will be fetched. Unlike other
+        /// registers, this one is 16 bits in length. The low and high 8-bit
+        /// halves of the register are called PCL and PCH, respectively. The
+        /// Program Counter may be read by pushing its value on the stack.
+        /// This can be done either by jumping to a subroutine or by causing
+        /// an interrupt.
+        /// </summary>
+        public ushort ProgramCounter { get; set; }
 
         /// <summary>
         /// <para>This 8-bit register stores the state of the processor. The bits in
