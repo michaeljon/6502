@@ -1,5 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+#pragma warning disable IDE1006
+
 namespace InnoWerks.Simulators.Tests
 {
     [TestClass]
@@ -36,9 +38,63 @@ namespace InnoWerks.Simulators.Tests
                     bool carry = expected > 0xff;
 
                     Assert.AreEqual(carry, cpu.Registers.Carry, $"{a} + {b} (Carry)");
-                    Assert.AreEqual((byte)expected, cpu.Registers.A, $"{a} + {b} (sum)");
+                    Assert.AreEqual((byte)(expected & 0xff), cpu.Registers.A, $"{a} + {b} (sum)");
                 }
             }
+        }
+
+        [TestMethod]
+        public void Mini()
+        {
+            // D8      CLD                  ; Binary mode
+            // 18      CLC                  ; Note: carry is clear!
+            // A9 xx   LDA   #$xx           ; a
+            // 69 xx   ADC   #$xx           ; b
+            // 00      DB    0
+
+            const byte a = 0x01;
+            const byte b = 0xff;
+
+            byte[] memory = new byte[1024 * 64];
+            memory[0x00] = 0xD8;    // CLD
+            memory[0x01] = 0x18;    // CLC
+            memory[0x02] = 0xA9;    // LDA a
+            memory[0x03] = a;
+            memory[0x04] = 0x69;    // ADC b
+            memory[0x05] = b;
+            memory[0x06] = 0x00;
+
+            var cpu = RunTinyTest(memory);
+
+            const ushort expected = (ushort)(a + b);
+            const bool carry = expected > 0xff;
+
+            Assert.AreEqual(carry, cpu.Registers.Carry, $"{a} + {b} (Carry)");
+            Assert.AreEqual((byte)(expected & 0xff), cpu.Registers.A, $"{a} + {b} (sum)");
+        }
+
+        [TestMethod]
+        public void Mini2()
+        {
+            int addr = 0;
+            byte[] memory = new byte[1024 * 64];
+
+            memory[addr++] = 0xD8;
+            memory[addr++] = 0xA0;  // force carry flag
+            memory[addr++] = 0x01;
+            memory[addr++] = 0xC0;
+            memory[addr++] = 0x01;
+
+            memory[addr++] = 0xA9;  // add 128 + 128
+            memory[addr++] = 0x80;
+            memory[addr++] = 0x69;
+            memory[addr++] = 0x80;
+            memory[addr++] = 0x00;
+
+            var cpu = RunTinyTest(memory);
+
+            Assert.IsTrue(cpu.Registers.Overflow);
+            Assert.IsTrue(cpu.Registers.Carry);
         }
 
         [TestMethod]

@@ -236,7 +236,7 @@ namespace InnoWerks.Simulators
         {
             int val = 0;
             int temp = read(addr);
-            Registers.Overflow = RegisterMath.IsHighBitSet(Registers.A ^ temp);
+            Registers.Overflow = ((Registers.A ^ temp) & 0x80) == 0;
 
             if (Registers.Decimal == true)
             {
@@ -276,13 +276,13 @@ namespace InnoWerks.Simulators
                     {
                         Registers.Overflow = false;
                     }
-                    else
+                }
+                else
+                {
+                    Registers.Carry = false;
+                    if (val < 0x80)
                     {
-                        Registers.Carry = false;
-                        if (val < 0x80)
-                        {
-                            Registers.Overflow = false;
-                        }
+                        Registers.Overflow = false;
                     }
                 }
             }
@@ -328,7 +328,7 @@ namespace InnoWerks.Simulators
                     val = (val & 0x0f) + (Registers.A & 0xf0) + (temp & 0xf0) + 0x10;
                 }
 
-                Registers.Zero = RegisterMath.IsZero((Registers.A + temp + (Registers.Carry ? 0x01 : 0x00)) & 0xff);
+                Registers.Zero = RegisterMath.IsNonZero((Registers.A + temp + (Registers.Carry ? 0x01 : 0x00)) & 0xff);
                 Registers.Negative = RegisterMath.IsHighBitSet(val);
                 Registers.Overflow = RegisterMath.IsHighBitSet(Registers.A ^ val) && RegisterMath.IsHighBitClear(Registers.A ^ temp);
 
@@ -1587,7 +1587,7 @@ namespace InnoWerks.Simulators
 
                 Registers.Carry = val < 0x100;
                 Registers.Overflow = (((Registers.A & 0x80) != (temp & 0x80)) &&
-                                      ((Registers.A & 0x80) != (val * 0x80)));
+                                      ((Registers.A & 0x80) != (val & 0x80)));
                 Registers.A = RegisterMath.TruncateToByte(val);
                 Registers.SetNZ(Registers.A);
             }
@@ -1612,7 +1612,7 @@ namespace InnoWerks.Simulators
         {
             int val = 0;
             int temp = read(addr);
-            Registers.Overflow = RegisterMath.IsHighBitSet(Registers.A ^ temp);
+            Registers.Overflow = ((Registers.A ^ temp) & 0x80) != 0;
 
             if (Registers.Decimal == true)
             {
@@ -1661,13 +1661,13 @@ namespace InnoWerks.Simulators
                     {
                         Registers.Overflow = false;
                     }
-                    else
+                }
+                else
+                {
+                    Registers.Carry = true;
+                    if (val >= 0x180)
                     {
-                        Registers.Carry = true;
-                        if (val >= 0x180)
-                        {
-                            Registers.Overflow = false;
-                        }
+                        Registers.Overflow = false;
                     }
                 }
             }
