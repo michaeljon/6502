@@ -1,0 +1,8 @@
+bin/
+obj/
+
+_FileInformation.txt
+*_Output.txt
+
+TestResults/
+temp/
