@@ -22,9 +22,13 @@ namespace Asm6502
     {
         public SymbolType SymbolType { get; set; }
 
+        public bool IsEquivalence => SymbolType == SymbolType.DefineByte || SymbolType == SymbolType.DefineWord;
+
         public int LineNumber { get; set; }
 
         public string Label { get; set; }
+
+        public string UnparsedValue { get; set; }
 
         public ushort Value { get; set; }
 

@@ -6,6 +6,6 @@ namespace Asm6502
 
     public class SymbolRedefinedException : Exception
     {
-        public SymbolRedefinedException(string symbol) : base($"Symbol {symbol} has already been defined.") { }
+        public SymbolRedefinedException(Symbol symbol, int lineNumber) : base($"Symbol {symbol} at {lineNumber} has already been defined.") { }
     }
 }

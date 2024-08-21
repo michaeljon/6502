@@ -1,5 +1,7 @@
 using System;
+using System.ComponentModel;
 using System.Globalization;
+using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Security;
 using System.Text;
@@ -78,6 +80,8 @@ namespace Asm6502
 
         public (AddressingMode addressingMode, string value) Argument { get; set; }
 
+        public string RawArgument { get; set; }
+
         public string Value { get; set; }
 
         public string Comment { get; set; }
@@ -115,6 +119,8 @@ namespace Asm6502
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(opCode {0})\n", OpCode);
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(opCodeByte ${0:X2})\n", OpCodeByte);
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(argument {0})\n", Argument);
+                    sb.AppendFormat(CultureInfo.InvariantCulture, "\t(value {0})\n", Value);
+                    sb.AppendFormat(CultureInfo.InvariantCulture, "\t(code {0})\n", MachineCodeAsString);
 
                     if (string.IsNullOrEmpty(Comment) == false)
                     {
@@ -134,6 +140,7 @@ namespace Asm6502
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(label {0})\n", Label);
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(directive {0})\n", Directive);
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(value {0})\n", Value);
+                    sb.AppendFormat(CultureInfo.InvariantCulture, "\t(code {0})\n", MachineCodeAsString);
 
                     if (string.IsNullOrEmpty(Comment) == false)
                     {
@@ -185,8 +192,15 @@ namespace Asm6502
             {
                 if (LineType == LineType.Code)
                 {
-                    // for now, need to get the rest
-                    return [OpCodeByte];
+                    ushort value = ResolveNumber(Value);
+
+                    return EffectiveSize switch
+                    {
+                        1 => [OpCodeByte],
+                        2 => [OpCodeByte, (byte)(value & 0xff)],
+                        3 => [OpCodeByte, (byte)(value & 0xff), (byte)((value >> 8) & 0xff)],
+                        _ => [],// NOTREACHED
+                    };
                 }
                 else if (LineType == LineType.Data)
                 {
@@ -201,11 +215,11 @@ namespace Asm6502
             }
         }
 
-        public string Bytes
+        public string MachineCodeAsString
         {
             get
             {
-                return Convert.ToHexString(MachineCode);
+                return string.Join(' ', MachineCode.Select(b => b.ToString("X2")));
             }
         }
 

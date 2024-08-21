@@ -17,22 +17,22 @@ namespace Asm6502
         [GeneratedRegex(@"^(\$[0-9A-F]{3,4}|\w+)$")]
         private static partial Regex ArgumentParserLongRegex();
 
-        [GeneratedRegex(@"^(?<label>[-A-Z][A-Z0-9]*)?\s+(?<opcode>[A-Z]{3})\s*(?<arg>[^\s;]+)?\s*(?<comment>;.*)?")]
+        [GeneratedRegex(@"^(?<label>[_A-Z][_A-Z0-9]*)?\s+(?<opcode>[A-Z]{3})\s*(?<arg>[^\s;]+)?\s*(?<comment>;.*)?")]
         private static partial Regex CodeLineRegex();
 
         [GeneratedRegex(@"^[\*;](?<comment>.*)|^\s+;(?<comment>.*)")]
         private static partial Regex CommentLineRegex();
 
-        [GeneratedRegex(@"^(?<label>[-A-Z][A-Z0-9]*)?\s+(?<dir>(DB|DW))\s+(?<arg>[^\s;]+)\s*(?<comment>;.*)?")]
+        [GeneratedRegex(@"^(?<label>[-A-Z][_A-Z0-9]*)?\s+(?<dir>(DB|DW))\s+(?<arg>[^\s;]+)\s*(?<comment>;.*)?")]
         private static partial Regex DataLineRegex();
 
         [GeneratedRegex(@"^\s+(?<dir>ORG)\s+(?<arg>[#$][0-9A-F]+)\s*(?<comment>;.*)?")]
         private static partial Regex DirectiveLineRegex();
 
-        [GeneratedRegex(@"^(?<label>[-A-Z][A-Z0-9]*):?\s*(?<comment>;.*)?")]
+        [GeneratedRegex(@"^(?<label>[-A-Z][_A-Z0-9]*):?\s*(?<comment>;.*)?")]
         private static partial Regex LabelledLineRegex();
 
-        [GeneratedRegex(@"^(?<label>[-A-Z][A-Z0-9]*)\s+(?<equiv>(=|EQU))\s+(?<arg>[#$][0-9A-F]+)\s*(?<comment>;.*)?")]
+        [GeneratedRegex(@"^(?<label>[-A-Z][_A-Z0-9]*)\s+(?<equiv>(=|EQU))\s+(?<arg>[#$][0-9A-F]+)\s*(?<comment>;.*)?")]
         private static partial Regex EquivalenceLineRegex();
 
 
@@ -66,6 +66,32 @@ namespace Asm6502
         public List<LineInformation> Program => programLines;
 
         public byte[] Assemble()
+        {
+            GatherGlobals();
+            ReadProgram();
+            ResolveReferences();
+
+            return GenerateBytes();
+        }
+
+        private void GatherGlobals()
+        {
+            var lineNumber = 1;
+
+            foreach (var line in program.Select(l => l.TrimEnd()))
+            {
+                if (equivalenceLine.IsMatch(line))
+                {
+                    var node = ParseEqivalenceLine(lineNumber, line, equivalenceLine.MatchNamedCaptures(line));
+
+                    UpdateSymbolTable(node);
+                }
+
+                lineNumber++;
+            }
+        }
+
+        private void ReadProgram()
         {
             var lineNumber = 1;
 
@@ -116,7 +142,11 @@ namespace Asm6502
                 {
                     currentAddress += node.EffectiveSize;
 
-                    UpdateSymbolTable(node);
+                    // this time through only record the non-EQU values
+                    if (node.LineType != LineType.Equivalence)
+                    {
+                        UpdateSymbolTable(node);
+                    }
 
 #if ASSEMBLER_DEBUG_OUTPUT
                     Console.WriteLine(node);
@@ -127,7 +157,44 @@ namespace Asm6502
                 lineNumber++;
             }
 
-            return [];
+        }
+
+        private void ResolveReferences()
+        {
+            foreach (var instruction in programLines.Where(i => i.LineType == LineType.Code))
+            {
+                // if this is a symbol then replace its value and reparse
+                if (symbolTable.TryGetValue(instruction.Argument.value, out var symbol) == true)
+                {
+                    if (symbol.IsEquivalence == false)
+                    {
+                        // todo - if this is a branch, then we need to resolve it differently
+                        var raw = instruction.RawArgument.Replace(instruction.Argument.value, symbol.UnparsedValue);
+                        instruction.Argument = ParseAddress(instruction.OpCode, raw);
+                    }
+
+                    instruction.Value = ExtractNumber(symbol.UnparsedValue, 0, 0);
+                }
+                else
+                {
+                    instruction.Value = instruction.Argument.value;
+                }
+            }
+        }
+
+        private byte[] GenerateBytes()
+        {
+            // 64k programs, pretty damned big actually
+            var bytes = new byte[0x10000];
+            ushort pc = 0;
+
+            foreach (var instruction in programLines.Where(p => p.LineType == LineType.Code || p.LineType == LineType.Data))
+            {
+                Array.Copy(instruction.MachineCode, 0, bytes, pc, instruction.MachineCode.Length);
+                pc += (ushort)instruction.MachineCode.Length;
+            }
+
+            return bytes;
         }
 
         private LineInformation ParseDataLine(int lineNumber, string line, IDictionary<string, string> captures)
@@ -213,6 +280,16 @@ namespace Asm6502
             captures.TryGetValue("arg", out string arg);
             captures.TryGetValue("comment", out string comment);
 
+            var opCode = Enum.Parse<OpCode>(opcode);
+
+            var argument = ParseAddress(opCode, arg);
+            if (symbolTable.TryGetValue(argument.value, out var symbol) == true && symbol.IsEquivalence == true)
+            {
+                // can immediately resolve this value
+                var raw = arg.Replace(argument.value, symbol.UnparsedValue);
+                argument = ParseAddress(opCode, raw);
+            }
+
             return new LineInformation
             {
                 LineType = LineType.Code,
@@ -220,8 +297,9 @@ namespace Asm6502
                 CurrentOrg = currentOrgAddress,
                 EffectiveAddress = currentAddress,
                 Label = label,
-                OpCode = Enum.Parse<OpCode>(opcode),
-                Argument = ParseAddress(Enum.Parse<OpCode>(opcode), arg),
+                OpCode = opCode,
+                RawArgument = arg,
+                Argument = argument,
                 Comment = ExtractComment(comment),
                 Line = line
             };
@@ -267,7 +345,7 @@ namespace Asm6502
             };
         }
 
-        private static (AddressingMode, string) ParseAddress(OpCode opCode, string addressString)
+        private static (AddressingMode addressingMode, string value) ParseAddress(OpCode opCode, string addressString)
         {
             if (InstructionInformation.BranchingOperations.Contains(opCode))
             {
@@ -342,9 +420,9 @@ namespace Asm6502
         {
             if (string.IsNullOrEmpty(node.Label) == false)
             {
-                if (symbolTable.ContainsKey(node.Label) == true)
+                if (symbolTable.TryGetValue(node.Label, out var symbol) == true)
                 {
-                    throw new SymbolRedefinedException(node.Label);
+                    throw new SymbolRedefinedException(symbol, node.LineNumber);
                 }
 
                 ushort value = node.LineType switch
@@ -372,6 +450,7 @@ namespace Asm6502
                         LineNumber = node.LineNumber,
                         SymbolType = symbolType,
                         Label = node.Label,
+                        UnparsedValue = value <= 255 ? "$" + value.ToString("X2") : "$" + value.ToString("X4"),
                         Value = value,
                         Size = node.EffectiveSize,
                     });
@@ -384,9 +463,17 @@ namespace Asm6502
             {
                 return ushort.Parse(number[1..], NumberStyles.HexNumber);
             }
+            else if (number.StartsWith("0x") == true)
+            {
+                return ushort.Parse(number[2..], NumberStyles.HexNumber);
+            }
             else if (number.StartsWith('%') == true)
             {
                 return ushort.Parse(number[1..], NumberStyles.BinaryNumber);
+            }
+            else if (number.StartsWith("0b") == true)
+            {
+                return ushort.Parse(number[2..], NumberStyles.BinaryNumber);
             }
             else
             {

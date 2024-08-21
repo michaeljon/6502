@@ -7,13 +7,13 @@ namespace Asm6502
     {
         static void Main(string[] args)
         {
-            // var inputLines = File.ReadAllLines("./tests/mini.S");
+            // var inputLines = File.ReadAllLines("./tests/mini2.S");
             string[] inputLines = [
-                "ADDR   EQ  $22",
-                "       AND ADDR",
-                "       AND $20",
-                "W      DW  $2021",
-                "B      DB  $20",
+                "ZP_ADDR    EQU $22",
+                "           AND ZP_ADDR",
+                "           AND ZP_ADDR,X",
+                "           AND (ZP_ADDR),Y",
+                "           AND (ZP_ADDR,X)",
             ];
 
             var assembler = new Assembler(inputLines, 0x8000);
@@ -34,7 +34,7 @@ namespace Asm6502
 
             foreach (var line in assembler.Program)
             {
-                Console.WriteLine($"{line.LineNumber,10} => {line.ToString().Replace("\n", " ").Replace("\t", "")}");
+                Console.WriteLine($"{line.LineNumber,-10} => {line.ToString().Replace("\n", " ").Replace("\t", "")}");
             }
         }
     }
