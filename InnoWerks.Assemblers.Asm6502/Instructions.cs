@@ -5,7 +5,7 @@ using static InnoWerks.Assemblers.OpCode;
 
 namespace InnoWerks.Assemblers
 {
-    internal static class InstructionInformation
+    public static class InstructionInformation
     {
         public static readonly ISet<AddressingMode> SingleByteAddressModes = new HashSet<AddressingMode>
         {

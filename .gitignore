@@ -6,3 +6,5 @@ _FileInformation.txt
 
 TestResults/
 temp/
+
+*.o

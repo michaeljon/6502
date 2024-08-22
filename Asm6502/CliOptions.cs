@@ -10,10 +10,10 @@ namespace Asm6502
         [Option('o', "output", HelpText = "Output file for binary. Will default to 'input.o'")]
         public string Output { get; set; }
 
-        [Option('v', "verbose", Default = false, HelpText = "Display symbol table upon completion.")]
-        public bool Verbose { get; set; }
+        [Option('s', "symbol", Default = false, HelpText = "Display symbol table upon completion.")]
+        public bool PrintSymbolTable { get; set; }
 
-        [Option('d', "debug", Default = false, HelpText = "Display internal program AST upon completion.")]
-        public bool Debug { get; set; }
+        [Option('p', "print", Default = false, HelpText = "Print the program text.")]
+        public bool PrintProgramText { get; set; }
     }
 }

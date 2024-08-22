@@ -110,6 +110,37 @@ namespace InnoWerks.Assemblers
 
         private readonly Dictionary<string, Symbol> symbolTable = [];
 
+        private byte[] objectCode;
+
+        public ReadOnlyDictionary<string, Symbol> SymbolTable => new(symbolTable);
+
+        public Collection<LineInformation> Program => new(programLines);
+
+#pragma warning disable CA1819
+        public byte[] ObjectCode
+        {
+            get
+            {
+                if (objectCode == null)
+                {
+                    // 64k programs, pretty damned big actually
+                    var bytes = new byte[0x10000];
+                    ushort pc = 0;
+
+                    foreach (var instruction in programLines.Where(p => p.LineType == LineType.Code || p.LineType == LineType.Data))
+                    {
+                        Array.Copy(instruction.MachineCode, 0, bytes, pc, instruction.MachineCode.Length);
+                        pc += (ushort)instruction.MachineCode.Length;
+                    }
+
+                    objectCode = bytes[..pc];
+                }
+
+                return objectCode;
+            }
+        }
+#pragma warning restore CA1819
+
         public Assembler(string[] program, ushort startingAddress)
         {
             this.program = program;
@@ -117,10 +148,6 @@ namespace InnoWerks.Assemblers
             currentOrgAddress = startingAddress;
             currentAddress = currentOrgAddress;
         }
-
-        public ReadOnlyDictionary<string, Symbol> SymbolTable => new(symbolTable);
-
-        public Collection<LineInformation> Program => new(programLines);
 
         public void Assemble()
         {
@@ -232,7 +259,7 @@ namespace InnoWerks.Assemblers
                                 (byte)((symbol.Value - (instruction.EffectiveAddress + instruction.EffectiveSize)));
 
                             instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + offset + "}", StringComparison.Ordinal);
-                            instruction.Value = "$" + offset.ToString("X2", CultureInfo.InvariantCulture);
+                            instruction.Value = "$" + (0xff - offset).ToString("X2", CultureInfo.InvariantCulture);
                         }
                         else
                         {
@@ -253,21 +280,6 @@ namespace InnoWerks.Assemblers
                     instruction.Value = instruction.ExtractedArgumentValue;
                 }
             }
-        }
-
-        public byte[] GenerateBytes()
-        {
-            // 64k programs, pretty damned big actually
-            var bytes = new byte[0x10000];
-            ushort pc = 0;
-
-            foreach (var instruction in programLines.Where(p => p.LineType == LineType.Code || p.LineType == LineType.Data))
-            {
-                Array.Copy(instruction.MachineCode, 0, bytes, pc, instruction.MachineCode.Length);
-                pc += (ushort)instruction.MachineCode.Length;
-            }
-
-            return bytes[..pc];
         }
 
         private LineInformation ParseDataLine(int lineNumber, string line, Dictionary<string, string> captures)
@@ -603,7 +615,7 @@ namespace InnoWerks.Assemblers
 
                 var symbolType = node.LineType switch
                 {
-                    LineType.Code => InstructionInformation.BranchingOperations.Contains(node.OpCode) ? SymbolType.RelativeAddress : SymbolType.AbsoluteAddress,
+                    LineType.Code => SymbolType.AbsoluteAddress,
                     LineType.Data => SymbolType.AbsoluteAddress,
                     LineType.Label => SymbolType.AbsoluteAddress,
                     LineType.Equivalence => value <= 255 ? SymbolType.DefineByte : SymbolType.DefineWord,

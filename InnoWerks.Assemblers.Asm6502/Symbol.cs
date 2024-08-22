@@ -11,8 +11,6 @@ namespace InnoWerks.Assemblers
 
         DefineWord,
 
-        RelativeAddress,
-
         AbsoluteAddress,
     }
 
@@ -51,19 +49,15 @@ namespace InnoWerks.Assemblers
             switch (SymbolType)
             {
                 case SymbolType.DefineByte:
-                    sb.AppendFormat(CultureInfo.InvariantCulture, "\t(value ${0:x2})\n", Value);
+                    sb.AppendFormat(CultureInfo.InvariantCulture, "\t(value ${0:X2})\n", Value);
                     break;
 
                 case SymbolType.DefineWord:
-                    sb.AppendFormat(CultureInfo.InvariantCulture, "\t(value ${0:x4})\n", Value);
-                    break;
-
-                case SymbolType.RelativeAddress:
-                    sb.AppendFormat(CultureInfo.InvariantCulture, "\t(offset {0:x2})\n", (sbyte)Value);
+                    sb.AppendFormat(CultureInfo.InvariantCulture, "\t(value ${0:X4})\n", Value);
                     break;
 
                 case SymbolType.AbsoluteAddress:
-                    sb.AppendFormat(CultureInfo.InvariantCulture, "\t(addr ${0:x4})\n", Value);
+                    sb.AppendFormat(CultureInfo.InvariantCulture, "\t(addr ${0:X4})\n", Value);
                     break;
             }
 
