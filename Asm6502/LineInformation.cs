@@ -1,9 +1,6 @@
 using System;
-using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using System.Security;
 using System.Text;
 
 namespace Asm6502
@@ -41,11 +38,11 @@ namespace Asm6502
             {
                 if (LineType == LineType.Code)
                 {
-                    if (InstructionInformation.SingleByteAddressModes.Contains(Argument.addressingMode))
+                    if (InstructionInformation.SingleByteAddressModes.Contains(AddressingMode))
                     {
                         return 2;
                     }
-                    else if (InstructionInformation.TwoByteAddressModes.Contains(Argument.addressingMode))
+                    else if (InstructionInformation.TwoByteAddressModes.Contains(AddressingMode))
                     {
                         return 3;
                     }
@@ -78,9 +75,15 @@ namespace Asm6502
 
         public bool IsEquivalence { get; set; }
 
-        public (AddressingMode addressingMode, string value) Argument { get; set; }
+        public AddressingMode AddressingMode { get; set; }
 
         public string RawArgument { get; set; }
+
+        public string RawArgumentWithReplacement { get; set; }
+
+        public string ExtractedArgument { get; set; }
+
+        public string ExtractedArgumentValue { get; set; }
 
         public string Value { get; set; }
 
@@ -97,7 +100,7 @@ namespace Asm6502
                     return 0x00;
                 }
 
-                return InstructionInformation.Instructions[(OpCode, Argument.addressingMode)];
+                return InstructionInformation.Instructions[(OpCode, AddressingMode)];
             }
         }
 
@@ -118,7 +121,7 @@ namespace Asm6502
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(label {0})\n", Label);
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(opCode {0})\n", OpCode);
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(opCodeByte ${0:X2})\n", OpCodeByte);
-                    sb.AppendFormat(CultureInfo.InvariantCulture, "\t(argument {0})\n", Argument);
+                    sb.AppendFormat(CultureInfo.InvariantCulture, "\t(addressMode {0})\n", AddressingMode);
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(value {0})\n", Value);
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(code {0})\n", MachineCodeAsString);
 
@@ -192,7 +195,8 @@ namespace Asm6502
             {
                 if (LineType == LineType.Code)
                 {
-                    ushort value = ResolveNumber(Value);
+                    // we need a dummy value
+                    ushort value = string.IsNullOrEmpty(Value) == false ? ResolveNumber(Value) : (ushort)0;
 
                     return EffectiveSize switch
                     {

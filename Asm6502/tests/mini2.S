@@ -7,17 +7,18 @@ LOOP2    AND   ZP_ADDR
          AND   ZP_ADDR,X
          AND   (ZP_ADDR),Y
          AND   (ZP_ADDR,X)
-         BCS   LOOP4
+         BCS   LOOP2
 
 LOOP3    AND   $20
          AND   $20,X
+         BCC   LOOP4
          AND   ($20),Y
          AND   ($20,X)
          AND   #$20
-         BCC   LOOP2
 
 LOOP4    AND   ROM_ADDR
          AND   ROM_ADDR,X
+         RTS
 
 W        DW    $2021
 B        DB    $20

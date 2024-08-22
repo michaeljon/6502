@@ -11,12 +11,62 @@ namespace Asm6502
 #pragma warning disable IDE0290
     public partial class Assembler
     {
-        [GeneratedRegex(@"^(\$[0-9A-F]{1,2})$")]
-        private static partial Regex ArgumentParserShortRegex();
+        #region Argument parser regular expressions
+        [GeneratedRegex(@"^A$")]
+        private static partial Regex AccumulatorRegex();
 
-        [GeneratedRegex(@"^(\$[0-9A-F]{3,4}|\w+)$")]
-        private static partial Regex ArgumentParserLongRegex();
+        [GeneratedRegex(@"^#(?<prefix>[\$@%])?(?<arg>([0-9A-F]+|\w+))$")]
+        private static partial Regex ImmediateRegex();
 
+        [GeneratedRegex(@"^(?<arg>(\w+))$")]
+        private static partial Regex RelativeRegex();
+
+        [GeneratedRegex(@"^(?<arg>(\$[0-9A-F]{4}|\w+))$")]
+        private static partial Regex AbsoluteAddressRegex();
+
+        [GeneratedRegex(@"^(?<arg>(\$[0-9A-F]{4}|\w+)),(?<reg>[XY])$")]
+        private static partial Regex AbsoluteIndexedRegex();
+
+        [GeneratedRegex(@"^\((?<arg>(\$[0-9A-F]{4}|\w+))\)$")]
+        private static partial Regex IndirectRegex();
+
+        [GeneratedRegex(@"^\((?<arg>(\$[0-9A-F]{4}|\w+)),X\)$")]
+        private static partial Regex IndexedIndirectRegex();
+
+        [GeneratedRegex(@"^(?<arg>(\$00[0-9A-F]{2}|\$[0-9A-F]{2}|\w+))$")]
+        private static partial Regex ZeroPageDirectRegex();
+
+        [GeneratedRegex(@"^(?<arg>(\$00[0-9A-F]{2}|\$[0-9A-F]{2}|\w+)),(?<reg>[XY])$")]
+        private static partial Regex ZeroPageIndexedRegex();
+
+        [GeneratedRegex(@"^\((?<arg>(\$[0-9A-F]{2}|\w+))\)$")]
+        private static partial Regex ZeroPageIndirectRegex();
+
+        [GeneratedRegex(@"^\((?<arg>(\$00[0-9A-F]{2}|\$[0-9A-F]{2}|\w+)),X\)$")]
+        private static partial Regex ZeroPageIndexedDirectRegex();
+
+        [GeneratedRegex(@"^\((?<arg>(\$00[0-9A-F]{2}|\$[0-9A-F]{2}|\w+))\),Y$")]
+        private static partial Regex ZeroPagePostIndexedDirectRegex();
+        #endregion
+
+        #region Argument parser regex instances
+        private readonly Regex accumulatorRegex = AccumulatorRegex();
+        private readonly Regex immediateRegex = ImmediateRegex();
+        private readonly Regex relativeRegex = RelativeRegex();
+        private readonly Regex absoluteAddressRegex = AbsoluteAddressRegex();
+        private readonly Regex absoluteIndexedRegex = AbsoluteIndexedRegex();
+        private readonly Regex indirectRegex = IndirectRegex();
+        private readonly Regex indexedIndirectRegex = IndexedIndirectRegex();
+
+        private readonly Regex zeroPageDirectRegex = ZeroPageDirectRegex();
+        private readonly Regex zeroPageIndexedRegex = ZeroPageIndexedRegex();
+        private readonly Regex zeroPageIndirectRegex = ZeroPageIndirectRegex();
+        private readonly Regex zeroPageIndexedDirectRegex = ZeroPageIndexedDirectRegex();
+        private readonly Regex zeroPagePostIndexedDirectRegex = ZeroPagePostIndexedDirectRegex();
+        #endregion
+
+        #region Instruction parser regular expressions
+        // instruction expressions
         [GeneratedRegex(@"^(?<label>[_A-Z][_A-Z0-9]*)?\s+(?<opcode>[A-Z]{3})\s*(?<arg>[^\s;]+)?\s*(?<comment>;.*)?")]
         private static partial Regex CodeLineRegex();
 
@@ -34,14 +84,16 @@ namespace Asm6502
 
         [GeneratedRegex(@"^(?<label>[-A-Z][_A-Z0-9]*)\s+(?<equiv>(=|EQU))\s+(?<arg>[#$][0-9A-F]+)\s*(?<comment>;.*)?")]
         private static partial Regex EquivalenceLineRegex();
+        #endregion
 
-
+        #region Instruction parser regex instances
         private readonly Regex codeLine = CodeLineRegex();
         private readonly Regex commentLine = CommentLineRegex();
         private readonly Regex dataLine = DataLineRegex();
         private readonly Regex directiveLine = DirectiveLineRegex();
         private readonly Regex labelledLine = LabelledLineRegex();
         private readonly Regex equivalenceLine = EquivalenceLineRegex();
+        #endregion
 
         private readonly IEnumerable<string> program;
 
@@ -164,20 +216,39 @@ namespace Asm6502
             foreach (var instruction in programLines.Where(i => i.LineType == LineType.Code))
             {
                 // if this is a symbol then replace its value and reparse
-                if (symbolTable.TryGetValue(instruction.Argument.value, out var symbol) == true)
+                if (string.IsNullOrEmpty(instruction.ExtractedArgument) == false && symbolTable.TryGetValue(instruction.ExtractedArgument, out var symbol) == true)
                 {
+                    var raw = instruction.RawArgument.Replace(instruction.ExtractedArgument, symbol.UnparsedValue);
+
                     if (symbol.IsEquivalence == false)
                     {
                         // todo - if this is a branch, then we need to resolve it differently
-                        var raw = instruction.RawArgument.Replace(instruction.Argument.value, symbol.UnparsedValue);
-                        instruction.Argument = ParseAddress(instruction.OpCode, raw);
-                    }
+                        if (InstructionInformation.BranchingOperations.Contains(instruction.OpCode))
+                        {
+                            var offset = (symbol.Value > instruction.EffectiveAddress) ?
+                                (byte)((symbol.Value - (instruction.EffectiveAddress + instruction.EffectiveSize)) & 0xff) :
+                                (byte)((symbol.Value - (instruction.EffectiveAddress + instruction.EffectiveSize)));
 
-                    instruction.Value = ExtractNumber(symbol.UnparsedValue, 0, 0);
+                            instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + offset + "}");
+                            instruction.Value = "$" + offset.ToString("X2");
+                        }
+                        else
+                        {
+                            (instruction.AddressingMode, instruction.ExtractedArgumentValue) = ParseAddress(instruction.OpCode, raw);
+                            instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + symbol.UnparsedValue + "}");
+                            instruction.Value = ExtractNumber(symbol.UnparsedValue, 0, 0);
+                        }
+                    }
+                    else
+                    {
+                        (instruction.AddressingMode, instruction.ExtractedArgumentValue) = ParseAddress(instruction.OpCode, raw);
+                        instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + symbol.UnparsedValue + "}");
+                        instruction.Value = ExtractNumber(symbol.UnparsedValue, 0, 0);
+                    }
                 }
                 else
                 {
-                    instruction.Value = instruction.Argument.value;
+                    instruction.Value = instruction.ExtractedArgumentValue;
                 }
             }
         }
@@ -283,11 +354,16 @@ namespace Asm6502
             var opCode = Enum.Parse<OpCode>(opcode);
 
             var argument = ParseAddress(opCode, arg);
-            if (symbolTable.TryGetValue(argument.value, out var symbol) == true && symbol.IsEquivalence == true)
+            var extractedArgument = argument.value;
+
+            if (string.IsNullOrEmpty(argument.value) == false)
             {
-                // can immediately resolve this value
-                var raw = arg.Replace(argument.value, symbol.UnparsedValue);
-                argument = ParseAddress(opCode, raw);
+                if (symbolTable.TryGetValue(argument.value, out var symbol) == true && symbol.IsEquivalence == true)
+                {
+                    // can immediately resolve this value
+                    var raw = arg.Replace(argument.value, symbol.UnparsedValue);
+                    argument = ParseAddress(opCode, raw);
+                }
             }
 
             return new LineInformation
@@ -299,7 +375,10 @@ namespace Asm6502
                 Label = label,
                 OpCode = opCode,
                 RawArgument = arg,
-                Argument = argument,
+                RawArgumentWithReplacement = arg,
+                ExtractedArgument = extractedArgument,
+                ExtractedArgumentValue = argument.value,
+                AddressingMode = argument.addressingMode,
                 Comment = ExtractComment(comment),
                 Line = line
             };
@@ -345,53 +424,120 @@ namespace Asm6502
             };
         }
 
-        private static (AddressingMode addressingMode, string value) ParseAddress(OpCode opCode, string addressString)
+        private (AddressingMode addressingMode, string value) ParseAddress(OpCode opCode, string addressString)
         {
             if (InstructionInformation.BranchingOperations.Contains(opCode))
             {
-                TryMatch(addressString, "", "", out var address);
-
-                return (AddressingMode.Relative, address);
+                var captures = relativeRegex.MatchNamedCaptures(addressString);
+                return (AddressingMode.Relative, captures["arg"]);
             }
 
-            return addressString switch
+            if (string.IsNullOrEmpty(addressString) == true)
             {
-                var s when string.IsNullOrEmpty(s) => (AddressingMode.Implicit, null),
-                var s when s == "A" => (AddressingMode.Accumulator, null),
-
-                var s when TryMatch(s, "#", "", out var address) => (AddressingMode.Immediate, address),
-
-                // these are LISA-format
-                var s when TryMatch(s, "*", "", out var address) => (AddressingMode.Relative, address),
-
-                var s when TryMatch(s, "<", ",X", out var address) => (AddressingMode.ZeroPageXIndexed, address),
-                var s when TryMatch(s, "", ",X", out var address) => (AddressingMode.AbsoluteXIndexed, address),
-                var s when TryMatch(s, "(", "),Y", out var address) => (AddressingMode.IndirectYIndexed, address),
-                var s when TryMatch(s, "(", ",X)", out var address) => (AddressingMode.XIndexedIndirect, address),
-                var s when TryMatch(s, "(", ")", out var address) => (AddressingMode.Indirect, address),
-                var s when TryMatch(s, "<", ",Y", out var address) => (AddressingMode.ZeroPageYIndexed, address),
-                var s when TryMatch(s, "", ",Y", out var address) => (AddressingMode.AbsoluteYIndexed, address),
-                var s when TryMatch(s, "<", "", out var address) => (AddressingMode.ZeroPage, address),
-
-                var s when ArgumentParserLongRegex().IsMatch(s) => (AddressingMode.Absolute, ExtractNumber(addressString, 0, 0)),
-                var s when ArgumentParserShortRegex().IsMatch(s) => (AddressingMode.ZeroPage, ExtractNumber(addressString, 0, 0)),
-
-                _ => (AddressingMode.Unknown, null)
-            };
-        }
-
-        private static bool TryMatch(string addressString, string prefix, string suffix, out string address)
-        {
-            address = null;
-
-            if (addressString.StartsWith(prefix, StringComparison.InvariantCulture) &&
-                addressString.EndsWith(suffix, StringComparison.InvariantCulture))
-            {
-                address = ExtractNumber(addressString, prefix.Length, suffix.Length);
-                return true;
+                return (AddressingMode.Implied, null);
             }
 
-            return false;
+            if (accumulatorRegex.IsMatch(addressString) == true)
+            {
+                return (AddressingMode.Accumulator, null);
+            }
+
+            if (immediateRegex.IsMatch(addressString) == true)
+            {
+                var captures = immediateRegex.MatchNamedCaptures(addressString);
+
+                captures.TryGetValue("prefix", out string prefix);
+                captures.TryGetValue("arg", out string arg);
+
+                return (AddressingMode.Immediate, $"{prefix ?? ""}{arg}");
+            }
+
+            if (absoluteAddressRegex.IsMatch(addressString) == true)
+            {
+                var captures = absoluteAddressRegex.MatchNamedCaptures(addressString);
+                return (AddressingMode.Absolute, captures["arg"]);
+            }
+
+            if (absoluteIndexedRegex.IsMatch(addressString) == true)
+            {
+                var captures = absoluteIndexedRegex.MatchNamedCaptures(addressString);
+                if (captures["reg"] == "X")
+                {
+                    return (AddressingMode.AbsoluteXIndexed, captures["arg"]);
+                }
+                else if (captures["reg"] == "Y")
+                {
+                    return (AddressingMode.AbsoluteYIndexed, captures["arg"]);
+                }
+                else
+                {
+                    throw new IndexOutOfRangeException($"{captures["reg"]} must be one of X or Y");
+                }
+            }
+
+            if (zeroPageDirectRegex.IsMatch(addressString) == true)
+            {
+                var captures = zeroPageDirectRegex.MatchNamedCaptures(addressString);
+                return (AddressingMode.ZeroPage, captures["arg"]);
+            }
+
+            if (zeroPageIndirectRegex.IsMatch(addressString) == true)
+            {
+                var captures = zeroPageIndirectRegex.MatchNamedCaptures(addressString);
+                return (AddressingMode.ZeroPageIndirect, captures["arg"]);
+            }
+
+            if (indexedIndirectRegex.IsMatch(addressString) == true)
+            {
+                var captures = indexedIndirectRegex.MatchNamedCaptures(addressString);
+                return (AddressingMode.AbsoluteIndirect, captures["arg"]);
+            }
+
+            if (zeroPageIndexedDirectRegex.IsMatch(addressString) == true)
+            {
+                var captures = zeroPageIndexedDirectRegex.MatchNamedCaptures(addressString);
+                return (AddressingMode.XIndexedIndirect, captures["arg"]);
+            }
+
+            if (zeroPageIndexedRegex.IsMatch(addressString) == true)
+            {
+                var captures = zeroPageIndexedRegex.MatchNamedCaptures(addressString);
+                if (captures["reg"] == "X")
+                {
+                    return (AddressingMode.ZeroPageXIndexed, captures["arg"]);
+                }
+                else if (captures["reg"] == "Y")
+                {
+                    if (opCode != OpCode.STX && opCode != OpCode.LDX)
+                    {
+                        // this can't be right, it's really an AbsoluteIndexed
+                        return (AddressingMode.AbsoluteYIndexed, captures["arg"]);
+                    }
+                    else
+                    {
+                        // because only opcodes 96 (STX) and b6 (LDX) are available as zp,y
+                        return (AddressingMode.ZeroPageYIndexed, captures["arg"]);
+                    }
+                }
+                else
+                {
+                    throw new IndexOutOfRangeException($"{captures["reg"]} must be one of X or Y");
+                }
+            }
+
+            if (zeroPagePostIndexedDirectRegex.IsMatch(addressString) == true)
+            {
+                var captures = zeroPagePostIndexedDirectRegex.MatchNamedCaptures(addressString);
+                return (AddressingMode.IndirectYIndexed, captures["arg"]);
+            }
+
+            if (indirectRegex.IsMatch(addressString) == true)
+            {
+                var captures = indirectRegex.MatchNamedCaptures(addressString);
+                return (AddressingMode.AbsoluteIndexedIndirect, captures["arg"]);
+            }
+
+            return (AddressingMode.Unknown, null);
         }
 
         private static string ExtractNumber(string addressString, int startSkip, int endSkip)
