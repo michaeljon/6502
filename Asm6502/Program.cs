@@ -15,11 +15,11 @@ namespace Asm6502
 
         private static void AssemblerRunner()
         {
-            // var inputLines = File.ReadAllLines("./tests/BruceClark6502_All.S");
-            string[] inputLines = [
-                "N2H      EQU   $0F",
-                "         STA   N2H+1"
-            ];
+            var inputLines = File.ReadAllLines("./tests/BruceClark6502_All.S");
+            // string[] inputLines = [
+            //     "N2H      EQU   $0F",
+            //     "         STA   N2H+1"
+            // ];
 
             var assembler = new Assembler(inputLines, 0x8000);
             var program = assembler.Assemble();
@@ -40,7 +40,7 @@ namespace Asm6502
                 }
             }
 
-            // File.WriteAllBytes("./tests/BruceClark6502_All.o", program);
+            File.WriteAllBytes("./tests/BruceClark6502_All.o", program);
         }
 
 #if false

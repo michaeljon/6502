@@ -129,13 +129,24 @@ namespace Asm6502
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(value {0})\n", Value);
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(code {0})\n", MachineCodeAsString);
 
-                    sb.AppendFormat(CultureInfo.InvariantCulture,
-                        "\t(asm {0}{1}{2}{3}{4})\n",
-                        (Label ?? "").PadRight(10),
-                        OpCode.ToString().PadRight(6),
-                        RawArgumentWithReplacement,
-                        ApplicableOffset < 0 ? "-" : "+",
-                        Math.Abs(ApplicableOffset));
+                    if (ApplicableOffset != 0)
+                    {
+                        sb.AppendFormat(CultureInfo.InvariantCulture,
+                            "\t(asm {0}{1}{2}{3}{4})\n",
+                            (Label ?? "").PadRight(10),
+                            OpCode.ToString().PadRight(6),
+                            RawArgumentWithReplacement,
+                            ApplicableOffset < 0 ? "-" : "+",
+                            Math.Abs(ApplicableOffset));
+                    }
+                    else
+                    {
+                        sb.AppendFormat(CultureInfo.InvariantCulture,
+                            "\t(asm {0}{1}{2})\n",
+                            (Label ?? "").PadRight(10),
+                            OpCode.ToString().PadRight(6),
+                            RawArgumentWithReplacement);
+                    }
 
                     if (string.IsNullOrEmpty(Comment) == false)
                     {

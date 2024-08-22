@@ -356,7 +356,7 @@ namespace Asm6502
             // let's see if we can take it apart
             var mathRegex = new Regex(@"(?<arg>(\w+))(?<operator>[-+])(?<offset>[0-9]+)");
 
-            var initialArg = arg;
+            var initialArg = arg ?? "";
             var usesArgumentMath = false;
             var applicableOffset = 0;
 
