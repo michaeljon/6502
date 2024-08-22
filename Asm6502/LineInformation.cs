@@ -87,6 +87,10 @@ namespace Asm6502
 
         public string Value { get; set; }
 
+        public bool UsesArgumentMath { get; set; }
+
+        public int ApplicableOffset { get; set; }
+
         public string Comment { get; set; }
 
         public string Line { get; set; }
@@ -124,6 +128,14 @@ namespace Asm6502
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(addressMode {0})\n", AddressingMode);
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(value {0})\n", Value);
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(code {0})\n", MachineCodeAsString);
+
+                    sb.AppendFormat(CultureInfo.InvariantCulture,
+                        "\t(asm {0}{1}{2}{3}{4})\n",
+                        (Label ?? "").PadRight(10),
+                        OpCode.ToString().PadRight(6),
+                        RawArgumentWithReplacement,
+                        ApplicableOffset < 0 ? "-" : "+",
+                        Math.Abs(ApplicableOffset));
 
                     if (string.IsNullOrEmpty(Comment) == false)
                     {
@@ -196,7 +208,7 @@ namespace Asm6502
                 if (LineType == LineType.Code)
                 {
                     // we need a dummy value
-                    ushort value = string.IsNullOrEmpty(Value) == false ? ResolveNumber(Value) : (ushort)0;
+                    ushort value = string.IsNullOrEmpty(Value) == false ? (ushort)(ResolveNumber(Value) + ApplicableOffset) : (ushort)0;
 
                     return EffectiveSize switch
                     {

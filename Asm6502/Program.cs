@@ -15,14 +15,20 @@ namespace Asm6502
 
         private static void AssemblerRunner()
         {
-            var inputLines = File.ReadAllLines("./tests/mini2.S");
-            // string[] inputLines = [
-            //     "   AND #$20",
-            //     "   AND #20"
-            // ];
+            // var inputLines = File.ReadAllLines("./tests/BruceClark6502_All.S");
+            string[] inputLines = [
+                "N2H      EQU   $0F",
+                "         STA   N2H+1"
+            ];
 
             var assembler = new Assembler(inputLines, 0x8000);
-            assembler.Assemble();
+            var program = assembler.Assemble();
+
+            Console.WriteLine("Program statements");
+            foreach (var line in assembler.Program)
+            {
+                Console.WriteLine($"{line.LineNumber,-10} => {line.ToString().Replace("\n", " ").Replace("\t", "")}");
+            }
 
             if (assembler.SymbolTable.Count > 0)
             {
@@ -34,13 +40,7 @@ namespace Asm6502
                 }
             }
 
-            Console.WriteLine();
-            Console.WriteLine("Program statements");
-
-            foreach (var line in assembler.Program)
-            {
-                Console.WriteLine($"{line.LineNumber,-10} => {line.ToString().Replace("\n", " ").Replace("\t", "")}");
-            }
+            // File.WriteAllBytes("./tests/BruceClark6502_All.o", program);
         }
 
 #if false

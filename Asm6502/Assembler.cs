@@ -265,7 +265,7 @@ namespace Asm6502
                 pc += (ushort)instruction.MachineCode.Length;
             }
 
-            return bytes;
+            return bytes[..pc];
         }
 
         private LineInformation ParseDataLine(int lineNumber, string line, IDictionary<string, string> captures)
@@ -353,6 +353,23 @@ namespace Asm6502
 
             var opCode = Enum.Parse<OpCode>(opcode);
 
+            // let's see if we can take it apart
+            var mathRegex = new Regex(@"(?<arg>(\w+))(?<operator>[-+])(?<offset>[0-9]+)");
+
+            var initialArg = arg;
+            var usesArgumentMath = false;
+            var applicableOffset = 0;
+
+            if (mathRegex.IsMatch(initialArg))
+            {
+                var parts = mathRegex.MatchNamedCaptures(initialArg);
+
+                arg = parts["arg"];
+
+                usesArgumentMath = true;
+                applicableOffset = int.Parse($"{parts["operator"]}{parts["offset"]}");
+            }
+
             var argument = ParseAddress(opCode, arg);
             var extractedArgument = argument.value;
 
@@ -380,6 +397,11 @@ namespace Asm6502
                 ExtractedArgumentValue = argument.value,
                 AddressingMode = argument.addressingMode,
                 Comment = ExtractComment(comment),
+
+                // todo:
+                UsesArgumentMath = usesArgumentMath,
+                ApplicableOffset = applicableOffset,
+
                 Line = line
             };
         }
