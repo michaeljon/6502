@@ -1,4 +1,4 @@
-namespace Asm6502
+namespace InnoWerks.Assemblers
 {
     public enum Directive
     {

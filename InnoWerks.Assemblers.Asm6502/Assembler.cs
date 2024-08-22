@@ -2,13 +2,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Asm6502
+namespace InnoWerks.Assemblers
 {
-#pragma warning disable IDE0290
     public partial class Assembler
     {
         #region Argument parser regular expressions
@@ -47,6 +47,9 @@ namespace Asm6502
 
         [GeneratedRegex(@"^\((?<arg>(\$00[0-9A-F]{2}|\$[0-9A-F]{2}|\w+))\),Y$")]
         private static partial Regex ZeroPagePostIndexedDirectRegex();
+
+        [GeneratedRegex(@"(?<arg>(\w+))(?<operator>[-+])(?<offset>[0-9]+)")]
+        private static partial Regex MathInArgumentRegex();
         #endregion
 
         #region Argument parser regex instances
@@ -63,6 +66,8 @@ namespace Asm6502
         private readonly Regex zeroPageIndirectRegex = ZeroPageIndirectRegex();
         private readonly Regex zeroPageIndexedDirectRegex = ZeroPageIndexedDirectRegex();
         private readonly Regex zeroPagePostIndexedDirectRegex = ZeroPagePostIndexedDirectRegex();
+
+        private readonly Regex mathInArgumentRegex = MathInArgumentRegex();
         #endregion
 
         #region Instruction parser regular expressions
@@ -113,9 +118,9 @@ namespace Asm6502
             currentAddress = currentOrgAddress;
         }
 
-        public Dictionary<string, Symbol> SymbolTable => symbolTable;
+        public ReadOnlyDictionary<string, Symbol> SymbolTable => new(symbolTable);
 
-        public List<LineInformation> Program => programLines;
+        public Collection<LineInformation> Program => new(programLines);
 
         public byte[] Assemble()
         {
@@ -171,7 +176,7 @@ namespace Asm6502
                 else if (directiveLine.IsMatch(line))
                 {
                     node = ParseDirectiveLine(lineNumber, line, directiveLine.MatchNamedCaptures(line));
-                    currentAddress = currentOrgAddress = ResolveNumber(node.Value);
+                    currentAddress = currentOrgAddress = NumberExtractors.ResolveNumber(node.Value);
                 }
                 else if (equivalenceLine.IsMatch(line))
                 {
@@ -202,13 +207,12 @@ namespace Asm6502
 
 #if ASSEMBLER_DEBUG_OUTPUT
                     Console.WriteLine(node);
-#endif                    
+#endif
                     programLines.Add(node);
                 }
 
                 lineNumber++;
             }
-
         }
 
         private void ResolveReferences()
@@ -218,7 +222,7 @@ namespace Asm6502
                 // if this is a symbol then replace its value and reparse
                 if (string.IsNullOrEmpty(instruction.ExtractedArgument) == false && symbolTable.TryGetValue(instruction.ExtractedArgument, out var symbol) == true)
                 {
-                    var raw = instruction.RawArgument.Replace(instruction.ExtractedArgument, symbol.UnparsedValue);
+                    var raw = instruction.RawArgument.Replace(instruction.ExtractedArgument, symbol.UnparsedValue, StringComparison.Ordinal);
 
                     if (symbol.IsEquivalence == false)
                     {
@@ -229,20 +233,20 @@ namespace Asm6502
                                 (byte)((symbol.Value - (instruction.EffectiveAddress + instruction.EffectiveSize)) & 0xff) :
                                 (byte)((symbol.Value - (instruction.EffectiveAddress + instruction.EffectiveSize)));
 
-                            instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + offset + "}");
-                            instruction.Value = "$" + offset.ToString("X2");
+                            instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + offset + "}", StringComparison.Ordinal);
+                            instruction.Value = "$" + offset.ToString("X2", CultureInfo.InvariantCulture);
                         }
                         else
                         {
-                            (instruction.AddressingMode, instruction.ExtractedArgumentValue) = ParseAddress(instruction.OpCode, raw);
-                            instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + symbol.UnparsedValue + "}");
+                            (instruction.AddressingMode, instruction.ExtractedArgumentValue) = ParseAddress(instruction.OpCode, raw, instruction.LineNumber);
+                            instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + symbol.UnparsedValue + "}", StringComparison.Ordinal);
                             instruction.Value = ExtractNumber(symbol.UnparsedValue, 0, 0);
                         }
                     }
                     else
                     {
-                        (instruction.AddressingMode, instruction.ExtractedArgumentValue) = ParseAddress(instruction.OpCode, raw);
-                        instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + symbol.UnparsedValue + "}");
+                        (instruction.AddressingMode, instruction.ExtractedArgumentValue) = ParseAddress(instruction.OpCode, raw, instruction.LineNumber);
+                        instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + symbol.UnparsedValue + "}", StringComparison.Ordinal);
                         instruction.Value = ExtractNumber(symbol.UnparsedValue, 0, 0);
                     }
                 }
@@ -268,7 +272,7 @@ namespace Asm6502
             return bytes[..pc];
         }
 
-        private LineInformation ParseDataLine(int lineNumber, string line, IDictionary<string, string> captures)
+        private LineInformation ParseDataLine(int lineNumber, string line, Dictionary<string, string> captures)
         {
 #if ASSEMBLER_DEBUG_OUTPUT
             Console.WriteLine($"{lineNumber,8} DATA    : {line,-80}");
@@ -293,7 +297,7 @@ namespace Asm6502
             };
         }
 
-        private LineInformation ParseDirectiveLine(int lineNumber, string line, IDictionary<string, string> captures)
+        private LineInformation ParseDirectiveLine(int lineNumber, string line, Dictionary<string, string> captures)
         {
 #if ASSEMBLER_DEBUG_OUTPUT
             Console.WriteLine($"{lineNumber,8} DIR     : {line,-80}");
@@ -316,7 +320,7 @@ namespace Asm6502
             };
         }
 
-        private LineInformation ParseEqivalenceLine(int lineNumber, string line, IDictionary<string, string> captures)
+        private LineInformation ParseEqivalenceLine(int lineNumber, string line, Dictionary<string, string> captures)
         {
 #if ASSEMBLER_DEBUG_OUTPUT
             Console.WriteLine($"{lineNumber,8} EQU     : {line,-80}");
@@ -340,7 +344,7 @@ namespace Asm6502
             };
         }
 
-        private LineInformation ParseCodeLine(int lineNumber, string line, IDictionary<string, string> captures)
+        private LineInformation ParseCodeLine(int lineNumber, string line, Dictionary<string, string> captures)
         {
 #if ASSEMBLER_DEBUG_OUTPUT
             Console.WriteLine($"{lineNumber,8} CODE    : {line,-80}");
@@ -353,24 +357,21 @@ namespace Asm6502
 
             var opCode = Enum.Parse<OpCode>(opcode);
 
-            // let's see if we can take it apart
-            var mathRegex = new Regex(@"(?<arg>(\w+))(?<operator>[-+])(?<offset>[0-9]+)");
-
             var initialArg = arg ?? "";
             var usesArgumentMath = false;
             var applicableOffset = 0;
 
-            if (mathRegex.IsMatch(initialArg))
+            if (mathInArgumentRegex.IsMatch(initialArg))
             {
-                var parts = mathRegex.MatchNamedCaptures(initialArg);
+                var parts = mathInArgumentRegex.MatchNamedCaptures(initialArg);
 
                 arg = parts["arg"];
 
                 usesArgumentMath = true;
-                applicableOffset = int.Parse($"{parts["operator"]}{parts["offset"]}");
+                applicableOffset = int.Parse($"{parts["operator"]}{parts["offset"]}", CultureInfo.InvariantCulture);
             }
 
-            var argument = ParseAddress(opCode, arg);
+            var argument = ParseAddress(opCode, arg, lineNumber);
             var extractedArgument = argument.value;
 
             if (string.IsNullOrEmpty(argument.value) == false)
@@ -378,8 +379,8 @@ namespace Asm6502
                 if (symbolTable.TryGetValue(argument.value, out var symbol) == true && symbol.IsEquivalence == true)
                 {
                     // can immediately resolve this value
-                    var raw = arg.Replace(argument.value, symbol.UnparsedValue);
-                    argument = ParseAddress(opCode, raw);
+                    var raw = arg.Replace(argument.value, symbol.UnparsedValue, StringComparison.Ordinal);
+                    argument = ParseAddress(opCode, raw, lineNumber);
                 }
             }
 
@@ -406,7 +407,7 @@ namespace Asm6502
             };
         }
 
-        private LineInformation ParseLabelledLine(int lineNumber, string line, IDictionary<string, string> captures)
+        private LineInformation ParseLabelledLine(int lineNumber, string line, Dictionary<string, string> captures)
         {
 #if ASSEMBLER_DEBUG_OUTPUT
             Console.WriteLine($"{lineNumber,8} LABEL   : {line,-80}");
@@ -427,7 +428,7 @@ namespace Asm6502
             };
         }
 
-        private LineInformation ParseCommentLine(int lineNumber, string line, IDictionary<string, string> captures)
+        private LineInformation ParseCommentLine(int lineNumber, string line, Dictionary<string, string> captures)
         {
 #if ASSEMBLER_DEBUG_OUTPUT
             Console.WriteLine($"{lineNumber,8} COMMENT : {line,-80}");
@@ -446,7 +447,7 @@ namespace Asm6502
             };
         }
 
-        private (AddressingMode addressingMode, string value) ParseAddress(OpCode opCode, string addressString)
+        private (AddressingMode addressingMode, string value) ParseAddress(OpCode opCode, string addressString, int lineNumber)
         {
             if (InstructionInformation.BranchingOperations.Contains(opCode))
             {
@@ -493,7 +494,7 @@ namespace Asm6502
                 }
                 else
                 {
-                    throw new IndexOutOfRangeException($"{captures["reg"]} must be one of X or Y");
+                    throw new IndexerException(captures["reg"], lineNumber);
                 }
             }
 
@@ -543,7 +544,7 @@ namespace Asm6502
                 }
                 else
                 {
-                    throw new IndexOutOfRangeException($"{captures["reg"]} must be one of X or Y");
+                    throw new IndexerException(captures["reg"], lineNumber);
                 }
             }
 
@@ -576,7 +577,7 @@ namespace Asm6502
 
             comment = comment.Trim();
 
-            if (comment.StartsWith("; ") == true)
+            if (comment.StartsWith("; ", StringComparison.Ordinal) == true)
             {
                 comment = comment[2..];
             }
@@ -598,7 +599,7 @@ namespace Asm6502
                     LineType.Data => node.EffectiveAddress,
                     LineType.Label => node.EffectiveAddress,
                     LineType.Code => node.EffectiveAddress,
-                    LineType.Equivalence => ResolveNumber(node.Value),
+                    LineType.Equivalence => NumberExtractors.ResolveNumber(node.Value),
                     _ => 0
                 };
 
@@ -618,55 +619,11 @@ namespace Asm6502
                         LineNumber = node.LineNumber,
                         SymbolType = symbolType,
                         Label = node.Label,
-                        UnparsedValue = value <= 255 ? "$" + value.ToString("X2") : "$" + value.ToString("X4"),
+                        UnparsedValue = value <= 255 ? "$" + value.ToString("X2", CultureInfo.InvariantCulture) : "$" + value.ToString("X4", CultureInfo.InvariantCulture),
                         Value = value,
                         Size = node.EffectiveSize,
                     });
             }
-        }
-
-        private ushort ResolveNumber(string number)
-        {
-            if (number.StartsWith('$') == true)
-            {
-                return ushort.Parse(number[1..], NumberStyles.HexNumber);
-            }
-            else if (number.StartsWith("0x") == true)
-            {
-                return ushort.Parse(number[2..], NumberStyles.HexNumber);
-            }
-            else if (number.StartsWith('%') == true)
-            {
-                return ushort.Parse(number[1..], NumberStyles.BinaryNumber);
-            }
-            else if (number.StartsWith("0b") == true)
-            {
-                return ushort.Parse(number[2..], NumberStyles.BinaryNumber);
-            }
-            else
-            {
-                return ushort.Parse(number, NumberStyles.Integer);
-            }
-        }
-    }
-
-    public static class RegexExtensions
-    {
-        public static Dictionary<string, string> MatchNamedCaptures(this Regex regex, string input)
-        {
-            var namedCaptureDictionary = new Dictionary<string, string>();
-            var groups = regex.Match(input).Groups;
-            var groupNames = regex.GetGroupNames();
-
-            foreach (string groupName in groupNames)
-            {
-                if (groups[groupName].Captures.Count > 0)
-                {
-                    namedCaptureDictionary.Add(groupName, groups[groupName].Value);
-                }
-            }
-
-            return namedCaptureDictionary;
         }
     }
 }

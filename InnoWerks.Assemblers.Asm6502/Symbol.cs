@@ -1,10 +1,8 @@
 using System.Globalization;
 using System.Text;
 
-namespace Asm6502
+namespace InnoWerks.Assemblers
 {
-#pragma warning disable IDE0290
-
     public enum SymbolType
     {
         Indifferent,

@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace Asm6502
+namespace InnoWerks.Assemblers
 {
     public enum LineType
     {
@@ -212,6 +212,7 @@ namespace Asm6502
             return sb.ToString();
         }
 
+#pragma warning disable CA1819
         public byte[] MachineCode
         {
             get
@@ -241,12 +242,13 @@ namespace Asm6502
                 }
             }
         }
+#pragma warning restore CA1819
 
         public string MachineCodeAsString
         {
             get
             {
-                return string.Join(' ', MachineCode.Select(b => b.ToString("X2")));
+                return string.Join(' ', MachineCode.Select(b => b.ToString("X2", CultureInfo.InvariantCulture)));
             }
         }
 
@@ -254,15 +256,15 @@ namespace Asm6502
         {
             if (number.StartsWith('$') == true)
             {
-                return ushort.Parse(number[1..], NumberStyles.HexNumber);
+                return ushort.Parse(number[1..], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
             }
             else if (number.StartsWith('%') == true)
             {
-                return ushort.Parse(number[1..], NumberStyles.BinaryNumber);
+                return ushort.Parse(number[1..], NumberStyles.BinaryNumber, CultureInfo.InvariantCulture);
             }
             else
             {
-                return ushort.Parse(number, NumberStyles.Integer);
+                return ushort.Parse(number, NumberStyles.Integer, CultureInfo.InvariantCulture);
             }
         }
     }
