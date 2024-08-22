@@ -122,13 +122,11 @@ namespace InnoWerks.Assemblers
 
         public Collection<LineInformation> Program => new(programLines);
 
-        public byte[] Assemble()
+        public void Assemble()
         {
             GatherGlobals();
             ReadProgram();
             ResolveReferences();
-
-            return GenerateBytes();
         }
 
         private void GatherGlobals()
@@ -257,7 +255,7 @@ namespace InnoWerks.Assemblers
             }
         }
 
-        private byte[] GenerateBytes()
+        public byte[] GenerateBytes()
         {
             // 64k programs, pretty damned big actually
             var bytes = new byte[0x10000];

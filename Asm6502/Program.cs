@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using CommandLine;
 using InnoWerks.Assemblers;
 
 namespace Asm6502
@@ -8,37 +9,86 @@ namespace Asm6502
     {
         static void Main(string[] args)
         {
-            AssemblerRunner();
+            var result = Parser.Default.ParseArguments<CliOptions>(args);
+
+            result.MapResult(
+                RunAssembler,
+
+                errors =>
+                {
+                    foreach (var error in errors)
+                    {
+                        Console.Error.WriteLine(error.ToString());
+                    }
+
+                    return 1;
+                }
+            );
         }
 
-        private static void AssemblerRunner()
+        private static int RunAssembler(CliOptions options)
         {
-            var inputLines = File.ReadAllLines("./tests/BruceClark6502_All.S");
-            // string[] inputLines = [
-            //     "N2H      EQU   $0F",
-            //     "         STA   N2H+1"
-            // ];
-
-            var assembler = new Assembler(inputLines, 0x8000);
-            var program = assembler.Assemble();
-
-            Console.WriteLine("Program statements");
-            foreach (var line in assembler.Program)
+            if (string.IsNullOrEmpty(options.Output))
             {
-                Console.WriteLine($"{line.LineNumber,-10} => {line.ToString().Replace("\n", " ", StringComparison.OrdinalIgnoreCase).Replace("\t", "", StringComparison.OrdinalIgnoreCase)}");
+                options.Output = Path.ChangeExtension(options.Input, ".o");
             }
 
-            if (assembler.SymbolTable.Count > 0)
-            {
-                Console.WriteLine("Symbol table");
+            var inputLines = File.ReadAllLines(options.Input);
 
-                foreach (var (label, symbol) in assembler.SymbolTable)
+            var assembler = new Assembler(inputLines, 0x8000);
+
+            try
+            {
+                assembler.Assemble();
+            }
+            catch (SymbolRedefinedException sre)
+            {
+                Console.Error.WriteLine(sre.Message);
+                return 1;
+            }
+            catch (IndexerException ie)
+            {
+                Console.Error.WriteLine(ie.Message);
+                return 1;
+            }
+            catch
+            {
+                Console.Error.WriteLine("Something else happened...");
+                return 1;
+            }
+
+            if (options.Debug)
+            {
+                Console.WriteLine("");
+                Console.WriteLine("Program statements");
+                foreach (var line in assembler.Program)
                 {
-                    Console.WriteLine($"{label,-10} => {symbol.ToString().Replace("\n", " ", StringComparison.OrdinalIgnoreCase).Replace("\t", "", StringComparison.OrdinalIgnoreCase)}");
+                    Console.WriteLine($"{line.LineNumber,-10} => {line.ToString().Replace("\n", " ", StringComparison.OrdinalIgnoreCase).Replace("\t", "", StringComparison.OrdinalIgnoreCase)}");
                 }
             }
 
-            File.WriteAllBytes("./tests/BruceClark6502_All.o", program);
+            if (options.Verbose)
+            {
+                Console.WriteLine("");
+                Console.WriteLine("Symbol table");
+                if (assembler.SymbolTable.Count > 0)
+                {
+                    foreach (var (label, symbol) in assembler.SymbolTable)
+                    {
+                        Console.WriteLine($"{label,-10} => {symbol.ToString().Replace("\n", " ", StringComparison.OrdinalIgnoreCase).Replace("\t", "", StringComparison.OrdinalIgnoreCase)}");
+                    }
+                }
+            }
+
+            var code = assembler.GenerateBytes();
+
+            Console.WriteLine("");
+            Console.WriteLine("Complete");
+            Console.WriteLine("Object size ${0:X4}", code.Length);
+
+            File.WriteAllBytes(options.Output, code);
+
+            return 0;
         }
     }
 }
