@@ -247,6 +247,8 @@ namespace InnoWerks.Assemblers
                 // if this is a symbol then replace its value and reparse
                 if (string.IsNullOrEmpty(instruction.ExtractedArgument) == false && symbolTable.TryGetValue(instruction.ExtractedArgument, out var symbol) == true)
                 {
+                    instruction.ResolvedSymbol = symbol;
+
                     var raw = instruction.RawArgument.Replace(instruction.ExtractedArgument, symbol.UnparsedValue, StringComparison.Ordinal);
 
                     if (symbol.IsEquivalence == false)
@@ -254,12 +256,10 @@ namespace InnoWerks.Assemblers
                         // todo - if this is a branch, then we need to resolve it differently
                         if (InstructionInformation.BranchingOperations.Contains(instruction.OpCode))
                         {
-                            var offset = (symbol.Value > instruction.EffectiveAddress) ?
-                                (byte)((symbol.Value - (instruction.EffectiveAddress + instruction.EffectiveSize)) & 0xff) :
-                                (byte)((symbol.Value - (instruction.EffectiveAddress + instruction.EffectiveSize)));
+                            var offset = (byte)((symbol.Value - (instruction.EffectiveAddress + instruction.EffectiveSize)) & 0xff);
 
                             instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + offset + "}", StringComparison.Ordinal);
-                            instruction.Value = "$" + (0xff - offset).ToString("X2", CultureInfo.InvariantCulture);
+                            instruction.Value = "$" + offset.ToString("X2", CultureInfo.InvariantCulture);
                         }
                         else
                         {
@@ -343,6 +343,7 @@ namespace InnoWerks.Assemblers
             return new LineInformation
             {
                 LineType = LineType.Equivalence,
+                Directive = Directive.EQU,
                 LineNumber = lineNumber,
                 CurrentOrg = currentOrgAddress,
                 EffectiveAddress = currentAddress,
@@ -368,16 +369,12 @@ namespace InnoWerks.Assemblers
             var opCode = Enum.Parse<OpCode>(opcode);
 
             var initialArg = arg ?? "";
-            var usesArgumentMath = false;
             var applicableOffset = 0;
 
             if (mathInArgumentRegex.IsMatch(initialArg))
             {
                 var parts = mathInArgumentRegex.MatchNamedCaptures(initialArg);
-
                 arg = parts["arg"];
-
-                usesArgumentMath = true;
                 applicableOffset = int.Parse($"{parts["operator"]}{parts["offset"]}", CultureInfo.InvariantCulture);
             }
 
@@ -409,8 +406,6 @@ namespace InnoWerks.Assemblers
                 AddressingMode = argument.addressingMode,
                 Comment = ExtractComment(comment),
 
-                // todo:
-                UsesArgumentMath = usesArgumentMath,
                 ApplicableOffset = applicableOffset,
 
                 Line = line
@@ -448,7 +443,7 @@ namespace InnoWerks.Assemblers
 
             return new LineInformation
             {
-                LineType = LineType.Comment,
+                LineType = line.StartsWith('*') ? LineType.Comment : LineType.FloatingComment,
                 LineNumber = lineNumber,
                 CurrentOrg = currentOrgAddress,
                 EffectiveAddress = currentAddress,

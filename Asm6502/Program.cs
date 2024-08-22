@@ -62,9 +62,6 @@ namespace Asm6502
 
             if (options.PrintProgramText)
             {
-                Console.WriteLine("");
-                Console.WriteLine("Program statements");
-
                 Console.WriteLine("------|-----------------|-------------------|-------|" + "".PadLeft(80, '-'));
                 Console.WriteLine(
                     "{0,5} | {1,-15} | {2,-17} | {3,-5} | {4}",
@@ -91,7 +88,7 @@ namespace Asm6502
             if (options.PrintSymbolTable)
             {
                 Console.WriteLine("");
-                Console.WriteLine("Symbol table");
+                Console.WriteLine("Symbols");
                 if (assembler.SymbolTable.Count > 0)
                 {
                     Console.WriteLine("----------|---------|-----------|------------|-------");
@@ -146,7 +143,7 @@ namespace Asm6502
                             instruction.Label ?? "",
                             instruction.OpCode != OpCode.Unknown ? instruction.OpCode.ToString() : "",
                             (InstructionInformation.BranchingOperations.Contains(instruction.OpCode) ?
-                                instruction.Value :
+                                instruction.ExtractedArgument :
                                 instruction.RawArgumentWithReplacement) + (instruction.ApplicableOffset < 0 ? "-" : "+") + Math.Abs(instruction.ApplicableOffset).ToString(CultureInfo.InvariantCulture),
                             string.IsNullOrEmpty(instruction.Comment) ? "" : "; " + instruction.Comment);
                     }
@@ -158,7 +155,7 @@ namespace Asm6502
                             instruction.Label ?? "",
                             instruction.OpCode != OpCode.Unknown ? instruction.OpCode.ToString() : "",
                             InstructionInformation.BranchingOperations.Contains(instruction.OpCode) ?
-                                instruction.Value :
+                                instruction.ExtractedArgument :
                                 instruction.RawArgumentWithReplacement,
                             string.IsNullOrEmpty(instruction.Comment) ? "" : "; " + instruction.Comment);
                     }
@@ -166,7 +163,11 @@ namespace Asm6502
                 case LineType.Comment:
                     return "* " + instruction.Comment;
 
+                case LineType.FloatingComment:
+                    return string.IsNullOrEmpty(instruction.Comment) ? "" : "                          ; " + instruction.Comment;
+
                 case LineType.Data:
+                case LineType.Directive:
                     return string.Format(
                         CultureInfo.InvariantCulture,
                         "{0,-10}{1,-6}{2,-10}{3}",
@@ -175,21 +176,12 @@ namespace Asm6502
                         instruction.Value,
                         string.IsNullOrEmpty(instruction.Comment) ? "" : "; " + instruction.Comment);
 
-                case LineType.Directive:
-                    return string.Format(
-                        CultureInfo.InvariantCulture,
-                        "{0,-10}{1,-6}{2,-10}{3}",
-                        instruction.Label ?? "",
-                        instruction.Directive,
-                        instruction.Value,
-                        string.IsNullOrEmpty(instruction.Comment) ? "" : "; " + instruction.Comment);
-
                 case LineType.Equivalence:
                     return string.Format(
                         CultureInfo.InvariantCulture,
                         "{0,-10}{1,-6}{2,-10}{3}",
                         instruction.Label ?? "",
-                        instruction.OpCode != OpCode.Unknown ? instruction.OpCode.ToString() : "",
+                        instruction.Directive,
                         instruction.Value,
                         string.IsNullOrEmpty(instruction.Comment) ? "" : "; " + instruction.Comment);
 

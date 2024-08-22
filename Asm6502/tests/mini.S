@@ -15,11 +15,14 @@ LABEL                     ; a floating label without a `:`
          CPY   #1
 
 LABEL2:                   ; a floating label with a `:`
+         LDA   #E1
+         LDA   E1
 
 LOADIT   LDA   DAT
          ADC   #128
          JMP   LABEL
          JSR   $1234
+         JSR   E4
 
          BCC   IMMHEX
          BCS   LOADIT

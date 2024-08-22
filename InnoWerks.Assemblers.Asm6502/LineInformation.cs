@@ -11,6 +11,8 @@ namespace InnoWerks.Assemblers
 
         Comment,
 
+        FloatingComment,
+
         Data,
 
         Directive,
@@ -87,13 +89,13 @@ namespace InnoWerks.Assemblers
 
         public string Value { get; set; }
 
-        public bool UsesArgumentMath { get; set; }
-
         public int ApplicableOffset { get; set; }
 
         public string Comment { get; set; }
 
         public string Line { get; set; }
+
+        public Symbol ResolvedSymbol { get; set; }
 
         public byte OpCodeByte
         {
@@ -155,6 +157,7 @@ namespace InnoWerks.Assemblers
                     break;
 
                 case LineType.Comment:
+                case LineType.FloatingComment:
                     if (string.IsNullOrEmpty(Comment) == false)
                     {
                         sb.AppendFormat(CultureInfo.InvariantCulture, "\t(comment '{0}')\n", Comment);
@@ -212,34 +215,42 @@ namespace InnoWerks.Assemblers
             return sb.ToString();
         }
 
+        private byte[] machineCode;
+
 #pragma warning disable CA1819
         public byte[] MachineCode
         {
             get
             {
-                if (LineType == LineType.Code)
+                if (machineCode == null)
                 {
-                    // we need a dummy value
-                    ushort value = string.IsNullOrEmpty(Value) == false ? (ushort)(ResolveNumber(Value) + ApplicableOffset) : (ushort)0;
-
-                    return EffectiveSize switch
+                    if (LineType == LineType.Code)
                     {
-                        1 => [OpCodeByte],
-                        2 => [OpCodeByte, (byte)(value & 0xff)],
-                        3 => [OpCodeByte, (byte)(value & 0xff), (byte)((value >> 8) & 0xff)],
-                        _ => [],// NOTREACHED
-                    };
-                }
-                else if (LineType == LineType.Data)
-                {
-                    ushort value = ResolveNumber(Value);
+                        // we need a dummy value
+                        ushort value = string.IsNullOrEmpty(Value) == false ? (ushort)(ResolveNumber(Value) + ApplicableOffset) : (ushort)0;
 
-                    return (Directive == Directive.DB) ? [(byte)(value & 0xff)] : [(byte)(value & 0xff), (byte)((value >> 8) & 0xff)];
+                        machineCode = EffectiveSize switch
+                        {
+                            1 => [OpCodeByte],
+                            2 => [OpCodeByte, (byte)(value & 0xff)],
+                            3 => [OpCodeByte, (byte)(value & 0xff), (byte)((value >> 8) & 0xff)],
+                            _ => [],// NOTREACHED
+                        };
+                    }
+                    else if (LineType == LineType.Data)
+                    {
+                        ushort value = ResolveNumber(Value);
+
+                        machineCode = (Directive == Directive.DB) ? [(byte)(value & 0xff)] : [(byte)(value & 0xff), (byte)((value >> 8) & 0xff)];
+                    }
+                    else
+                    {
+                        machineCode = [];
+                    }
+
                 }
-                else
-                {
-                    return [];
-                }
+
+                return machineCode;
             }
         }
 #pragma warning restore CA1819
