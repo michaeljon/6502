@@ -238,6 +238,13 @@ namespace InnoWerks.Assemblers
 
                 lineNumber++;
             }
+
+            programLines.Add(new LineInformation
+            {
+                LineType = LineType.Empty,
+                LineNumber = lineNumber,
+                CurrentOrg = currentOrgAddress
+            });
         }
 
         private void ResolveReferences()
@@ -264,7 +271,7 @@ namespace InnoWerks.Assemblers
                         else
                         {
                             (instruction.AddressingMode, instruction.ExtractedArgumentValue) = ParseAddress(instruction.OpCode, raw, instruction.LineNumber);
-                            instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + symbol.UnparsedValue + "}", StringComparison.Ordinal);
+                            // instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + symbol.UnparsedValue + "}", StringComparison.Ordinal);
                             instruction.Value = ExtractNumber(symbol.UnparsedValue, 0, 0);
                         }
                     }
@@ -594,7 +601,9 @@ namespace InnoWerks.Assemblers
         {
             if (string.IsNullOrEmpty(node.Label) == false)
             {
-                if (symbolTable.TryGetValue(node.Label, out var symbol) == true)
+                var workingLabel = node.Label;
+
+                if (symbolTable.TryGetValue(workingLabel, out var symbol) == true)
                 {
                     throw new SymbolRedefinedException(symbol, node.LineNumber);
                 }
@@ -618,12 +627,12 @@ namespace InnoWerks.Assemblers
                 };
 
                 symbolTable.Add(
-                    node.Label,
+                    workingLabel,
                     new Symbol
                     {
                         LineNumber = node.LineNumber,
                         SymbolType = symbolType,
-                        Label = node.Label,
+                        Label = workingLabel,
                         UnparsedValue = value <= 255 ? "$" + value.ToString("X2", CultureInfo.InvariantCulture) : "$" + value.ToString("X4", CultureInfo.InvariantCulture),
                         Value = value,
                         Size = node.EffectiveSize,

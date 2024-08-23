@@ -1,4 +1,5 @@
 * A comment
+         XC
                           ; another floating comment
          ORG   $300       ; org with a comment
 
@@ -15,7 +16,7 @@ LABEL                     ; a floating label without a `:`
          CPY   #1
 
 LABEL2:                   ; a floating label with a `:`
-         LDA   #E1
+LABEL3   LDA   #E1
          LDA   E1
 
 LOADIT   LDA   DAT

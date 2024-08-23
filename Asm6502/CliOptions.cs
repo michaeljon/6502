@@ -15,5 +15,8 @@ namespace Asm6502
 
         [Option('p', "print", Default = false, HelpText = "Print the program text.")]
         public bool PrintProgramText { get; set; }
+
+        [Option('s', "origin", Required = false, Default = (ushort)0x300, HelpText = "Staring address of program code.")]
+        public ushort Origin { get; set; }
     }
 }
