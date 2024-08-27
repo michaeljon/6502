@@ -6,6 +6,7 @@ namespace InnoWerks.Simulators
         string Nmemonic,
         Action<Cpu, ushort> Execute,
         Func<Cpu, ushort> DecodeOperand,
+        AddressingMode AddressingMode,
         long PageCrossPenalty = 0)
     {
         /// <summary>
@@ -22,6 +23,11 @@ namespace InnoWerks.Simulators
         ///
         /// </summary>
         public Action<Cpu, ushort> Execute { get; init; } = Execute;
+
+        /// <summary>
+        ///
+        /// </summary>
+        public AddressingMode AddressingMode { get; init; } = AddressingMode;
 
         /// <summary>
         ///

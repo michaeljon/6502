@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-#pragma warning disable RCS1163, IDE0060
+#pragma warning disable RCS1163, IDE0060, CA1707
 
 namespace InnoWerks.Simulators
 {
@@ -30,6 +30,7 @@ namespace InnoWerks.Simulators
         private readonly Func<ushort, byte> read;
 
         private readonly Action<ushort, byte> write;
+
 
         private readonly Action<Cpu> callback;
 
@@ -183,11 +184,10 @@ namespace InnoWerks.Simulators
             // decode the operand based on the opcode and addressing mode
             ushort src = opCodeDefinition.DecodeOperand(this);
 
-            // var save = Console.ForegroundColor;
+            var stepToExecute = $"{savePC:X4} {opCodeDefinition.Nmemonic}   {OperandDisplay,-10}";
             if (writeInstructions)
             {
-                // Console.ForegroundColor = ConsoleColor.DarkGreen;
-                Console.Write($"{savePC:X4} {opCodeDefinition.Nmemonic}   {OperandDisplay,-10}");
+                Console.Write(stepToExecute);
             }
 
             opCodeDefinition.Execute(this, src);
@@ -196,7 +196,6 @@ namespace InnoWerks.Simulators
             {
                 Console.Write($"  {Registers.GetRegisterDisplay} ");
                 Console.WriteLine($"  {Registers.InternalGetFlagsDisplay,-8}");
-                // Console.ForegroundColor = save;
             }
 
             callback?.Invoke(this);
@@ -232,7 +231,7 @@ namespace InnoWerks.Simulators
         /// c ← Carry from ALU (bit 8/16 of result)
         /// </code>
         /// </summary>
-        public void ADCCMOS(ushort addr, long cycles, long pageCrossPenalty = 0)
+        public void ADC_CMOS(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             int val = 0;
             int temp = read(addr);
@@ -306,7 +305,7 @@ namespace InnoWerks.Simulators
         /// c ← Carry from ALU (bit 8/16 of result)
         /// </code>
         /// </summary>
-        public void ADCNMOS(ushort addr, long cycles, long pageCrossPenalty = 0)
+        public void ADC_NMOS(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             int temp = read(addr);
 
@@ -882,11 +881,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CMP(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            int val = read(addr);
+            int val = Registers.A - read(addr);
 
-            Registers.Carry = Registers.A >= val;
-            val = Registers.A - val;
-
+            // Registers.Carry = Registers.A >= val;
+            Registers.Carry = ((~val >> 8) & 0x01) != 0;
             Registers.SetNZ(val);
 
             WaitCycles(cycles);
@@ -906,11 +904,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CPX(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            int val = read(addr);
+            int val = Registers.X - read(addr);
 
-            Registers.Carry = Registers.X >= val;
-            val = Registers.X - val;
-
+            // Registers.Carry = Registers.X >= val;
+            Registers.Carry = ((~val >> 8) & 0x01) != 0;
             Registers.SetNZ(val);
 
             WaitCycles(cycles);
@@ -930,11 +927,10 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CPY(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            int val = read(addr);
+            int val = Registers.Y - read(addr);
 
-            Registers.Carry = Registers.Y >= val;
-            val = Registers.Y - val;
-
+            // Registers.Carry = Registers.Y >= val;
+            Registers.Carry = ((~val >> 8) & 0x01) != 0;
             Registers.SetNZ(val);
 
             WaitCycles(cycles);
@@ -1552,7 +1548,7 @@ namespace InnoWerks.Simulators
         /// c ← Carry from ALU(bit 8/16 of result) (set if borrow not required)
         /// </code>
         /// </summary>
-        public void SBCNMOS(ushort addr, long cycles, long pageCrossPenalty = 0)
+        public void SBC_NMOS(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             int temp = read(addr);
             int temp2 = Registers.A - temp - (Registers.Carry ? 0x00 : 0x01);
@@ -1608,7 +1604,7 @@ namespace InnoWerks.Simulators
         /// c ← Carry from ALU(bit 8/16 of result) (set if borrow not required)
         /// </code>
         /// </summary>
-        public void SBCCMOS(ushort addr, long cycles, long pageCrossPenalty = 0)
+        public void SBC_CMOS(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             int val = 0;
             int temp = read(addr);
@@ -1635,19 +1631,13 @@ namespace InnoWerks.Simulators
                 if (val < 0x100)
                 {
                     Registers.Carry = false;
-                    if (val < 0x80)
-                    {
-                        Registers.Overflow = false;
-                    }
+                    Registers.Overflow &= val >= 0x80;
                     val -= 0x60;
                 }
                 else
                 {
                     Registers.Carry = true;
-                    if (val >= 0x180)
-                    {
-                        Registers.Overflow = false;
-                    }
+                    Registers.Overflow &= val < 0x180;
                 }
                 val += temp2;
             }
@@ -1981,9 +1971,54 @@ namespace InnoWerks.Simulators
         {
             illegalOpCode = true;
         }
+
+
+        public void WAI(ushort _, long cycles, long pageCrossPenalty = 0)
+        {
+            WaitCycles(cycles);
+            throw new NotImplementedException();
+        }
+
+        public void STP(ushort _, long cycles, long pageCrossPenalty = 0)
+        {
+            WaitCycles(cycles);
+            throw new NotImplementedException();
+        }
+
         #endregion
 
         #region InstructionDecoders
+        public ushort DecodeUndefined()
+        {
+            illegalOpCode = true;
+
+            OperandDisplay = "";
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Implied - In the implied addressing mode, the address containing
+        /// the operand is implicitly stated in the operation code of the instruction.
+        /// </summary>
+        public ushort DecodeImplied()
+        {
+            OperandDisplay = "";
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Implied - In the implied addressing mode, the address containing
+        /// the operand is implicitly stated in the operation code of the instruction.
+        /// </summary>
+        public ushort DecodeStack()
+        {
+            OperandDisplay = "";
+
+            return 0;
+        }
+
         /// <summary>
         /// Accum - This form of addressing is represented with a
         /// one byte instruction, implying an operation on the accumulator.
@@ -2037,46 +2072,6 @@ namespace InnoWerks.Simulators
         }
 
         /// <summary>
-        /// ZP,X (X indexing) - This form of address is used with the index
-        /// register and is referred to as "Zero Page,X".
-        /// The effective address is calculated by adding the second byte to the
-        /// contents of the index register. Since this is a form of "Zero Page"
-        /// addressing, the content of the second byte references a location
-        /// in page zero. Additionally, due to the "Zero Page" addressing nature
-        /// of this mode, no carry is added to the high order eight bits of
-        /// memory and crossing page boundaries does not occur.
-        /// </summary>
-        public ushort DecodeZeroPageIndexedX()
-        {
-            OperandDisplay = $"{{${read(Registers.ProgramCounter):X2}}},X";
-
-            byte zpAddr = read(Registers.ProgramCounter);
-            Registers.ProgramCounter++;
-
-            return (ushort)((zpAddr + Registers.X) & 0x00ff);
-        }
-
-        /// <summary>
-        /// ZP,Y (Y indexing) - This form of address is used with the index
-        /// register and is referred to as "Zero Page,Y".
-        /// The effective address is calculated by adding the second byte to the
-        /// contents of the index register. Since this is a form of "Zero Page"
-        /// addressing, the content of the second byte references a location
-        /// in page zero. Additionally, due to the "Zero Page" addressing nature
-        /// of this mode, no carry is added to the high order eight bits of
-        /// memory and crossing page boundaries does not occur.
-        /// </summary>
-        public ushort DecodeZeroPageIndexedY()
-        {
-            OperandDisplay = $"{{${read(Registers.ProgramCounter):X2}}},Y";
-
-            byte zpAddr = read(Registers.ProgramCounter);
-            Registers.ProgramCounter++;
-
-            return (ushort)((zpAddr + Registers.Y) & 0x00ff);
-        }
-
-        /// <summary>
         /// ABS,X (X indexing) - This form of addressing is used in conjunction
         /// with X and Y index register and is referred to as "Absolute,X".
         /// The effective address is formed by adding the contents
@@ -2086,7 +2081,7 @@ namespace InnoWerks.Simulators
         /// This type of indexing allows any location referencing and the index
         /// to modify fields, resulting in reducing coding and execution time.
         /// </summary>
-        public ushort DecodeAbsoluteIndexedX()
+        public ushort DecodeAbsoluteXIndexed()
         {
             OperandDisplay = $"${read((ushort)(Registers.ProgramCounter + 1)):X2}{read(Registers.ProgramCounter):X2},X";
 
@@ -2106,7 +2101,7 @@ namespace InnoWerks.Simulators
         /// This type of indexing allows any location referencing and the index
         /// to modify fields, resulting in reducing coding and execution time.
         /// </summary>
-        public ushort DecodeAbsoluteIndexedY()
+        public ushort DecodeAbsoluteYIndexed()
         {
             OperandDisplay = $"${read((ushort)(Registers.ProgramCounter + 1)):X2}{read(Registers.ProgramCounter):X2},Y";
 
@@ -2117,29 +2112,43 @@ namespace InnoWerks.Simulators
         }
 
         /// <summary>
-        /// (ABS,X) - The contents of the second and third instruction byte are
-        /// added to the X register. The sixteen-bit result is a memory address
-        /// containing the effective address (JMP (ABS,X) only).
+        /// ZP,X (X indexing) - This form of address is used with the index
+        /// register and is referred to as "Zero Page,X".
+        /// The effective address is calculated by adding the second byte to the
+        /// contents of the index register. Since this is a form of "Zero Page"
+        /// addressing, the content of the second byte references a location
+        /// in page zero. Additionally, due to the "Zero Page" addressing nature
+        /// of this mode, no carry is added to the high order eight bits of
+        /// memory and crossing page boundaries does not occur.
         /// </summary>
-        public ushort DecodeIndexedAbsolute()
+        public ushort DecodeZeroPageXIndexed()
         {
-            OperandDisplay = $"(${read((ushort)(Registers.ProgramCounter + 1)):X2}{read(Registers.ProgramCounter):X2},X)";
+            OperandDisplay = $"{{${read(Registers.ProgramCounter):X2}}},X";
 
-            ushort addrL = read(Registers.ProgramCounter++);
-            ushort addrH = read(Registers.ProgramCounter++);
+            byte zpAddr = read(Registers.ProgramCounter);
+            Registers.ProgramCounter++;
 
-            return read((ushort)((addrH << 8) + addrL + Registers.X));
+            return (ushort)((zpAddr + Registers.X) & 0x00ff);
         }
 
         /// <summary>
-        /// Implied - In the implied addressing mode, the address containing
-        /// the operand is implicitly stated in the operation code of the instruction.
+        /// ZP,Y (Y indexing) - This form of address is used with the index
+        /// register and is referred to as "Zero Page,Y".
+        /// The effective address is calculated by adding the second byte to the
+        /// contents of the index register. Since this is a form of "Zero Page"
+        /// addressing, the content of the second byte references a location
+        /// in page zero. Additionally, due to the "Zero Page" addressing nature
+        /// of this mode, no carry is added to the high order eight bits of
+        /// memory and crossing page boundaries does not occur.
         /// </summary>
-        public ushort DecodeImplied()
+        public ushort DecodeZeroPageYIndexed()
         {
-            OperandDisplay = "";
+            OperandDisplay = $"{{${read(Registers.ProgramCounter):X2}}},Y";
 
-            return 0;
+            byte zpAddr = read(Registers.ProgramCounter);
+            Registers.ProgramCounter++;
+
+            return (ushort)((zpAddr + Registers.Y) & 0x00ff);
         }
 
         /// <summary>
@@ -2163,6 +2172,32 @@ namespace InnoWerks.Simulators
         }
 
         /// <summary>
+        /// (IND) - The second byte of the instruction contains a zero page address
+        /// serving as the indirect pointer.
+        /// </summary>
+        public ushort DecodeZeroPageIndirect()
+        {
+            OperandDisplay = "";
+
+            return 0;
+        }
+
+        /// <summary>
+        /// (ABS,X) - The contents of the second and third instruction byte are
+        /// added to the X register. The sixteen-bit result is a memory address
+        /// containing the effective address (JMP (ABS,X) only).
+        /// </summary>
+        public ushort DecodeAbsoluteIndexedIndirect()
+        {
+            OperandDisplay = $"(${read((ushort)(Registers.ProgramCounter + 1)):X2}{read(Registers.ProgramCounter):X2},X)";
+
+            ushort addrL = read(Registers.ProgramCounter++);
+            ushort addrH = read(Registers.ProgramCounter++);
+
+            return read((ushort)((addrH << 8) + addrL + Registers.X));
+        }
+
+        /// <summary>
         /// (IND,X) - In indexed indirect addressing (referred to ad (Indirect,X)),
         /// the second byte of the instruction is added to the contents of the X
         /// register, discarding the carry. The result of this addition points to a
@@ -2172,7 +2207,7 @@ namespace InnoWerks.Simulators
         /// specifying the high and low order bytes of the effective address
         /// must be in page zero.
         /// </summary>
-        public ushort DecodeIndexedIndirect()
+        public ushort DecodeXIndexedIndirect()
         {
             OperandDisplay = $"({{${read(Registers.ProgramCounter):X2}}},X)";
 
@@ -2191,7 +2226,7 @@ namespace InnoWerks.Simulators
         /// zero memory loation, the result being the high order eight bits
         /// of the effective address.
         /// </summary>
-        public ushort DecodeIndirectIndexed()
+        public ushort DecodeIndirectYIndexed()
         {
             OperandDisplay = $"({{${read(Registers.ProgramCounter):X2}}}),Y";
 
@@ -2228,26 +2263,6 @@ namespace InnoWerks.Simulators
 #endif
 
             return (ushort)((0x100 * effH) + effL);
-        }
-
-        /// <summary>
-        /// (IND) - The second byte of the instruction contains a zero page address
-        /// serving as the indirect pointer.
-        /// </summary>
-        public ushort DecodeIndirect()
-        {
-            OperandDisplay = "";
-
-            return 0;
-        }
-
-        public ushort DecodeUndefined()
-        {
-            illegalOpCode = true;
-
-            OperandDisplay = "";
-
-            return 0;
         }
         #endregion
     }

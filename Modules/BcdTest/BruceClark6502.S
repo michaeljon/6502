@@ -1,3 +1,6 @@
+* Modified and adapted from
+*  http://www.6502.org/tutorials/decimal_mode.html#B
+*
 * Verify decimal mode behavior
 * Written by Bruce Clark.  This code is public domain.
 *
@@ -27,34 +30,25 @@
 * few seconds more on a 65C02 than a 6502 or 65816)
 *
 * See Appendix B for changes made here
-
-                          ; operands - register Y = carry in
-N1       EQU   $00
-N2       EQU   $01
-                          ; binary result
-HA       EQU   $02
-HNVZC    EQU   $03
-                          ;04
-                          ; decimal result
-DA       EQU   $04
-DNVZC    EQU   $05
-                          ; predicted results
 AR       EQU   $06
 NF       EQU   $07
-                          ;08
 VF       EQU   $08
-ZF       EQU   $09
-CF       EQU   $0A
-ERROR    EQU   $0B
-                          ;0C
-                          ; workspace
-N1L      EQU   $0C
-N1H      EQU   $0D
-N2L      EQU   $0E
-N2H      EQU   $0F
-
+CF       EQU   $09
+ZF       EQU   $0a
+DA       EQU   $0b
+DNVZC    EQU   $0c
+HA       EQU   $0d
+HNVZC    EQU   $0e
+N1       EQU   $0f
+N1H      EQU   $10
+N1L      EQU   $11
+N2       EQU   $12
+N2H      EQU   $13
+N2L      EQU   $15
+ERROR    EQU   $30
+                          ;
          ORG   $8000
-                          ; The test
+                          ;
 TEST     LDY   #1         ; initialize Y (used to loop through carry flag values)
          STY   ERROR      ; store 1 in ERROR until the test passes
          LDA   #0         ; initialize N1 and N2
@@ -62,25 +56,17 @@ TEST     LDY   #1         ; initialize Y (used to loop through carry flag values
          STA   N2
 LOOP1    LDA   N2         ; N2L = N2 & $0F
          AND   #$0F       ; [1] see text
-         CMP   #$0A
-         BCS   NEXT2
          STA   N2L
          LDA   N2         ; N2H = N2 & $F0
          AND   #$F0       ; [2] see text
-         CMP   #$A0
-         BCS   NEXT2
          STA   N2H
          ORA   #$0F       ; N2H+1 = (N2 & $F0) + $0F
          STA   N2H+1
 LOOP2    LDA   N1         ; N1L = N1 & $0F
          AND   #$0F       ; [3] see text
-         CMP   #$0A
-         BCS   NEXT1
          STA   N1L
          LDA   N1         ; N1H = N1 & $F0
          AND   #$F0       ; [4] see text
-         CMP   #$A0
-         BCS   NEXT1
          STA   N1H
          JSR   ADD
          JSR   A6502
@@ -90,17 +76,15 @@ LOOP2    LDA   N1         ; N1L = N1 & $0F
          JSR   S6502
          JSR   COMPARE
          BNE   DONE
-NEXT1    INC   N1         ; [5] see text
+         INC   N1         ; [5] see text
          BNE   LOOP2      ; loop through all 256 values of N1
-NEXT2    INC   N2         ; [6] see text
+         INC   N2         ; [6] see text
          BNE   LOOP1      ; loop through all 256 values of N2
          DEY
          BPL   LOOP1      ; loop through both values of the carry flag
          LDA   #0         ; test passed, so store 0 in ERROR
          STA   ERROR
 DONE     RTS
-         DB    0          ; short-term exit strategry
-
                           ; Calculate the actual decimal mode accumulator and flags, the accumulator
                           ; and flag results when N1 is added to N2 using binary arithmetic, the
                           ; predicted accumulator result, the predicted carry flag, and the predicted
@@ -119,7 +103,6 @@ ADD      SED              ; decimal mode
          LDA   N1
          ADC   N2
          STA   HA         ; accumulator result of N1+N2 using binary arithmetic
-
          PHP
          PLA
          STA   HNVZC      ; flags result of N1+N2 using binary arithmetic
@@ -155,7 +138,6 @@ A3       STA   AR         ; predicted accumulator result
                           ;
          STA   VF         ; predicted V flags
          RTS
-
                           ; Calculate the actual decimal mode accumulator and flags, and the
                           ; accumulator and flag results when N2 is subtracted from N1 using binary
                           ; arithmetic
@@ -173,14 +155,11 @@ SUB      SED              ; decimal mode
          LDA   N1
          SBC   N2
          STA   HA         ; accumulator result of N1-N2 using binary arithmetic
-
          PHP
          PLA
          STA   HNVZC      ; flags result of N1-N2 using binary arithmetic
          RTS
-
                           ; Calculate the predicted SBC accumulator result for the 6502 and 65816
-
                           ;
 SUB1     CPY   #1         ; set carry if Y = 1, clear carry if Y = 0
          LDA   N1L
@@ -201,9 +180,7 @@ S11      ORA   N1H
          SBC   #$5F       ; subtract $60 (carry is clear)
 S12      STA   AR
          RTS
-
                           ; Calculate the predicted SBC accumulator result for the 6502 and 65C02
-
                           ;
 SUB2     CPY   #1         ; set carry if Y = 1, clear carry if Y = 0
          LDA   N1L
@@ -226,7 +203,6 @@ S22      CPX   #0
          SBC   #6
 S23      STA   AR         ; predicted accumulator result
          RTS
-
                           ; Compare accumulator actual results to predicted results
                           ;
                           ; Return:
@@ -252,10 +228,8 @@ COMPARE  LDA   DA
          EOR   CF
          AND   #1         ; mask off C flag
 C1       RTS
-
                           ; These routines store the predicted values for ADC and SBC for the 6502,
                           ; 65C02, and 65816 in AR, CF, NF, VF, and ZF
-
 A6502    LDA   VF
                           ;
                           ; since all 8 bits of the P register were stored in VF, bit 7 of VF contains
@@ -265,7 +239,6 @@ A6502    LDA   VF
          LDA   HNVZC
          STA   ZF
          RTS
-
 S6502    JSR   SUB1
          LDA   HNVZC
          STA   NF
@@ -273,14 +246,12 @@ S6502    JSR   SUB1
          STA   ZF
          STA   CF
          RTS
-
 A65C02   LDA   AR
          PHP
          PLA
          STA   NF
          STA   ZF
          RTS
-
 S65C02   JSR   SUB2
          LDA   AR
          PHP
@@ -291,14 +262,12 @@ S65C02   JSR   SUB2
          STA   VF
          STA   CF
          RTS
-
 A65816   LDA   AR
          PHP
          PLA
          STA   NF
          STA   ZF
          RTS
-
 S65816   JSR   SUB1
          LDA   AR
          PHP
