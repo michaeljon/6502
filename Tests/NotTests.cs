@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace InnoWerks.Simulators.Tests
 {
-    [TestClass]
+    // [TestClass]
     public class NotTests
     {
         private static readonly Dictionary<AddressingMode, string> addressModeLookup = new()

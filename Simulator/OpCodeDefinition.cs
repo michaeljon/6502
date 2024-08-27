@@ -4,7 +4,7 @@ namespace InnoWerks.Simulators
 {
     public record OpCodeDefinition(
         string Nmemonic,
-        Action<Cpu, ushort> Execute,
+        Action<Cpu, ushort, byte> Execute,
         Func<Cpu, ushort> DecodeOperand,
         AddressingMode AddressingMode,
         long PageCrossPenalty = 0)
@@ -22,7 +22,7 @@ namespace InnoWerks.Simulators
         /// <summary>
         ///
         /// </summary>
-        public Action<Cpu, ushort> Execute { get; init; } = Execute;
+        public Action<Cpu, ushort, byte> Execute { get; init; } = Execute;
 
         /// <summary>
         ///

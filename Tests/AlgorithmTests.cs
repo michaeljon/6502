@@ -29,10 +29,10 @@ namespace InnoWerks.Simulators.Tests
                 (addr, b) => memory[addr] = b,
                 (cpu) =>
                 {
-                    Console.WriteLine($"value  {memory[0x6059]:X2} ");
-                    Console.WriteLine($"ubnd   {memory[0x605A]:X2} ");
-                    Console.WriteLine($"lbnd   {memory[0x605B]:X2} ");
-                    Console.WriteLine($"aryadr {memory[0xef]:X2}{memory[0xee]:X2} ");
+                    // Console.WriteLine($"value  {memory[0x6059]:X2} ");
+                    // Console.WriteLine($"ubnd   {memory[0x605A]:X2} ");
+                    // Console.WriteLine($"lbnd   {memory[0x605B]:X2} ");
+                    // Console.WriteLine($"aryadr {memory[0xef]:X2}{memory[0xee]:X2} ");
                 });
 
             cpu.Reset();
