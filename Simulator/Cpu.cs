@@ -207,6 +207,12 @@ namespace InnoWerks.Simulators
             Registers.StackPointer--;
         }
 
+        private void StackPush(int i)
+        {
+            write((ushort)(StackBase + Registers.StackPointer), RegisterMath.TruncateToByte(i));
+            Registers.StackPointer--;
+        }
+
         private byte StackPop()
         {
             Registers.StackPointer++;
@@ -233,60 +239,41 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ADC_CMOS(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            int val = 0;
-            int temp = read(addr);
-            Registers.Overflow = ((Registers.A ^ temp) & 0x80) == 0;
+            int w = 0;
+            int value = read(addr);
+
+            Registers.Overflow = ((Registers.A ^ value) & 0x80) == 0;
 
             if (Registers.Decimal == true)
             {
                 cycles++;
 
-                val = (Registers.A & 0x0f) + (temp & 0x0f) + (Registers.Carry ? 0x01 : 0x00);
-                if (val >= 0x0a)
+                w = (Registers.A & 0x0f) + (value & 0x0f) + (Registers.Carry ? 0x01 : 0x00);
+                if (w >= 0x0a)
                 {
-                    val = 0x10 | ((val + 0x06) & 0x0f);
+                    w = 0x10 | ((w + 0x06) & 0x0f);
                 }
-                val += (Registers.A & 0xf0) + (temp & 0xf0);
-                if (val >= 0xa0)
+                w += (Registers.A & 0xf0) + (value & 0xf0);
+                if (w >= 0xa0)
                 {
                     Registers.Carry = true;
-                    if (val >= 0x180)
-                    {
-                        Registers.Overflow = false;
-                    }
-                    val += 0x60;
+                    Registers.Overflow &= w < 0x180;
+                    w += 0x60;
                 }
                 else
                 {
                     Registers.Carry = false;
-                    if (val < 0x80)
-                    {
-                        Registers.Overflow = false;
-                    }
+                    Registers.Overflow &= w >= 0x80;
                 }
             }
             else
             {
-                val = Registers.A + temp + (Registers.Carry ? 0x01 : 0x00);
-                if (val >= 0x100)
-                {
-                    Registers.Carry = true;
-                    if (val >= 0x180)
-                    {
-                        Registers.Overflow = false;
-                    }
-                }
-                else
-                {
-                    Registers.Carry = false;
-                    if (val < 0x80)
-                    {
-                        Registers.Overflow = false;
-                    }
-                }
+                w = Registers.A + value + (Registers.Carry ? 0x01 : 0x00);
+                Registers.Overflow = ((Registers.A ^ w) & (value ^ w) & 0x80) != 0;
+                Registers.Carry = w >= 0x100;
             }
 
-            Registers.A = RegisterMath.TruncateToByte(val);
+            Registers.A = RegisterMath.TruncateToByte(w);
             Registers.SetNZ(Registers.A);
 
             WaitCycles(cycles);
@@ -366,10 +353,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void AND(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            var value = read(addr);
-            var intermediate = Registers.A & value;
-            Registers.A = RegisterMath.TruncateToByte(intermediate);
+            var value = Registers.A & read(addr);
 
+            Registers.A = RegisterMath.TruncateToByte(value);
             Registers.SetNZ(Registers.A);
 
             WaitCycles(cycles);
@@ -389,21 +375,21 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ASL(ushort addr, bool accumulator, long cycles, long pageCrossPenalty = 0)
         {
-            int value = accumulator ? Registers.A : read(addr);
-
-            Registers.Carry = ((byte)(value & 0x80)) == 0x80;
-
-            value = (byte)(0xfe & (value << 1));
-
-            Registers.SetNZ(value);
-
             if (accumulator == true)
             {
-                Registers.A = RegisterMath.TruncateToByte(value);
+                Registers.Carry = ((Registers.A >> 7) & 0x01) != 0;
+                Registers.A = RegisterMath.TruncateToByte(0xfe & (Registers.A << 1));
+                Registers.SetNZ(Registers.A);
             }
             else
             {
-                write(addr, RegisterMath.TruncateToByte(value));
+                int value = read(addr);
+
+                Registers.Carry = ((byte)(value & 0x80)) != 0x00;
+                value = 0xfe & (value << 1);
+                Registers.SetNZ(value);
+
+                // todo: deal with http://forum.6502.org/viewtopic.php?f=4&t=1617&view=previous
             }
 
             WaitCycles(cycles);
@@ -600,8 +586,8 @@ namespace InnoWerks.Simulators
             {
                 byte val = read(addr);
                 Registers.Zero = RegisterMath.IsZero(Registers.A & val);
-                Registers.Negative = ((byte)(val & 0x80)) == 0x80;
-                Registers.Overflow = ((byte)(val & 0x40)) == 0x40;
+                Registers.Negative = ((byte)(val & 0x80)) != 0x00;
+                Registers.Overflow = ((byte)(val & 0x40)) != 0x00;
             }
 
             WaitCycles(cycles);
@@ -702,29 +688,6 @@ namespace InnoWerks.Simulators
             }
 
             Registers.ProgramCounter = addr;
-
-            WaitCycles(cycles);
-        }
-
-        /// <summary>
-        /// <para>BRL - Branch Long</para>
-        /// <code>
-        /// Flags affected: --------
-        /// Branch not taken:
-        /// —
-        ///
-        /// Branch taken:
-        /// PC ← PC + sign-extend(near)
-        /// </code>
-        /// </summary>
-        public void BRL(ushort addr, long cycles, long pageCrossPenalty = 0)
-        {
-            if ((addr & 0xff00) != (Registers.ProgramCounter & 0xff00))
-            {
-                cycles += pageCrossPenalty;
-            }
-
-            Registers.ProgramCounter += addr;
 
             WaitCycles(cycles);
         }
@@ -883,7 +846,6 @@ namespace InnoWerks.Simulators
         {
             int val = Registers.A - read(addr);
 
-            // Registers.Carry = Registers.A >= val;
             Registers.Carry = ((~val >> 8) & 0x01) != 0;
             Registers.SetNZ(val);
 
@@ -906,7 +868,6 @@ namespace InnoWerks.Simulators
         {
             int val = Registers.X - read(addr);
 
-            // Registers.Carry = Registers.X >= val;
             Registers.Carry = ((~val >> 8) & 0x01) != 0;
             Registers.SetNZ(val);
 
@@ -929,7 +890,6 @@ namespace InnoWerks.Simulators
         {
             int val = Registers.Y - read(addr);
 
-            // Registers.Carry = Registers.Y >= val;
             Registers.Carry = ((~val >> 8) & 0x01) != 0;
             Registers.SetNZ(val);
 
@@ -950,8 +910,30 @@ namespace InnoWerks.Simulators
         public void DEC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             byte value = RegisterMath.Dec(read(addr));
-            Registers.SetNZ(value);
+
             write(addr, value);
+            write(addr, value);
+
+            Registers.SetNZ(value);
+
+            WaitCycles(cycles);
+        }
+
+        /// <summary>
+        /// <para>DEA - Decrement Accumulator</para>
+        /// <code>
+        /// Flags affected: n-----z-
+        ///
+        /// A ← A - 1
+        ///
+        /// n ← Most significant bit of result
+        /// z ← Set if the result is zero
+        /// </code>
+        /// </summary>
+        public void DEA(ushort _, long cycles, long pageCrossPenalty = 0)
+        {
+            Registers.A = RegisterMath.Dec(Registers.A);
+            Registers.SetNZ(Registers.A);
 
             WaitCycles(cycles);
         }
@@ -1007,10 +989,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void EOR(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            var value = read(addr);
-            var intermediate = Registers.A ^ value;
-            Registers.A = RegisterMath.TruncateToByte(intermediate);
+            var value = Registers.A ^ read(addr);
 
+            Registers.A = RegisterMath.TruncateToByte(value);
             Registers.SetNZ(Registers.A);
 
             WaitCycles(cycles);
@@ -1030,8 +1011,30 @@ namespace InnoWerks.Simulators
         public void INC(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
             byte val = RegisterMath.Inc(read(addr));
-            Registers.SetNZ(val);
+
             write(addr, val);
+            write(addr, val);
+
+            Registers.SetNZ(val);
+
+            WaitCycles(cycles);
+        }
+
+        /// <summary>
+        /// <para>INX - Increment Accumulator</para>
+        /// <code>
+        /// Flags affected: n-----z-
+        ///
+        /// A ← A + 1
+        ///
+        /// n ← Most significant bit of result
+        /// z ← Set if the result is zero
+        /// </code>
+        /// </summary>
+        public void INA(ushort _, long cycles, long pageCrossPenalty = 0)
+        {
+            Registers.A = RegisterMath.Inc(Registers.A);
+            Registers.SetNZ(Registers.A);
 
             WaitCycles(cycles);
         }
@@ -1200,21 +1203,22 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void LSR(ushort addr, bool accumulator, long cycles, long pageCrossPenalty = 0)
         {
-            if (accumulator == false)
+            if (accumulator == true)
             {
-                int val = read(addr);
-                Registers.Carry = (val & 0x01) != 0;
-                Registers.Negative = false;
-                val >>= 1;
-                Registers.SetNZ(val);
-                write(addr, RegisterMath.TruncateToByte(val));
+                Registers.Carry = (Registers.A & 0x01) != 0;
+                Registers.A = RegisterMath.TruncateToByte((Registers.A >> 1) & 0x7f);
+                Registers.SetNZ(Registers.A);
             }
             else
             {
-                Registers.Carry = (Registers.A & 0x01) != 0;
-                Registers.Negative = false;
-                Registers.A >>= 1;
-                Registers.SetNZ(Registers.A);
+                int val = read(addr);
+                Registers.Carry = (val & 0x01) != 0;
+
+                val = (val >> 1) & 0x7f;
+                Registers.SetNZ(val);
+
+                write(addr, RegisterMath.TruncateToByte(val));
+                write(addr, RegisterMath.TruncateToByte(val));
             }
 
             WaitCycles(cycles);
@@ -1244,10 +1248,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ORA(ushort addr, long cycles, long pageCrossPenalty = 0)
         {
-            var value = read(addr);
-            var intermediate = Registers.A | value;
-            Registers.A = RegisterMath.TruncateToByte(intermediate);
+            var value = Registers.A | read(addr);
 
+            Registers.A = RegisterMath.TruncateToByte(value);
             Registers.SetNZ(Registers.A);
 
             WaitCycles(cycles);
@@ -1282,7 +1285,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void PHP(ushort _, long cycles, long pageCrossPenalty = 0)
         {
-            StackPush(Registers.ProcessorStatus);
+            StackPush(Registers.ProcessorStatus | 0x10);
 
             WaitCycles(cycles);
         }
@@ -1431,22 +1434,22 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ROL(ushort addr, bool accumulator, long cycles, long pageCrossPenalty = 0)
         {
-            // ROL
-            if (accumulator == false)
+            if (accumulator == true)
             {
-                int val = read(addr) << 1 | (Registers.Carry ? 0x01 : 0x00);
-                Registers.Carry = val > 0xff;
-
-                Registers.SetNZ(val);
-                write(addr, RegisterMath.TruncateToByte(val));
+                var adjustment = Registers.Carry ? 1 : 0;
+                Registers.Carry = (Registers.A >> 7) != 0;
+                Registers.A = RegisterMath.TruncateToByte((Registers.A << 1) | adjustment);
+                Registers.SetNZ(Registers.A);
             }
             else
             {
-                int val = Registers.A << 1 | (Registers.Carry ? 0x01 : 0x00);
-                Registers.Carry = val > 0xff;
-
-                Registers.A = RegisterMath.TruncateToByte(val);
-                Registers.SetNZ(val);
+                var value = read(addr);
+                var adjustment = Registers.Carry ? 1 : 0;
+                Registers.Carry = (value >> 7) != 0;
+                value = RegisterMath.TruncateToByte((value << 1) | adjustment);
+                Registers.SetNZ(value);
+                write(addr, RegisterMath.TruncateToByte(value));
+                write(addr, RegisterMath.TruncateToByte(value));
             }
 
             WaitCycles(cycles);
@@ -1466,23 +1469,22 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ROR(ushort addr, bool accumulator, long cycles, long pageCrossPenalty = 0)
         {
-            // ROR
-            if (accumulator == false)
+            if (accumulator == true)
             {
-                int temp = read(addr);
-                int val = (temp >> 1) | (Registers.Carry ? 0x80 : 0x00);
-                Registers.Carry = (temp & 0x01) != 0;
-
-                Registers.SetNZ(val);
-                write(addr, RegisterMath.TruncateToByte(val));
+                var adjustment = (Registers.Carry ? 1 : 0) << 7;
+                Registers.Carry = (Registers.A & 1) != 0;
+                Registers.A = RegisterMath.TruncateToByte((Registers.A >> 1) | adjustment);
+                Registers.SetNZ(Registers.A);
             }
-            // ROA
             else
             {
-                int val = (Registers.A >> 1) | (Registers.Carry ? 0x80 : 0x00);
-                Registers.Carry = (Registers.A & 0x01) != 0;
-                Registers.A = RegisterMath.TruncateToByte(val);
-                Registers.SetNZ(val);
+                var value = read(addr);
+                var adjustment = (Registers.Carry ? 1 : 0) << 7;
+                Registers.Carry = (value & 1) != 0;
+                value = RegisterMath.TruncateToByte((value >> 1) | adjustment);
+                Registers.SetNZ(value);
+                write(addr, RegisterMath.TruncateToByte(value));
+                write(addr, RegisterMath.TruncateToByte(value));
             }
 
             WaitCycles(cycles);

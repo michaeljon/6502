@@ -41,22 +41,7 @@ namespace InnoWerks.Simulators.Tests
         }
         private static void GenerateOpTable(Dictionary<byte, OpCodeDefinition> opCodeTable)
         {
-            Console.Write("|     |");
-            for (var col = 0; col <= 0x0f; col++)
-            {
-                Console.Write($"    {col:x1}    ");
-                Console.Write("|");
-            }
-            Console.WriteLine();
-
-            Console.Write($"|-----|");
-            for (var col = 0; col <= 0x0f; col++)
-            {
-                Console.Write($"---------");
-                Console.Write("|");
-            }
-
-            Console.WriteLine();
+            GenerateHeaderFooter();
 
             for (var row = 0; row <= 0x0f; row++)
             {
@@ -83,16 +68,39 @@ namespace InnoWerks.Simulators.Tests
                 }
 
                 Console.WriteLine();
-
-                Console.Write($"|-----|");
-                for (var col = 0; col <= 0x0f; col++)
-                {
-                    Console.Write($"---------");
-                    Console.Write("|");
-                }
-
-                Console.WriteLine();
+                GenerateSeparator();
             }
+
+            GenerateHeaderFooter(true);
+        }
+
+        private static void GenerateHeaderFooter(bool last = false)
+        {
+            if (last == false)
+            {
+                GenerateSeparator();
+            }
+
+            Console.Write("|     |");
+            for (var col = 0; col <= 0x0f; col++)
+            {
+                Console.Write($"    {col:x1}    ");
+                Console.Write("|");
+            }
+            Console.WriteLine();
+
+            GenerateSeparator();
+        }
+
+        private static void GenerateSeparator()
+        {
+            Console.Write($"|-----|");
+            for (var col = 0; col <= 0x0f; col++)
+            {
+                Console.Write($"---------");
+                Console.Write("|");
+            }
+            Console.WriteLine();
         }
     }
 }
