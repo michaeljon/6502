@@ -1,6 +1,9 @@
 
+using System.Diagnostics;
+
 namespace InnoWerks.Simulators
 {
+    [DebuggerDisplay("{InternalGetFlagsDisplay}")]
     public class Registers
     {
         public void Reset()
@@ -25,6 +28,7 @@ namespace InnoWerks.Simulators
         /// many operations are only available for the accumulator, not the
         /// index registers.
         /// </summary>
+        [DebuggerDisplay("{A:X2}")]
         public byte A { get; set; }
 
         /// <summary>
@@ -32,6 +36,7 @@ namespace InnoWerks.Simulators
         /// a special addressing mode, indexed indirect, which lets you to
         /// have a vector table on the zero page.
         /// </summary>
+        [DebuggerDisplay("{Y:X2}")]
         public byte X { get; set; }
 
         /// <summary>
@@ -40,6 +45,7 @@ namespace InnoWerks.Simulators
         /// enables access to any memory place without having to use
         /// self-modifying code.
         /// </summary>
+        [DebuggerDisplay("{Y:X2}")]
         public byte Y { get; set; }
 
         /// <summary>
@@ -52,6 +58,7 @@ namespace InnoWerks.Simulators
         ///  to or from the index register X (see below) with the TSX and TXS
         ///  instructions.</para>
         /// </summary>
+        [DebuggerDisplay("{StackPointer:X2}")]
         public byte StackPointer { get; set; }
 
         /// <summary>
@@ -63,6 +70,7 @@ namespace InnoWerks.Simulators
         /// This can be done either by jumping to a subroutine or by causing
         /// an interrupt.
         /// </summary>
+        [DebuggerDisplay("{ProgramCounter:X4}")]
         public ushort ProgramCounter { get; set; }
 
         /// <summary>

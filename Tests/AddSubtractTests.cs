@@ -1,3 +1,5 @@
+using System;
+using InnoWerks.Assemblers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #pragma warning disable IDE1006
@@ -10,27 +12,23 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void AdcFullBinaryModeLoopWithoutCarry()
         {
-            // D8      CLD                  ; Binary mode
-            // 18      CLC                  ; Note: carry is clear!
-            // A9 xx   LDA   #$xx           ; a
-            // 69 xx   ADC   #$xx           ; b
-            // 00      DB    0
-
-            byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xD8;
-            memory[0x01] = 0x18;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x00;    // a
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x00;    // b
-            memory[0x06] = 0x00;
-
             for (short a = 0x00; a < 256; a++)
             {
                 for (short b = 0x00; b < 256; b++)
                 {
-                    memory[0x03] = (byte)(a & 0xff);
-                    memory[0x05] = (byte)(b & 0xff);
+                    byte[] memory = new byte[1024 * 64];
+                    var assembler = new Assembler(
+                        [
+                            $"   CLD            ; binary mode",
+                            $"   CLC            ; clear carry ",
+                            $"   LDA #${a:x2}   ; a",
+                            $"   ADC #${b:x2}   ; b",
+                            $"   BRK"
+                        ],
+                        0x0000
+                    );
+                    assembler.Assemble();
+                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
                     var cpu = RunTinyTest(memory);
 
@@ -46,23 +44,22 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void Mini()
         {
-            // D8      CLD                  ; Binary mode
-            // 18      CLC                  ; Note: carry is clear!
-            // A9 xx   LDA   #$xx           ; a
-            // 69 xx   ADC   #$xx           ; b
-            // 00      DB    0
-
             const byte a = 0x01;
             const byte b = 0xff;
 
             byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xD8;    // CLD
-            memory[0x01] = 0x18;    // CLC
-            memory[0x02] = 0xA9;    // LDA a
-            memory[0x03] = a;
-            memory[0x04] = 0x69;    // ADC b
-            memory[0x05] = b;
-            memory[0x06] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   CLD            ; binary mode",
+                    $"   CLC            ; clear carry ",
+                    $"   LDA #${a:x2}   ; a",
+                    $"   ADC #${b:x2}   ; b",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory);
 
@@ -76,20 +73,20 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void Mini2()
         {
-            int addr = 0;
             byte[] memory = new byte[1024 * 64];
-
-            memory[addr++] = 0xD8;
-            memory[addr++] = 0xA0;  // force carry flag
-            memory[addr++] = 0x01;
-            memory[addr++] = 0xC0;
-            memory[addr++] = 0x01;
-
-            memory[addr++] = 0xA9;  // add 128 + 128
-            memory[addr++] = 0x80;
-            memory[addr++] = 0x69;
-            memory[addr++] = 0x80;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   CLD            ; binary mode",
+                    $"   LDY #$01       ; force carry flag ",
+                    $"   CPY #$01       ; ",
+                    $"   LDA #$80       ; 128 ",
+                    $"   ADC #$80       ; + 128",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory);
 
@@ -100,32 +97,29 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void SbcFullBinaryModeLoopWithoutCarry()
         {
-            // D8      CLD                  ; Binary mode
-            // 18      CLC                  ; Note: carry is clear!
-            // A9 xx   LDA   #$xx           ; a
-            // E9 xx   SBC   #$xx           ; b
-            // 00      DB    0
-
-            byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xD8;
-            memory[0x01] = 0x18;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x00;    // a
-            memory[0x04] = 0xE9;
-            memory[0x05] = 0x00;    // b
-            memory[0x06] = 0x00;
-
             for (var a = 0x00; a < 256; a++)
             {
                 for (var b = 0x00; b < 256; b++)
                 {
-                    memory[0x03] = (byte)a;
-                    memory[0x05] = (byte)b;
+                    byte[] memory = new byte[1024 * 64];
+                    var assembler = new Assembler(
+                        [
+                            $"   CLD            ; binary mode",
+                            $"   CLC            ; clear carry ",
+                            $"   LDA #${a:x2}   ; a",
+                            $"   SBC #${b:x2}   ; b",
+                            $"   BRK"
+                        ],
+                        0x0000
+                    );
+                    assembler.Assemble();
+                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
                     var cpu = RunTinyTest(memory);
 
-                    int expected = 0x00ff + a - b + 0;
+                    int expected = a + ~b;
                     bool carry = expected >= 0x100;
+                    expected &= 0xff;
 
                     Assert.AreEqual(carry, cpu.Registers.Carry, $"{a} - {b} (Carry)");
                     Assert.AreEqual((byte)expected, cpu.Registers.A, $"{a} - {b} (sum)");
@@ -136,21 +130,6 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void AdcPartialDecimalModeLoopWithoutCarry()
         {
-            // F8      SED                  ; Decimal mode
-            // 18      CLC                  ; Note: carry is clear!
-            // A9 xx   LDA   #$xx           ; a
-            // 69 xx   ADC   #$xx           ; b
-            // 00      DB    0
-
-            byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x18;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x00;    // a
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x00;    // b
-            memory[0x06] = 0x00;
-
             for (var a = 0; a <= 99; a++)
             {
                 for (var b = 0; b <= 99; b++)
@@ -158,8 +137,19 @@ namespace InnoWerks.Simulators.Tests
                     var decimalA = (byte)((a / 10) << 4) | (a % 10);
                     var decimalB = (byte)((b / 10) << 4) | (b % 10);
 
-                    memory[0x03] = (byte)decimalA;
-                    memory[0x05] = (byte)decimalB;
+                    byte[] memory = new byte[1024 * 64];
+                    var assembler = new Assembler(
+                        [
+                            $"   SED            ; decimal mode",
+                            $"   CLC            ; clear carry ",
+                            $"   LDA #${decimalA:x2}   ; a",
+                            $"   ADC #${decimalB:x2}   ; b",
+                            $"   BRK"
+                        ],
+                        0x0000
+                    );
+                    assembler.Assemble();
+                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
                     var cpu = RunTinyTest(memory);
 
@@ -178,21 +168,6 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void SbcPartialDecimalModeLoopWithoutCarry()
         {
-            // F8      SED                  ; Decimal mode
-            // 18      CLC                  ; Note: carry is clear!
-            // A9 xx   LDA   #$xx           ; a
-            // e9 xx   SBC   #$xx           ; b
-            // 00      DB    0
-
-            byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x18;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x00;    // a
-            memory[0x04] = 0xe9;
-            memory[0x05] = 0x00;    // b
-            memory[0x06] = 0x00;
-
             for (var a = 1; a <= 99; a++)
             {
                 for (var b = 0; b <= 99; b++)
@@ -200,8 +175,19 @@ namespace InnoWerks.Simulators.Tests
                     var decimalA = (byte)(((a / 10) << 4) | (a % 10));
                     var decimalB = (byte)(((b / 10) << 4) | (b % 10));
 
-                    memory[0x03] = decimalA;
-                    memory[0x05] = decimalB;
+                    byte[] memory = new byte[1024 * 64];
+                    var assembler = new Assembler(
+                        [
+                            $"   SED            ; decimal mode",
+                            $"   CLC            ; clear carry ",
+                            $"   LDA #${decimalA:x2}   ; a",
+                            $"   SBC #${decimalB:x2}   ; b",
+                            $"   BRK"
+                        ],
+                        0x0000
+                    );
+                    assembler.Assemble();
+                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
                     var cpu = RunTinyTest(memory);
 
@@ -256,27 +242,23 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void AdcFullBinaryModeLoopWithCarry()
         {
-            // D8      CLD                  ; Binary mode
-            // 38      SEC                  ; Note: carry is set
-            // A9 xx   LDA   #$xx           ; a
-            // 69 xx   ADC   #$xx           ; b
-            // 00      DB    0
-
-            byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xD8;
-            memory[0x01] = 0x38;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x00;    // a
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x00;    // b
-            memory[0x06] = 0x00;
-
             for (var a = 0x00; a < 256; a++)
             {
                 for (var b = 0x00; b < 256; b++)
                 {
-                    memory[0x03] = (byte)a;
-                    memory[0x05] = (byte)b;
+                    byte[] memory = new byte[1024 * 64];
+                    var assembler = new Assembler(
+                        [
+                            $"   CLD            ; binary mode",
+                            $"   SEC            ; set carry ",
+                            $"   LDA #${a:x2}   ; a",
+                            $"   ADC #${b:x2}   ; b",
+                            $"   BRK"
+                        ],
+                        0x0000
+                    );
+                    assembler.Assemble();
+                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
                     var cpu = RunTinyTest(memory);
 
@@ -292,27 +274,23 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void SbcFullBinaryModeLoopWithCarry()
         {
-            // D8      CLD                  ; Binary mode
-            // 38      SEC                  ; Note: carry is set
-            // A9 xx   LDA   #$xx           ; a
-            // E9 xx   SBC   #$xx           ; b
-            // 00      DB    0
-
-            byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xD8;
-            memory[0x01] = 0x38;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x00;    // a
-            memory[0x04] = 0xE9;
-            memory[0x05] = 0x00;    // b
-            memory[0x06] = 0x00;
-
             for (var a = 0x00; a < 256; a++)
             {
                 for (var b = 0x00; b < 256; b++)
                 {
-                    memory[0x03] = (byte)a;
-                    memory[0x05] = (byte)b;
+                    byte[] memory = new byte[1024 * 64];
+                    var assembler = new Assembler(
+                        [
+                            $"   CLD            ; binary mode",
+                            $"   SEC            ; set carry ",
+                            $"   LDA #${a:x2}   ; a",
+                            $"   SBC #${b:x2}   ; b",
+                            $"   BRK"
+                        ],
+                        0x0000
+                    );
+                    assembler.Assemble();
+                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
                     var cpu = RunTinyTest(memory);
 
@@ -328,21 +306,6 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void AdcPartialDecimalModeLoopWithCarry()
         {
-            // F8      SED                  ; Decimal mode
-            // 38      SEC                  ; Note: carry is set
-            // A9 xx   LDA   #$xx           ; a
-            // 69 xx   ADC   #$xx           ; b
-            // 00      DB    0
-
-            byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x38;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x00;    // a
-            memory[0x04] = 0x69;
-            memory[0x05] = 0x00;    // b
-            memory[0x06] = 0x00;
-
             for (var a = 0; a <= 99; a++)
             {
                 for (var b = 0; b <= 99; b++)
@@ -350,8 +313,19 @@ namespace InnoWerks.Simulators.Tests
                     var decimalA = (byte)((a / 10) << 4) | (a % 10);
                     var decimalB = (byte)((b / 10) << 4) | (b % 10);
 
-                    memory[0x03] = (byte)decimalA;
-                    memory[0x05] = (byte)decimalB;
+                    byte[] memory = new byte[1024 * 64];
+                    var assembler = new Assembler(
+                        [
+                            $"   SED            ; decimal mode",
+                            $"   SEC            ; set carry ",
+                            $"   LDA #${decimalA:x2}   ; a",
+                            $"   ADC #${decimalB:x2}   ; b",
+                            $"   BRK"
+                        ],
+                        0x0000
+                    );
+                    assembler.Assemble();
+                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
                     var cpu = RunTinyTest(memory);
 
@@ -370,21 +344,6 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void SbcPartialDecimalModeLoopWithCarry()
         {
-            // F8      SED                  ; Decimal mode
-            // 38      SEC                  ; Note: carry is set
-            // A9 xx   LDA   #$xx           ; a
-            // E9 xx   SBC   #$xx           ; b
-            // 00      DB    0
-
-            byte[] memory = new byte[1024 * 64];
-            memory[0x00] = 0xF8;
-            memory[0x01] = 0x38;
-            memory[0x02] = 0xA9;
-            memory[0x03] = 0x00;    // a
-            memory[0x04] = 0xE9;
-            memory[0x05] = 0x00;    // b
-            memory[0x06] = 0x00;
-
             for (var a = 0; a <= 99; a++)
             {
                 for (var b = 0; b <= 99; b++)
@@ -392,8 +351,19 @@ namespace InnoWerks.Simulators.Tests
                     var decimalA = (byte)((a / 10) << 4) | (a % 10);
                     var decimalB = (byte)((b / 10) << 4) | (b % 10);
 
-                    memory[0x03] = (byte)decimalA;
-                    memory[0x05] = (byte)decimalB;
+                    byte[] memory = new byte[1024 * 64];
+                    var assembler = new Assembler(
+                        [
+                            $"   SED            ; decimal mode",
+                            $"   SEC            ; set carry ",
+                            $"   LDA #${decimalA:x2}   ; a",
+                            $"   SBC #${decimalB:x2}   ; b",
+                            $"   BRK"
+                        ],
+                        0x0000
+                    );
+                    assembler.Assemble();
+                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
                     var cpu = RunTinyTest(memory);
 

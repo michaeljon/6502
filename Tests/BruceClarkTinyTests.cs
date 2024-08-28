@@ -1,3 +1,5 @@
+using System;
+using InnoWerks.Assemblers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace InnoWerks.Simulators.Tests
@@ -12,22 +14,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExampleTestA()
         {
-            // F8      SED                  ; Decimal mode
-            // A9 05   LDA   #$05
-            // 18      CLC
-            // 69 05   ADC   #$05
-            // 00      DB    0              ; the accumulator is $10
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x05;
-            memory[addr++] = 0x18;
-            memory[addr++] = 0x69;
-            memory[addr++] = 0x05;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED",
+                    $"   LDA #$05",
+                    $"   CLC",
+                    $"   ADC #$05",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(0x10, cpu.Registers.A);
@@ -36,19 +35,18 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExampleTestB()
         {
-            // F8      SED                  ; Decimal mode (has no effect on this sequence)
-            // A9 05   LDA   #$05
-            // 0A      ASL
-            // 00      DB    0              ; the accumulator is $0A
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x05;
-            memory[addr++] = 0x0A;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED",
+                    $"   LDA #$05",
+                    $"   ASL",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(0x0A, cpu.Registers.A);
@@ -57,22 +55,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExampleTestC()
         {
-            // F8      SED                  ; Decimal mode
-            // A9 09   LDA   #$09
-            // 18      CLC
-            // 69 01   ADC   #$01
-            // 00      DB    0              ; the accumulator is $10
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x09;
-            memory[addr++] = 0x18;
-            memory[addr++] = 0x69;
-            memory[addr++] = 0x01;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED",
+                    $"   LDA #$09",
+                    $"   CLC",
+                    $"   ADC #$01",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(0x10, cpu.Registers.A);
@@ -81,23 +76,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExampleTestD()
         {
-            // F8      SED                  ; Decimal mode (has no effect on this sequence)
-            // A9 09   LDA   #$09
-            // 85 E0   STA   {$E0}
-            // E6 E0   INC   {$E0}
-            // 00      DB    0              ; NUM (assuming it is an ordinary RAM location) will contain $0A.
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x09;
-            memory[addr++] = 0x85;
-            memory[addr++] = 0xE0;
-            memory[addr++] = 0xE6;
-            memory[addr++] = 0xE0;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED            ; Decimal mode (has no effect on this sequence)",
+                    $"   LDA #$09",
+                    $"   STA $E0",
+                    $"   INC $E0",
+                    $"   BRK            ; NUM (assuming it is an ordinary RAM location) will contain $0A."
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(0x0a, memory[0xe0]);
@@ -106,22 +97,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample1()
         {
-            // D8      CLD                  ; Binary mode (binary addition: 88 + 70 + 1 = 159)
-            // 38      SEC                  ; Note: carry is set, not clear!
-            // A9 58   LDA   #$58           ; 88
-            // 69 46   ADC   #$46           ; 70 (after this instruction, C = 0, A = $9F = 159)
-            // 00      DB    0
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xD8;
-            memory[addr++] = 0x38;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x58;
-            memory[addr++] = 0x69;
-            memory[addr++] = 0x46;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   CLD            ; Binary mode (binary addition: 88 + 70 + 1 = 159)",
+                    $"   SEC            ; Note: carry is set, not clear!",
+                    $"   LDA #$58       ; 88",
+                    $"   ADC #$46       ; 70 (after this instruction, C = 0, A = $9F = 159)",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
@@ -131,22 +119,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample2()
         {
-            // F8      SED                  ; Decimal mode (BCD addition: 58 + 46 + 1 = 105)
-            // 38      SEC                  ; Note: carry is set, not clear!
-            // A9 58   LDA   #$58
-            // 69 46   ADC   #$46           ; After this instruction, C = 1, A = $05
-            // 00      DB    0
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0x38;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x58;
-            memory[addr++] = 0x69;
-            memory[addr++] = 0x46;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED            ; Decimal mode (BCD addition: 58 + 46 + 1 = 105)",
+                    $"   SEC            ; Note: carry is set, not clear!",
+                    $"   LDA #$58",
+                    $"   ADC #$46       ; After this instruction, C = 1, A = $05",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
@@ -156,22 +141,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample3()
         {
-            // F8      SED                  ; Decimal mode (BCD addition: 12 + 34 = 46)
-            // 18      CLC
-            // A9 12   LDA   #$12
-            // 69 34   ADC   #$34           ; After this instruction, C = 0, A = $46
-            // 00      DB    0
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0x18;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x12;
-            memory[addr++] = 0x69;
-            memory[addr++] = 0x34;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED            ; Decimal mode (BCD addition: 12 + 34 = 46)",
+                    $"   CLC            ; Note: carry is set, not clear!",
+                    $"   LDA #$12",
+                    $"   ADC #$34       ; After this instruction, C = 0, A = $46",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
@@ -181,22 +163,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample4()
         {
-            // F8      SED                  ; Decimal mode (BCD addition: 15 + 26 = 41)
-            // 18      CLC
-            // A9 15   LDA   #$15
-            // 69 26   ADC   #$26           ; After this instruction, C = 0, A = $41
-            // 00      DB    0
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0x18;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x15;
-            memory[addr++] = 0x69;
-            memory[addr++] = 0x26;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED            ; Decimal mode (BCD addition: 15 + 26 = 41)",
+                    $"   CLC            ; Note: carry is set, not clear!",
+                    $"   LDA #$15",
+                    $"   ADC #$26       ; After this instruction, C = 0, A = $41",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
@@ -206,22 +185,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample5()
         {
-            // F8      SED                  ; Decimal mode (BCD addition: 81 + 92 = 173)
-            // 18      CLC
-            // A9 81   LDA   #$81
-            // 69 92   ADC   #$92           ; After this instruction, C = 1, A = $73
-            // 00      DB    0
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0x18;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x81;
-            memory[addr++] = 0x69;
-            memory[addr++] = 0x92;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED            ; Decimal mode (BCD addition: 81 + 92 = 173)",
+                    $"   CLC            ; Note: carry is set, not clear!",
+                    $"   LDA #$81",
+                    $"   ADC #$92       ; After this instruction, C = 1, A = $73",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
@@ -231,22 +207,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample6()
         {
-            // F8      SED                  ; Decimal mode (BCD subtraction: 46 - 12 = 34)
-            // 38      SEC
-            // A9 46   LDA   #$46
-            // E9 12   SBC   #$12           ; After this instruction, C = 1, A = $34)
-            // 00      DB    0
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0x38;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x46;
-            memory[addr++] = 0xE9;
-            memory[addr++] = 0x12;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED            ; Decimal mode (BCD subtraction: 46 - 12 = 34)",
+                    $"   SEC            ; Note: carry is set, not clear!",
+                    $"   LDA #$46",
+                    $"   SBC #$12       ; After this instruction, C = 1, A = $34)",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
@@ -256,22 +229,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample7()
         {
-            // F8      SED                  ; Decimal mode (BCD subtraction: 40 - 13 = 27)
-            // 38      SEC
-            // A9 40   LDA   #$40
-            // E9 13   SBC   #$13           ; After this instruction, C = 1, A = $27)
-            // 00      DB    0
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0x38;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x40;
-            memory[addr++] = 0xE9;
-            memory[addr++] = 0x13;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED            ; Decimal mode (BCD subtraction: 40 - 13 = 27)",
+                    $"   SEC            ; Note: carry is set, not clear!",
+                    $"   LDA #$40",
+                    $"   SBC #$13       ; After this instruction, C = 1, A = $27)",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
@@ -281,22 +251,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample8()
         {
-            // F8      SED                  ; Decimal mode (BCD subtraction: 32 - 2 - 1 = 29)
-            // 18      CLC                  ; Note: carry is clear, not set!
-            // A9 32   LDA   #$32
-            // E9 02   SBC   #$02           ; After this instruction, C = 1, A = $29)
-            // 00      DB    0
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0x18;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x32;
-            memory[addr++] = 0xE9;
-            memory[addr++] = 0x02;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED            ; Decimal mode (BCD subtraction: 32 - 2 - 1 = 29)",
+                    $"   CLC            ; Note: carry is set, not clear!",
+                    $"   LDA #$32",
+                    $"   SBC #$02       ; After this instruction, C = 1, A = $29)",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
@@ -306,22 +273,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample9()
         {
-            // F8      SED                  ; Decimal mode (BCD subtraction: 12 - 21)
-            // 38      SEC
-            // A9 12   LDA   #$12
-            // E9 21   SBC   #$21           ; After this instruction, C = 0, A = $91)
-            // 00      DB    0
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0x38;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x12;
-            memory[addr++] = 0xE9;
-            memory[addr++] = 0x21;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED            ; Decimal mode (BCD subtraction: 12 - 21)",
+                    $"   SEC            ; Note: carry is set, not clear!",
+                    $"   LDA #$12",
+                    $"   SBC #$21       ; After this instruction, C = 0, A = $91)",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC65C02);
             Assert.IsFalse(cpu.Registers.Carry);

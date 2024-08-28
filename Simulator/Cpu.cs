@@ -709,7 +709,7 @@ namespace InnoWerks.Simulators
             Registers.ProgramCounter++;
             StackPush(RegisterMath.HighByte(Registers.ProgramCounter));
             StackPush(RegisterMath.LowByte(Registers.ProgramCounter));
-            StackPush(Registers.ProcessorStatus);
+            StackPush(Registers.ProcessorStatus | 0x10);
 
             Registers.Decimal = false;
             Registers.Break = true;
@@ -1595,7 +1595,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void SBC_CMOS(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
-            if (Registers.Decimal == true)
+            if (Registers.Decimal == false)
             {
                 ADC_CMOS(addr, RegisterMath.TruncateToByte(~value), cycles, pageCrossPenalty);
             }

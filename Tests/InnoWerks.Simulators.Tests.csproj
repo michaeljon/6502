@@ -16,6 +16,7 @@
 
  <ItemGroup>
    <ProjectReference Include="..\Simulator\InnoWerks.Simulators.Sim6502.csproj" />
+   <ProjectReference Include="..\..\asm\InnoWerks.Assemblers.Asm6502\InnoWerks.Assemblers.Asm6502.csproj" />
  </ItemGroup>
 
   <ItemGroup>
