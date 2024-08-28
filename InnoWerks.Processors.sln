@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnoWerks.Assemblers.Asm6502", "InnoWerks.Assemblers.Asm6502\InnoWerks.Assemblers.Asm6502.csproj", "{783926D7-3A40-43B9-BD99-A73FE8093225}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnoWerks.Assemblers.Tests", "InnoWerks.Assemblers.Tests\InnoWerks.Assemblers.Tests.csproj", "{D15A2A9C-73CA-4713-8016-286825099741}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnoWerks.Simulators.Tests", "InnoWerks.Simulators.Tests\InnoWerks.Simulators.Tests.csproj", "{3BEBC05E-5658-408B-B93F-84C0A6028570}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asm6502", "Asm6502\Asm6502.csproj", "{4A28DE34-268B-48FD-9AAB-2D7655846229}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sim6502", "Sim6502\Sim6502.csproj", "{79DA2127-349D-4170-A358-EFFBC54AF1BA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{783926D7-3A40-43B9-BD99-A73FE8093225}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{783926D7-3A40-43B9-BD99-A73FE8093225}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{783926D7-3A40-43B9-BD99-A73FE8093225}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{783926D7-3A40-43B9-BD99-A73FE8093225}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D15A2A9C-73CA-4713-8016-286825099741}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D15A2A9C-73CA-4713-8016-286825099741}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D15A2A9C-73CA-4713-8016-286825099741}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D15A2A9C-73CA-4713-8016-286825099741}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BEBC05E-5658-408B-B93F-84C0A6028570}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BEBC05E-5658-408B-B93F-84C0A6028570}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BEBC05E-5658-408B-B93F-84C0A6028570}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BEBC05E-5658-408B-B93F-84C0A6028570}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A28DE34-268B-48FD-9AAB-2D7655846229}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A28DE34-268B-48FD-9AAB-2D7655846229}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A28DE34-268B-48FD-9AAB-2D7655846229}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A28DE34-268B-48FD-9AAB-2D7655846229}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79DA2127-349D-4170-A358-EFFBC54AF1BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79DA2127-349D-4170-A358-EFFBC54AF1BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79DA2127-349D-4170-A358-EFFBC54AF1BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79DA2127-349D-4170-A358-EFFBC54AF1BA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
