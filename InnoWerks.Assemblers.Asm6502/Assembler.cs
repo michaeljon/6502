@@ -117,6 +117,8 @@ namespace InnoWerks.Assemblers
 
         public Collection<LineInformation> Program => new(programLines);
 
+        public IEnumerable<string> ProgramText => programLines.Select(l => $"{l.MachineCodeAsString,-10}|{l.InstructionText}");
+
 #pragma warning disable CA1819
         public byte[] ObjectCode
         {
@@ -470,7 +472,20 @@ namespace InnoWerks.Assemblers
 
             if (string.IsNullOrEmpty(addressString) == true)
             {
-                return (AddressingMode.Implied, null);
+                if (InstructionInformation.AccumulatorOperations.Contains(opCode))
+                {
+                    return (AddressingMode.Accumulator, null);
+                }
+                else if (InstructionInformation.StackOperations.Contains(opCode))
+                {
+                    return (AddressingMode.Stack, null);
+                }
+                else if (InstructionInformation.ImpliedOperations.Contains(opCode))
+                {
+                    return (AddressingMode.Implied, null);
+                }
+
+                throw new InvalidInstructionFormatException(lineNumber);
             }
 
             if (accumulatorRegex.IsMatch(addressString) == true)

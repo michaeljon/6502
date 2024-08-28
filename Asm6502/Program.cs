@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using CommandLine;
 using InnoWerks.Assemblers;
-using InnoWerks.Processors.Common;
 
 namespace Asm6502
 {
@@ -106,81 +105,10 @@ namespace Asm6502
                     instruction.EffectiveAddress.ToString("X4", CultureInfo.InvariantCulture) +
                         (instruction.MachineCode.Length == 0 ? "" : " : " + instruction.MachineCodeAsString),
                     instruction.EffectiveSize,
-                    GetInstructionText(instruction));
+                    instruction.InstructionText);
             }
 
             Console.WriteLine(SEPARATOR + "".PadLeft(80, '-'));
-        }
-
-        private static string GetInstructionText(LineInformation instruction)
-        {
-            const string FORMAT = "{0,-12}{1,-6}{2,-15}{3}";
-
-            switch (instruction.LineType)
-            {
-                case LineType.Code:
-                    if (instruction.ApplicableOffset != 0)
-                    {
-                        return string.Format(
-                            CultureInfo.InvariantCulture,
-                            FORMAT,
-                            instruction.Label ?? "",
-                            instruction.OpCode != OpCode.Unknown ? instruction.OpCode.ToString() : "",
-                            instruction.RawArgumentWithReplacement + (instruction.ApplicableOffset < 0 ? "-" : "+") + Math.Abs(instruction.ApplicableOffset).ToString(CultureInfo.InvariantCulture),
-                            string.IsNullOrEmpty(instruction.Comment) ? "" : "; " + instruction.Comment);
-                    }
-                    else
-                    {
-                        return string.Format(
-                            CultureInfo.InvariantCulture,
-                            FORMAT,
-                            instruction.Label ?? "",
-                            instruction.OpCode != OpCode.Unknown ? instruction.OpCode.ToString() : "",
-                            InstructionInformation.BranchingOperations.Contains(instruction.OpCode) ?
-                                instruction.ExtractedArgument :
-                                instruction.RawArgumentWithReplacement,
-                            string.IsNullOrEmpty(instruction.Comment) ? "" : "; " + instruction.Comment);
-                    }
-
-                case LineType.Comment:
-                    return "* " + instruction.Comment;
-
-                case LineType.FloatingComment:
-                    return string.IsNullOrEmpty(instruction.Comment) ? "" : "                                 ; " + instruction.Comment;
-
-                case LineType.Data:
-                case LineType.Directive:
-                    return string.Format(
-                        CultureInfo.InvariantCulture,
-                        FORMAT,
-                        instruction.Label ?? "",
-                        instruction.Directive.ToString(),
-                        instruction.Value,
-                        string.IsNullOrEmpty(instruction.Comment) ? "" : "; " + instruction.Comment);
-
-                case LineType.Equivalence:
-                    return string.Format(
-                        CultureInfo.InvariantCulture,
-                        FORMAT,
-                        instruction.Label ?? "",
-                        instruction.Directive,
-                        instruction.Value,
-                        string.IsNullOrEmpty(instruction.Comment) ? "" : "; " + instruction.Comment);
-
-                case LineType.Empty:
-                    return "";
-
-                case LineType.Label:
-                    return string.Format(
-                        CultureInfo.InvariantCulture,
-                        FORMAT,
-                        instruction.Label ?? "",
-                        "",
-                        "",
-                        string.IsNullOrEmpty(instruction.Comment) ? "" : "; " + instruction.Comment);
-            }
-
-            return "*****";
         }
 
         private static void PrintSymbolTable(ReadOnlyDictionary<string, Symbol> symbolTable)

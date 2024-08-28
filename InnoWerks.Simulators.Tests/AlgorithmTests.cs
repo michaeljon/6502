@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using InnoWerks.Processors.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace InnoWerks.Simulators.Tests

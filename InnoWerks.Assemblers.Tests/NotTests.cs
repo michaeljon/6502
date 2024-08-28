@@ -1,26 +1,20 @@
 using System;
-using System.Collections.Generic;
 using InnoWerks.Processors.Common;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace InnoWerks.Simulators.Tests
+namespace InnoWerks.Assemblers.Tests
 {
     [TestClass]
     public class NotTests
     {
         [TestMethod]
-        public void Generate6502OpCodeTable()
+        public void GenerateOpTable()
         {
-            GenerateOpTable(CpuInstructions.OpCode6502);
-        }
+            var instructions = new (OpCode opCode, AddressingMode addressingMode)[256];
+            foreach (var (k, v) in InstructionInformation.Instructions)
+            {
+                instructions[v.code] = k;
+            }
 
-        [TestMethod]
-        public void Generate65C02OpCodeTable()
-        {
-            GenerateOpTable(CpuInstructions.OpCode65C02);
-        }
-        private static void GenerateOpTable(Dictionary<byte, OpCodeDefinition> opCodeTable)
-        {
             GenerateHeaderFooter();
 
             for (var row = 0; row <= 0x0f; row++)
@@ -29,11 +23,10 @@ namespace InnoWerks.Simulators.Tests
                 for (var col = 0; col <= 0x0f; col++)
                 {
                     var index = (byte)(row << 4 | col);
-                    var ocd = opCodeTable[index];
-                    var disp = ocd.OpCode != OpCode.Unknown ? ocd.OpCode.ToString() : "   ";
+                    var (opCode, _) = instructions[index];
+                    var disp = opCode != OpCode.Unknown ? opCode.ToString() : "   ";
 
                     Console.Write(disp.Length == 3 ? $"   {disp}   " : $"   {disp}  ");
-
                     Console.Write("|");
                 }
 
@@ -42,10 +35,10 @@ namespace InnoWerks.Simulators.Tests
                 Console.Write($"|     |");
                 for (var col = 0; col <= 0x0f; col++)
                 {
-                    var opcode = (byte)(row << 4 | col);
-                    var ocd = opCodeTable[opcode];
+                    var index = (byte)(row << 4 | col);
+                    var (_, addressingMode) = instructions[index];
 
-                    Console.Write($"{AddressModeLookup.GetDisplay(ocd.AddressingMode)}");
+                    Console.Write($"{AddressModeLookup.GetDisplay(addressingMode)}");
                     Console.Write("|");
                 }
 

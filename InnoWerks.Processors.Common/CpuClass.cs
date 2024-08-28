@@ -1,12 +1,14 @@
 //
 // See: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
 //
-namespace InnoWerks.Simulators
+namespace InnoWerks.Processors.Common
 {
     public enum CpuClass
     {
-        WDC6502,
+        None = 0,
 
-        WDC65C02,
+        WDC6502 = 1,
+
+        WDC65C02 = 2,
     }
 }

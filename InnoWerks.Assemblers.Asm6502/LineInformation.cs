@@ -107,7 +107,10 @@ namespace InnoWerks.Assemblers
                     return 0x00;
                 }
 
-                return InstructionInformation.Instructions[(OpCode, AddressingMode)];
+                // todo: make sure to return the correct value, or blow up
+                // if the target doesn't include the instruction
+
+                return InstructionInformation.Instructions[(OpCode, AddressingMode)].code;
             }
         }
 
@@ -216,6 +219,80 @@ namespace InnoWerks.Assemblers
             return sb.ToString();
         }
 
+        public string InstructionText
+        {
+            get
+            {
+                const string FORMAT = "{0,-12}{1,-6}{2,-15}{3}";
+
+                switch (LineType)
+                {
+                    case LineType.Code:
+                        if (ApplicableOffset != 0)
+                        {
+                            return string.Format(
+                                CultureInfo.InvariantCulture,
+                                FORMAT,
+                                Label ?? "",
+                                OpCode != OpCode.Unknown ? OpCode.ToString() : "",
+                                RawArgumentWithReplacement + (ApplicableOffset < 0 ? "-" : "+") + Math.Abs(ApplicableOffset).ToString(CultureInfo.InvariantCulture),
+                                string.IsNullOrEmpty(Comment) ? "" : "; " + Comment);
+                        }
+                        else
+                        {
+                            return string.Format(
+                                CultureInfo.InvariantCulture,
+                                FORMAT,
+                                Label ?? "",
+                                OpCode != OpCode.Unknown ? OpCode.ToString() : "",
+                                InstructionInformation.BranchingOperations.Contains(OpCode) ?
+                                    ExtractedArgument :
+                                    RawArgumentWithReplacement,
+                                string.IsNullOrEmpty(Comment) ? "" : "; " + Comment);
+                        }
+
+                    case LineType.Comment:
+                        return "* " + Comment;
+
+                    case LineType.FloatingComment:
+                        return string.IsNullOrEmpty(Comment) ? "" : "                                 ; " + Comment;
+
+                    case LineType.Data:
+                    case LineType.Directive:
+                        return string.Format(
+                            CultureInfo.InvariantCulture,
+                            FORMAT,
+                            Label ?? "",
+                            Directive.ToString(),
+                            Value,
+                            string.IsNullOrEmpty(Comment) ? "" : "; " + Comment);
+
+                    case LineType.Equivalence:
+                        return string.Format(
+                            CultureInfo.InvariantCulture,
+                            FORMAT,
+                            Label ?? "",
+                            Directive,
+                            Value,
+                            string.IsNullOrEmpty(Comment) ? "" : "; " + Comment);
+
+                    case LineType.Empty:
+                        return "";
+
+                    case LineType.Label:
+                        return string.Format(
+                            CultureInfo.InvariantCulture,
+                            FORMAT,
+                            Label ?? "",
+                            "",
+                            "",
+                            string.IsNullOrEmpty(Comment) ? "" : "; " + Comment);
+                }
+
+                return "*****";
+            }
+        }
+
         private byte[] machineCode;
 
 #pragma warning disable CA1819
@@ -248,7 +325,6 @@ namespace InnoWerks.Assemblers
                     {
                         machineCode = [];
                     }
-
                 }
 
                 return machineCode;

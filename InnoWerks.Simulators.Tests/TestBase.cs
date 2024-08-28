@@ -1,4 +1,5 @@
 using System;
+using InnoWerks.Processors.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #pragma warning disable CA1822

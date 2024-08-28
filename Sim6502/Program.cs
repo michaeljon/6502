@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using InnoWerks.Processors.Common;
 
 namespace InnoWerks.Simulators.Driver
 {

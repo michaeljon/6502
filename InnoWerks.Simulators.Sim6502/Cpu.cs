@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using InnoWerks.Processors.Common;
 
 #pragma warning disable RCS1163, IDE0060, CA1707
 
@@ -30,7 +31,6 @@ namespace InnoWerks.Simulators
         private readonly Func<ushort, byte> read;
 
         private readonly Action<ushort, byte> write;
-
 
         private readonly Action<Cpu> callback;
 
@@ -82,14 +82,14 @@ namespace InnoWerks.Simulators
 
                 if (CpuClass == CpuClass.WDC6502)
                 {
-                    opCodeDefinition = OpCodes.OpCode6502[opcode];
+                    opCodeDefinition = CpuInstructions.OpCode6502[opcode];
                 }
                 else
                 {
-                    opCodeDefinition = OpCodes.OpCode65C02[opcode];
+                    opCodeDefinition = CpuInstructions.OpCode65C02[opcode];
                 }
 
-                if (opCodeDefinition.Nmemonic == null)
+                if (opCodeDefinition.OpCode == OpCode.Unknown)
                 {
                     // illegal opcode encountered, should dump core here
                     illegalOpCode = true;
@@ -100,7 +100,7 @@ namespace InnoWerks.Simulators
 
                 instructionsProcessed++;
 
-                if (opCodeDefinition.Nmemonic.Equals("BRK", StringComparison.Ordinal) && stopOnBreak)
+                if (opCodeDefinition.OpCode == OpCode.BRK && stopOnBreak)
                 {
                     return;
                 }
@@ -185,7 +185,7 @@ namespace InnoWerks.Simulators
             ushort addr = opCodeDefinition.DecodeOperand(this);
             byte value = read(addr);
 
-            var stepToExecute = $"{savePC:X4} {opCodeDefinition.Nmemonic}   {OperandDisplay,-10}";
+            var stepToExecute = $"{savePC:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}";
             if (writeInstructions)
             {
                 Console.Write(stepToExecute);
@@ -313,9 +313,9 @@ namespace InnoWerks.Simulators
                     w = (w & 0x0f) + (Registers.A & 0xf0) + (value & 0xf0) + 0x10;
                 }
 
-                Registers.Zero = RegisterMath.IsNonZero((Registers.A + value + adjustment) & 0xff);
+                Registers.Zero = RegisterMath.IsZero((Registers.A + value + adjustment) & 0xff);
                 Registers.Negative = RegisterMath.IsHighBitSet(w);
-                Registers.Overflow = ((Registers.A ^ 0x80) & 0x80) != 0 && ((Registers.A ^ value) & 0x80) == 0;
+                Registers.Overflow = ((Registers.A ^ w) & 0x80) != 0 && ((Registers.A ^ value) & 0x80) == 0;
 
                 if ((w & 0x1f0) > 0x90)
                 {
@@ -1940,7 +1940,6 @@ namespace InnoWerks.Simulators
         {
             illegalOpCode = true;
         }
-
 
         public void WAI(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {

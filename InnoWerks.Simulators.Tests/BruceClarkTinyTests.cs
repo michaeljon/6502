@@ -1,5 +1,6 @@
 using System;
 using InnoWerks.Assemblers;
+using InnoWerks.Processors.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace InnoWerks.Simulators.Tests
@@ -295,22 +296,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample10()
         {
-            // F8      SED                  ; Decimal mode (BCD subtraction: 21 - 34)
-            // 38      SEC
-            // A9 21   LDA   #$21
-            // E9 34   SBC   #$34           ; After this instruction, C = 0, A = $87)
-            // 00      DB    0
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0x38;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x21;
-            memory[addr++] = 0xE9;
-            memory[addr++] = 0x34;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED            ; Decimal mode (BCD subtraction: 21 - 34)",
+                    $"   SEC            ; Note: carry is set, not clear!",
+                    $"   LDA #$21",
+                    $"   SBC #$34       ; After this instruction, C = 0, A = $87)",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC65C02);
             Assert.IsFalse(cpu.Registers.Carry);
@@ -320,21 +318,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample13()
         {
-            // F8      SED                  ; Decimal mode
-            // 18      CLC
-            // A9 90   LDA   #$90
-            // 69 90   ADC   #$90
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0x18;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x90;
-            memory[addr++] = 0x69;
-            memory[addr++] = 0x90;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED",
+                    $"   CLC",
+                    $"   LDA #$90",
+                    $"   ADC #$90",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Overflow);
@@ -343,22 +339,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample14()
         {
-            // F8      SED                  ; Decimal mode
-            // 38      SEC
-            // A9 01   LDA   #$01
-            // E9 01   SBC   #$01           ; expect A = 0, Z = 1
-            // 00      DB    0
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0x38;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x01;
-            memory[addr++] = 0xE9;
-            memory[addr++] = 0x01;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED",
+                    $"   SEC",
+                    $"   LDA #$01",
+                    $"   SBC #$01",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Zero);
@@ -368,21 +361,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void AppendixA1()
         {
-            // D8      CLD                  ; binary mode: 99 + 1
-            // 18      CLC
-            // A9 99   LDA   #$99
-            // 69 01   ADC   #$01
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xD8;
-            memory[addr++] = 0x18;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x99;
-            memory[addr++] = 0x69;
-            memory[addr++] = 0x01;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   CLD",
+                    $"   CLC",
+                    $"   LDA #$99",
+                    $"   ADC #$01",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(0x9a, cpu.Registers.A);
@@ -392,21 +383,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void AppendixA2()
         {
-            // F8      SED                  ; decimal mode: 99 + 1
-            // 18      CLC
-            // A9 99   LDA   #$99
-            // 69 01   ADC   #$01
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0x18;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x99;
-            memory[addr++] = 0x69;
-            memory[addr++] = 0x01;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED            ; decimal mode: 99 + 1",
+                    $"   CLC",
+                    $"   LDA #$99",
+                    $"   ADC #$01",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC65C02);
             Assert.AreEqual(0x00, cpu.Registers.A);
@@ -416,20 +405,19 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample99()
         {
-            // F8      SED
-            // 38      SEC
-            // A9 00   LDA   #$00
-            // E9 00   SBC   #$00
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xF8;
-            memory[addr++] = 0x38;
-            memory[addr++] = 0xA9;
-            memory[addr++] = 0x00;
-            memory[addr++] = 0xE9;
-            memory[addr++] = 0x00;
+            var assembler = new Assembler(
+                [
+                    $"   SED",
+                    $"   SEC",
+                    $"   LDA #$00",
+                    $"   SBC #$00",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Zero);
@@ -443,20 +431,19 @@ namespace InnoWerks.Simulators.Tests
         [DataRow((byte)0x80, (byte)0xff, (byte)0x7f, true, false, true)]
         public void ClcAdcOverflowFlagTests(byte xx, byte yy, byte accum, bool c, bool z, bool v)
         {
-            // D8      CLD
-            // 18      CLC
-            // A9 xx   LDA   #$xx
-            // 69 yy   ADC   #$yy
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xD8;
-            memory[addr++] = 0x18;
-            memory[addr++] = 0xA9;
-            memory[addr++] = xx;
-            memory[addr++] = 0x69;
-            memory[addr++] = yy;
+            var assembler = new Assembler(
+                [
+                    $"   CLD",
+                    $"   CLC",
+                    $"   LDA #${xx}",
+                    $"   ADC #${yy}",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(c, cpu.Registers.Carry);
@@ -472,20 +459,19 @@ namespace InnoWerks.Simulators.Tests
         [DataRow((byte)0x7f, (byte)0xff, (byte)0x80, false, false, true)]
         public void SecSbcOverflowFlagTests(byte xx, byte yy, byte accum, bool c, bool z, bool v)
         {
-            // D8      CLD
-            // 38      SEC
-            // A9 xx   LDA   #$xx
-            // E9 yy   SBC   #$yy
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xD8;
-            memory[addr++] = 0x38;
-            memory[addr++] = 0xA9;
-            memory[addr++] = xx;
-            memory[addr++] = 0xE9;
-            memory[addr++] = yy;
+            var assembler = new Assembler(
+                [
+                    $"   CLD",
+                    $"   SEC",
+                    $"   LDA #${xx}",
+                    $"   SBC #${yy}",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC65C02);
             Assert.AreEqual(c, cpu.Registers.Carry);
@@ -499,20 +485,19 @@ namespace InnoWerks.Simulators.Tests
         [DataRow((byte)0x3f, (byte)0x40, (byte)0x80, false, false, true)]
         public void SecAdcOverflowFlagTests(byte xx, byte yy, byte accum, bool c, bool z, bool v)
         {
-            // D8      CLD
-            // 38      SEC
-            // A9 xx   LDA   #$xx
-            // 69 yy   ADC   #$yy
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xD8;
-            memory[addr++] = 0x38;
-            memory[addr++] = 0xA9;
-            memory[addr++] = xx;
-            memory[addr++] = 0x69;
-            memory[addr++] = yy;
+            var assembler = new Assembler(
+                [
+                    $"   CLD",
+                    $"   SEC",
+                    $"   LDA #${xx}",
+                    $"   ADC #${yy}",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(c, cpu.Registers.Carry);
@@ -526,20 +511,19 @@ namespace InnoWerks.Simulators.Tests
         [DataRow((byte)0xc0, (byte)0x40, (byte)0x7f, true, false, true)]
         public void ClcSbcOverflowFlagTests(byte xx, byte yy, byte accum, bool c, bool z, bool v)
         {
-            // D8      CLD
-            // 18      CLC
-            // A9 xx   LDA   #$xx
-            // E9 yy   SBC   #$yy
-
             byte[] memory = new byte[1024 * 64];
-            byte addr = 0x00;
-
-            memory[addr++] = 0xD8;
-            memory[addr++] = 0x18;
-            memory[addr++] = 0xA9;
-            memory[addr++] = xx;
-            memory[addr++] = 0xE9;
-            memory[addr++] = yy;
+            var assembler = new Assembler(
+                [
+                    $"   CLD",
+                    $"   CLC",
+                    $"   LDA #${xx}",
+                    $"   SBC #${yy}",
+                    $"   BRK"
+                ],
+                0x0000
+            );
+            assembler.Assemble();
+            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
 
             var cpu = RunTinyTest(memory, CpuClass.WDC6502);
             Assert.AreEqual(c, cpu.Registers.Carry);

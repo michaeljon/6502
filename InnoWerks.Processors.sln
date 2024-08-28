@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asm6502", "Asm6502\Asm6502.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sim6502", "Sim6502\Sim6502.csproj", "{79DA2127-349D-4170-A358-EFFBC54AF1BA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnoWerks.Processors.Common.Tests", "InnoWerks.Processors.Common.Tests\InnoWerks.Processors.Common.Tests.csproj", "{A6D2D56E-58BC-43EE-9FDE-9E06FBCB0F47}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{79DA2127-349D-4170-A358-EFFBC54AF1BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79DA2127-349D-4170-A358-EFFBC54AF1BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79DA2127-349D-4170-A358-EFFBC54AF1BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6D2D56E-58BC-43EE-9FDE-9E06FBCB0F47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6D2D56E-58BC-43EE-9FDE-9E06FBCB0F47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6D2D56E-58BC-43EE-9FDE-9E06FBCB0F47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6D2D56E-58BC-43EE-9FDE-9E06FBCB0F47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

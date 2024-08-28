@@ -4,7 +4,7 @@ using InnoWerks.Processors.Common;
 namespace InnoWerks.Simulators
 {
     public record OpCodeDefinition(
-        string Nmemonic,
+        OpCode OpCode,
         Action<Cpu, ushort, byte> Execute,
         Func<Cpu, ushort> DecodeOperand,
         AddressingMode AddressingMode,
@@ -13,7 +13,7 @@ namespace InnoWerks.Simulators
         /// <summary>
         ///
         /// </summary>
-        public string Nmemonic { get; init; } = Nmemonic;
+        public OpCode OpCode { get; init; } = OpCode;
 
         /// <summary>
         ///
@@ -37,7 +37,7 @@ namespace InnoWerks.Simulators
 
         public override string ToString()
         {
-            return Nmemonic;
+            return OpCode.ToString();
         }
     }
 }
