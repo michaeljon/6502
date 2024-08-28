@@ -1,4 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\InnoWerks.Processors.Common\InnoWerks.Processors.Common.csproj" />
+  </ItemGroup>
   <PropertyGroup>
   </PropertyGroup>
 </Project>

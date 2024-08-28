@@ -1,4 +1,4 @@
-﻿namespace InnoWerks.Simulators
+﻿namespace InnoWerks.Processors.Common
 {
     public enum AddressingMode
     {

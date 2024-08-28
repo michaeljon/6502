@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using CommandLine;
 using InnoWerks.Assemblers;
+using InnoWerks.Processors.Common;
 
 namespace Asm6502
 {

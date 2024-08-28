@@ -1,4 +1,5 @@
 using System;
+using InnoWerks.Processors.Common;
 
 namespace InnoWerks.Simulators
 {

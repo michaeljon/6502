@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using InnoWerks.Processors.Common;
 
 namespace InnoWerks.Assemblers
 {

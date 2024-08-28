@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\InnoWerks.Assemblers.Asm6502\InnoWerks.Assemblers.Asm6502.csproj" />
+    <ProjectReference Include="..\InnoWerks.Processors.Common\InnoWerks.Processors.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
