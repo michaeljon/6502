@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+ <ItemGroup>
+   <ProjectReference Include="..\Simulator\InnoWerks.Simulators.Sim6502.csproj" />
+ </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Modules\**\*">
+      <Link>Modules\%(RecursiveDir)/%(FileName)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>
