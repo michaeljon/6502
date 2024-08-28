@@ -119,7 +119,7 @@ namespace InnoWerks.Assemblers
                 {(ROL, ZeroPageXIndexed), 0x36 },
                 {(RMB3, ZeroPage), 0x37 },
                 {(SEC, Implied), 0x38 },
-                {(AND, AbsoluteYIndexed), 0x39 },
+                {(AND, Implied), 0x39 },
                 {(DEA, Accumulator), 0x3a },
                 // unassigned
                 {(BIT, AbsoluteXIndexed), 0x3c },
