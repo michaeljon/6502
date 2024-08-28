@@ -1,7 +1,7 @@
 //
 // See: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
 //
-namespace InnoWerks.Processors.Common
+namespace InnoWerks.Processors
 {
     public enum CpuClass
     {

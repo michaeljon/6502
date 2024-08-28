@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\InnoWerks.Assemblers.Asm6502\InnoWerks.Assemblers.Asm6502.csproj" />
-    <ProjectReference Include="..\InnoWerks.Processors.Common\InnoWerks.Processors.Common.csproj" />
+    <ProjectReference Include="..\InnoWerks.Processors\InnoWerks.Processors.csproj" />
   </ItemGroup>
 
   <ItemGroup>

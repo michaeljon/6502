@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace InnoWerks.Processors.Common
+namespace InnoWerks.Processors
 {
     public static class AddressModeLookup
     {

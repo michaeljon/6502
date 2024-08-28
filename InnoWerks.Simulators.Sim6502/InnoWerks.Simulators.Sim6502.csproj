@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\InnoWerks.Processors.Common\InnoWerks.Processors.Common.csproj" />
+    <ProjectReference Include="..\InnoWerks.Processors\InnoWerks.Processors.csproj" />
   </ItemGroup>
   <PropertyGroup>
   </PropertyGroup>

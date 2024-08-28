@@ -1,5 +1,5 @@
 using System;
-using InnoWerks.Processors.Common;
+using InnoWerks.Processors;
 
 namespace InnoWerks.Assemblers.Tests
 {

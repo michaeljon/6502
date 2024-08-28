@@ -1,7 +1,7 @@
 using InnoWerks.Assemblers;
 using InnoWerks.Simulators;
 
-namespace InnoWerks.Processors.Common.Tests
+namespace InnoWerks.Processors.Tests
 {
     [TestClass]
     public class InstructionVerificationTests

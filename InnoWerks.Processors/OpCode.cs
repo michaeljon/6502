@@ -1,4 +1,4 @@
-﻿namespace InnoWerks.Processors.Common
+﻿namespace InnoWerks.Processors
 {
     public enum OpCode
     {
