@@ -3,6 +3,7 @@ obj/
 
 _FileInformation.txt
 *_Output.txt
+output.txt
 
 TestResults/
 temp/

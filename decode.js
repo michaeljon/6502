@@ -1,6 +1,15 @@
 #!/usr/bin/env node
 
-const ps = parseInt(process.argv[2], 16);
+const base =
+  process.argv[2].substring(0, 2) == "0x" || process.argv[2].substring(0) == "$"
+    ? 16
+    : 10;
+const val =
+  process.argv[2].substring(0) == "$"
+    ? process.argv[2].substring(1)
+    : process.argv[2];
+
+const ps = parseInt(val, base);
 
 let result = "";
 

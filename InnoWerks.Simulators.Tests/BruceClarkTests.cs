@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using InnoWerks.Assemblers;
 using InnoWerks.Processors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -11,16 +12,21 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClark6502()
         {
-            const string Filename = "Modules/BcdTest/BruceClark6502";
+            const string Filename = "Modules/BcdTest/BruceClark6502.S";
             const ushort Origin = 0x8000;
             const ushort InitializationVector = 0x8000;
 
-            const ushort ERROR = 0x30;
+            const ushort ERROR = 0x2F;
 
-            byte[] memory = new byte[1024 * 64];
-            byte[] program = File.ReadAllBytes(Filename);
+            var programLines = File.ReadAllLines(Filename);
+            var assembler = new Assembler(
+                programLines,
+                Origin
+            );
+            assembler.Assemble();
 
-            Array.Copy(program, 0, memory, Origin, program.Length);
+            var memory = new AccessCountingMemory();
+            memory.LoadProgram(assembler.ObjectCode, Origin);
 
             // power up initialization
             memory[Cpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
@@ -28,9 +34,9 @@ namespace InnoWerks.Simulators.Tests
 
             var cpu = new Cpu(
                 CpuClass.WDC6502,
-                (addr) => memory[addr],
-                (addr, b) => memory[addr] = b,
-                (cpu) => DummyLoggerCallback(cpu, memory))
+                memory,
+                (cpu, pc) => TraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
+                (cpu) => FlagsLoggerCallback(cpu, memory, 2))
             {
                 SkipTimingWait = true
             };
@@ -38,13 +44,8 @@ namespace InnoWerks.Simulators.Tests
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: true);
-
-            if (memory[ERROR] != 0x00)
-            {
-                PrintPage(memory, 0x00);
-                cpu.PrintStatus();
-            }
+            Console.WriteLine();
+            cpu.Run(stopOnBreak: true, writeInstructions: false);
 
             TestContext.WriteLine($"INST: {cpu.InstructionsProcessed}");
             Assert.AreEqual(0x00, memory[ERROR]);
@@ -53,16 +54,21 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClark65C02()
         {
-            const string Filename = "Modules/BcdTest/BruceClark65C02";
+            const string Filename = "Modules/BcdTest/BruceClark65C02.S";
             const ushort Origin = 0x8000;
             const ushort InitializationVector = 0x8000;
 
-            const ushort ERROR = 0x30;
+            const ushort ERROR = 0x2F;
 
-            byte[] memory = new byte[1024 * 64];
-            byte[] program = File.ReadAllBytes(Filename);
+            var programLines = File.ReadAllLines(Filename);
+            var assembler = new Assembler(
+                programLines,
+                Origin
+            );
+            assembler.Assemble();
 
-            Array.Copy(program, 0, memory, Origin, program.Length);
+            var memory = new AccessCountingMemory();
+            memory.LoadProgram(assembler.ObjectCode, Origin);
 
             // power up initialization
             memory[Cpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
@@ -70,9 +76,9 @@ namespace InnoWerks.Simulators.Tests
 
             var cpu = new Cpu(
                 CpuClass.WDC65C02,
-                (addr) => memory[addr],
-                (addr, b) => memory[addr] = b,
-                (cpu) => DummyLoggerCallback(cpu, memory, 2))
+                memory,
+                (cpu, pc) => TraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
+                (cpu) => FlagsLoggerCallback(cpu, memory, 2))
             {
                 SkipTimingWait = true
             };
@@ -80,13 +86,8 @@ namespace InnoWerks.Simulators.Tests
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: true);
-
-            if (memory[ERROR] != 0x00)
-            {
-                PrintPage(memory, 0x00);
-                cpu.PrintStatus();
-            }
+            Console.WriteLine();
+            cpu.Run(stopOnBreak: true, writeInstructions: false);
 
             TestContext.WriteLine($"INST: {cpu.InstructionsProcessed}");
             Assert.AreEqual(0x00, memory[ERROR]);
@@ -95,16 +96,21 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkOverflowTest()
         {
-            const string Filename = "Modules/BcdTest/OverflowTest";
+            const string Filename = "Modules/BcdTest/OverflowTest.S";
             const ushort Origin = 0x8000;
             const ushort InitializationVector = 0x8000;
 
             const ushort ERROR = 0x30;
 
-            byte[] memory = new byte[1024 * 64];
-            byte[] program = File.ReadAllBytes(Filename);
+            var programLines = File.ReadAllLines(Filename);
+            var assembler = new Assembler(
+                programLines,
+                Origin
+            );
+            assembler.Assemble();
 
-            Array.Copy(program, 0, memory, Origin, program.Length);
+            var memory = new AccessCountingMemory();
+            memory.LoadProgram(assembler.ObjectCode, Origin);
 
             // power up initialization
             memory[Cpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
@@ -112,9 +118,9 @@ namespace InnoWerks.Simulators.Tests
 
             var cpu = new Cpu(
                 CpuClass.WDC65C02,
-                (addr) => memory[addr],
-                (addr, b) => memory[addr] = b,
-                (cpu) => DummyLoggerCallback(cpu, memory, 1))
+                memory,
+                (cpu, pc) => TraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
+                (cpu) => FlagsLoggerCallback(cpu, memory, 0))
             {
                 SkipTimingWait = true
             };
@@ -122,13 +128,8 @@ namespace InnoWerks.Simulators.Tests
             cpu.Reset();
 
             // run
-            cpu.Run(stopOnBreak: true, writeInstructions: true);
-
-            if (memory[ERROR] != 0x00)
-            {
-                PrintPage(memory, 0x00);
-                cpu.PrintStatus();
-            }
+            Console.WriteLine();
+            cpu.Run(stopOnBreak: true, writeInstructions: false);
 
             TestContext.WriteLine($"INST: {cpu.InstructionsProcessed}");
             Assert.AreEqual(0x00, memory[ERROR]);

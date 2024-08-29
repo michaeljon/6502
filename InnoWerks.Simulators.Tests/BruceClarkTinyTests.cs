@@ -1,4 +1,3 @@
-using System;
 using InnoWerks.Assemblers;
 using InnoWerks.Processors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -15,7 +14,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExampleTestA()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED",
@@ -27,16 +26,16 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(0x10, cpu.Registers.A);
         }
 
         [TestMethod]
         public void BruceClarkExampleTestB()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED",
@@ -47,16 +46,16 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(0x0A, cpu.Registers.A);
         }
 
         [TestMethod]
         public void BruceClarkExampleTestC()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED",
@@ -68,16 +67,16 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(0x10, cpu.Registers.A);
         }
 
         [TestMethod]
         public void BruceClarkExampleTestD()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED            ; Decimal mode (has no effect on this sequence)",
@@ -89,16 +88,16 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            RunTinyTest(memory, CpuClass.WDC6502);
+            RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(0x0a, memory[0xe0]);
         }
 
         [TestMethod]
         public void BruceClarkExample1()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   CLD            ; Binary mode (binary addition: 88 + 70 + 1 = 159)",
@@ -110,9 +109,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
             Assert.AreEqual(0x9f, cpu.Registers.A);
         }
@@ -120,7 +119,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample2()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED            ; Decimal mode (BCD addition: 58 + 46 + 1 = 105)",
@@ -132,9 +131,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
             Assert.AreEqual(0x05, cpu.Registers.A);
         }
@@ -142,7 +141,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample3()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED            ; Decimal mode (BCD addition: 12 + 34 = 46)",
@@ -154,9 +153,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
             Assert.AreEqual(0x46, cpu.Registers.A);
         }
@@ -164,7 +163,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample4()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED            ; Decimal mode (BCD addition: 15 + 26 = 41)",
@@ -176,9 +175,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
             Assert.AreEqual(0x41, cpu.Registers.A);
         }
@@ -186,7 +185,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample5()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED            ; Decimal mode (BCD addition: 81 + 92 = 173)",
@@ -198,9 +197,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
             Assert.AreEqual(0x73, cpu.Registers.A);
         }
@@ -208,7 +207,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample6()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED            ; Decimal mode (BCD subtraction: 46 - 12 = 34)",
@@ -220,9 +219,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
             Assert.AreEqual(0x34, cpu.Registers.A);
         }
@@ -230,7 +229,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample7()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED            ; Decimal mode (BCD subtraction: 40 - 13 = 27)",
@@ -242,9 +241,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
             Assert.AreEqual(0x27, cpu.Registers.A);
         }
@@ -252,7 +251,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample8()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED            ; Decimal mode (BCD subtraction: 32 - 2 - 1 = 29)",
@@ -264,9 +263,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
             Assert.AreEqual(0x29, cpu.Registers.A);
         }
@@ -274,7 +273,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample9()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED            ; Decimal mode (BCD subtraction: 12 - 21)",
@@ -286,9 +285,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC65C02);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC65C02);
             Assert.IsFalse(cpu.Registers.Carry);
             Assert.AreEqual(0x91, cpu.Registers.A);
         }
@@ -296,7 +295,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample10()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED            ; Decimal mode (BCD subtraction: 21 - 34)",
@@ -308,9 +307,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC65C02);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC65C02);
             Assert.IsFalse(cpu.Registers.Carry);
             Assert.AreEqual(0x87, cpu.Registers.A);
         }
@@ -318,7 +317,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample13()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED",
@@ -330,16 +329,16 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Overflow);
         }
 
         [TestMethod]
         public void BruceClarkExample14()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED",
@@ -351,9 +350,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Zero);
             Assert.AreEqual(0x00, cpu.Registers.A);
         }
@@ -361,7 +360,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void AppendixA1()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   CLD",
@@ -373,9 +372,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(0x9a, cpu.Registers.A);
             Assert.IsFalse(cpu.Registers.Zero);
         }
@@ -383,7 +382,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void AppendixA2()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED            ; decimal mode: 99 + 1",
@@ -395,9 +394,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC65C02);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC65C02);
             Assert.AreEqual(0x00, cpu.Registers.A);
             Assert.IsTrue(cpu.Registers.Zero);
         }
@@ -405,7 +404,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void BruceClarkExample99()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   SED",
@@ -417,9 +416,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Zero);
             Assert.AreEqual(0x00, cpu.Registers.A);
         }
@@ -431,7 +430,7 @@ namespace InnoWerks.Simulators.Tests
         [DataRow((byte)0x80, (byte)0xff, (byte)0x7f, true, false, true)]
         public void ClcAdcOverflowFlagTests(byte xx, byte yy, byte accum, bool c, bool z, bool v)
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   CLD",
@@ -443,9 +442,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(c, cpu.Registers.Carry);
             Assert.AreEqual(z, cpu.Registers.Zero);
             Assert.AreEqual(v, cpu.Registers.Overflow);
@@ -459,7 +458,7 @@ namespace InnoWerks.Simulators.Tests
         [DataRow((byte)0x7f, (byte)0xff, (byte)0x80, false, false, true)]
         public void SecSbcOverflowFlagTests(byte xx, byte yy, byte accum, bool c, bool z, bool v)
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   CLD",
@@ -471,9 +470,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC65C02);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC65C02);
             Assert.AreEqual(c, cpu.Registers.Carry);
             Assert.AreEqual(z, cpu.Registers.Zero);
             Assert.AreEqual(v, cpu.Registers.Overflow);
@@ -485,7 +484,7 @@ namespace InnoWerks.Simulators.Tests
         [DataRow((byte)0x3f, (byte)0x40, (byte)0x80, false, false, true)]
         public void SecAdcOverflowFlagTests(byte xx, byte yy, byte accum, bool c, bool z, bool v)
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   CLD",
@@ -497,9 +496,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(c, cpu.Registers.Carry);
             Assert.AreEqual(z, cpu.Registers.Zero);
             Assert.AreEqual(v, cpu.Registers.Overflow);
@@ -511,7 +510,7 @@ namespace InnoWerks.Simulators.Tests
         [DataRow((byte)0xc0, (byte)0x40, (byte)0x7f, true, false, true)]
         public void ClcSbcOverflowFlagTests(byte xx, byte yy, byte accum, bool c, bool z, bool v)
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   CLD",
@@ -523,9 +522,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory, CpuClass.WDC6502);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(c, cpu.Registers.Carry);
             Assert.AreEqual(z, cpu.Registers.Zero);
             Assert.AreEqual(v, cpu.Registers.Overflow);

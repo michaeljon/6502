@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using InnoWerks.Assemblers;
 using InnoWerks.Processors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -9,16 +10,21 @@ namespace InnoWerks.Simulators.Tests
     public class AlgorithmTests : TestBase
     {
         [TestMethod]
-        public void BinarySearchPositiveCase()
+        public void BinarySearchNegativeCase()
         {
-            const string Filename = "Modules/BinarySearch/binarySearch";
+            const string Filename = "Modules/BinarySearch/binarySearch.S";
             const ushort Origin = 0x6000;
-            const ushort InitializationVector = 0x605c;
+            const ushort InitializationVector = 0x606f;
 
-            byte[] memory = new byte[1024 * 64];
-            byte[] program = File.ReadAllBytes(Filename);
+            var programLines = File.ReadAllLines(Filename);
+            var assembler = new Assembler(
+                programLines,
+                Origin
+            );
+            assembler.Assemble();
 
-            Array.Copy(program, 0, memory, Origin, program.Length);
+            var memory = new AccessCountingMemory();
+            memory.LoadProgram(assembler.ObjectCode, Origin);
 
             // power up initialization
             memory[Cpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
@@ -26,59 +32,54 @@ namespace InnoWerks.Simulators.Tests
 
             var cpu = new Cpu(
                 CpuClass.WDC65C02,
-                (addr) => memory[addr],
-                (addr, b) => memory[addr] = b,
-                (cpu) =>
-                {
-                    // Console.WriteLine($"value  {memory[0x6059]:X2} ");
-                    // Console.WriteLine($"ubnd   {memory[0x605A]:X2} ");
-                    // Console.WriteLine($"lbnd   {memory[0x605B]:X2} ");
-                    // Console.WriteLine($"aryadr {memory[0xef]:X2}{memory[0xee]:X2} ");
-                });
+                memory,
+                (cpu, pc) => DummyTraceCallback(cpu, pc, memory, null),
+                (cpu) => DummyLoggerCallback(cpu, memory, 0));
 
             cpu.Reset();
 
             // run
+            Console.WriteLine();
+            cpu.Run(stopOnBreak: true, writeInstructions: false);
+
+            Assert.IsTrue(cpu.Registers.Carry);
+        }
+
+        [TestMethod]
+        public void BinarySearchPositiveCase()
+        {
+            const string Filename = "Modules/BinarySearch/binarySearch.S";
+            const ushort Origin = 0x6000;
+            const ushort InitializationVector = 0x605c;
+
+            var programLines = File.ReadAllLines(Filename);
+            var assembler = new Assembler(
+                programLines,
+                Origin
+            );
+            assembler.Assemble();
+
+            var memory = new AccessCountingMemory();
+            memory.LoadProgram(assembler.ObjectCode, Origin);
+
+            // power up initialization
+            memory[Cpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
+            memory[Cpu.RstVectorL] = InitializationVector & 0xff;
+
+            var cpu = new Cpu(
+                CpuClass.WDC65C02,
+                memory,
+                (cpu, pc) => DummyTraceCallback(cpu, pc, memory, null),
+                (cpu) => DummyLoggerCallback(cpu, memory, 0));
+
+            cpu.Reset();
+
+            // run
+            Console.WriteLine();
             cpu.Run(stopOnBreak: true, writeInstructions: false);
 
             Assert.AreEqual(0x04, cpu.Registers.A);
             Assert.IsFalse(cpu.Registers.Carry);
-        }
-
-        [TestMethod]
-        public void BinarySearchNegativeCase()
-        {
-            const string Filename = "Modules/BinarySearch/binarySearch";
-            const ushort Origin = 0x6000;
-            const ushort InitializationVector = 0x606f;
-
-            byte[] memory = new byte[1024 * 64];
-            byte[] program = File.ReadAllBytes(Filename);
-
-            Array.Copy(program, 0, memory, Origin, program.Length);
-
-            // power up initialization
-            memory[Cpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
-            memory[Cpu.RstVectorL] = InitializationVector & 0xff;
-
-            var cpu = new Cpu(
-                CpuClass.WDC65C02,
-                (addr) => memory[addr],
-                (addr, b) => memory[addr] = b,
-                (cpu) =>
-                {
-                    Console.WriteLine($"value  {memory[0x6059]:X2} ");
-                    Console.WriteLine($"ubnd   {memory[0x605A]:X2} ");
-                    Console.WriteLine($"lbnd   {memory[0x605B]:X2} ");
-                    Console.WriteLine($"aryadr {memory[0xef]:X2}{memory[0xee]:X2} ");
-                });
-
-            cpu.Reset();
-
-            // run
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
-
-            Assert.IsTrue(cpu.Registers.Carry);
         }
     }
 }

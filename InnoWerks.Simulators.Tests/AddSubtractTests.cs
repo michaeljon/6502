@@ -1,4 +1,3 @@
-using System;
 using InnoWerks.Assemblers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -16,7 +15,7 @@ namespace InnoWerks.Simulators.Tests
             {
                 for (short b = 0x00; b < 256; b++)
                 {
-                    byte[] memory = new byte[1024 * 64];
+                    var memory = new AccessCountingMemory();
                     var assembler = new Assembler(
                         [
                             $"   CLD            ; binary mode",
@@ -28,9 +27,9 @@ namespace InnoWerks.Simulators.Tests
                         0x0000
                     );
                     assembler.Assemble();
-                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+                    memory.LoadProgram(assembler.ObjectCode, 0);
 
-                    var cpu = RunTinyTest(memory);
+                    var cpu = RunTinyTest(memory, assembler.ProgramByAddress);
 
                     ushort expected = (ushort)(a + b);
                     bool carry = expected > 0xff;
@@ -47,7 +46,7 @@ namespace InnoWerks.Simulators.Tests
             const byte a = 0x01;
             const byte b = 0xff;
 
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   CLD            ; binary mode",
@@ -59,9 +58,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress);
 
             const ushort expected = (ushort)(a + b);
             const bool carry = expected > 0xff;
@@ -73,7 +72,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void Mini2()
         {
-            byte[] memory = new byte[1024 * 64];
+            var memory = new AccessCountingMemory();
             var assembler = new Assembler(
                 [
                     $"   CLD            ; binary mode",
@@ -86,9 +85,9 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+            memory.LoadProgram(assembler.ObjectCode, 0);
 
-            var cpu = RunTinyTest(memory);
+            var cpu = RunTinyTest(memory, assembler.ProgramByAddress);
 
             Assert.IsTrue(cpu.Registers.Overflow);
             Assert.IsTrue(cpu.Registers.Carry);
@@ -101,7 +100,7 @@ namespace InnoWerks.Simulators.Tests
             {
                 for (var b = 0x00; b < 256; b++)
                 {
-                    byte[] memory = new byte[1024 * 64];
+                    var memory = new AccessCountingMemory();
                     var assembler = new Assembler(
                         [
                             $"   CLD            ; binary mode",
@@ -113,9 +112,9 @@ namespace InnoWerks.Simulators.Tests
                         0x0000
                     );
                     assembler.Assemble();
-                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+                    memory.LoadProgram(assembler.ObjectCode, 0);
 
-                    var cpu = RunTinyTest(memory);
+                    var cpu = RunTinyTest(memory, assembler.ProgramByAddress);
 
                     int expected = a + ~b;
                     bool carry = expected >= 0x100;
@@ -137,7 +136,7 @@ namespace InnoWerks.Simulators.Tests
                     var decimalA = (byte)((a / 10) << 4) | (a % 10);
                     var decimalB = (byte)((b / 10) << 4) | (b % 10);
 
-                    byte[] memory = new byte[1024 * 64];
+                    var memory = new AccessCountingMemory();
                     var assembler = new Assembler(
                         [
                             $"   SED            ; decimal mode",
@@ -149,9 +148,9 @@ namespace InnoWerks.Simulators.Tests
                         0x0000
                     );
                     assembler.Assemble();
-                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+                    memory.LoadProgram(assembler.ObjectCode, 0);
 
-                    var cpu = RunTinyTest(memory);
+                    var cpu = RunTinyTest(memory, assembler.ProgramByAddress);
 
                     // check for a carry
                     bool carry = (a + b) >= 100;
@@ -175,7 +174,7 @@ namespace InnoWerks.Simulators.Tests
                     var decimalA = (byte)(((a / 10) << 4) | (a % 10));
                     var decimalB = (byte)(((b / 10) << 4) | (b % 10));
 
-                    byte[] memory = new byte[1024 * 64];
+                    var memory = new AccessCountingMemory();
                     var assembler = new Assembler(
                         [
                             $"   SED            ; decimal mode",
@@ -187,9 +186,9 @@ namespace InnoWerks.Simulators.Tests
                         0x0000
                     );
                     assembler.Assemble();
-                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+                    memory.LoadProgram(assembler.ObjectCode, 0);
 
-                    var cpu = RunTinyTest(memory);
+                    var cpu = RunTinyTest(memory, assembler.ProgramByAddress);
 
                     bool carryFlag;
                     bool overflowFlag = ((decimalA ^ decimalB) & 0x0080) != 0;
@@ -246,7 +245,7 @@ namespace InnoWerks.Simulators.Tests
             {
                 for (var b = 0x00; b < 256; b++)
                 {
-                    byte[] memory = new byte[1024 * 64];
+                    var memory = new AccessCountingMemory();
                     var assembler = new Assembler(
                         [
                             $"   CLD            ; binary mode",
@@ -258,9 +257,9 @@ namespace InnoWerks.Simulators.Tests
                         0x0000
                     );
                     assembler.Assemble();
-                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+                    memory.LoadProgram(assembler.ObjectCode, 0);
 
-                    var cpu = RunTinyTest(memory);
+                    var cpu = RunTinyTest(memory, assembler.ProgramByAddress);
 
                     ushort expected = (ushort)(a + b + 1);
                     bool carry = expected > 0xff;
@@ -278,7 +277,7 @@ namespace InnoWerks.Simulators.Tests
             {
                 for (var b = 0x00; b < 256; b++)
                 {
-                    byte[] memory = new byte[1024 * 64];
+                    var memory = new AccessCountingMemory();
                     var assembler = new Assembler(
                         [
                             $"   CLD            ; binary mode",
@@ -290,9 +289,9 @@ namespace InnoWerks.Simulators.Tests
                         0x0000
                     );
                     assembler.Assemble();
-                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+                    memory.LoadProgram(assembler.ObjectCode, 0);
 
-                    var cpu = RunTinyTest(memory);
+                    var cpu = RunTinyTest(memory, assembler.ProgramByAddress);
 
                     int expected = 0x00ff + a - b + 1;
                     bool carry = expected >= 0x100;
@@ -313,7 +312,7 @@ namespace InnoWerks.Simulators.Tests
                     var decimalA = (byte)((a / 10) << 4) | (a % 10);
                     var decimalB = (byte)((b / 10) << 4) | (b % 10);
 
-                    byte[] memory = new byte[1024 * 64];
+                    var memory = new AccessCountingMemory();
                     var assembler = new Assembler(
                         [
                             $"   SED            ; decimal mode",
@@ -325,9 +324,9 @@ namespace InnoWerks.Simulators.Tests
                         0x0000
                     );
                     assembler.Assemble();
-                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+                    memory.LoadProgram(assembler.ObjectCode, 0);
 
-                    var cpu = RunTinyTest(memory);
+                    var cpu = RunTinyTest(memory, assembler.ProgramByAddress);
 
                     // check for a carry
                     bool carry = (a + b + 1) >= 100;
@@ -351,7 +350,7 @@ namespace InnoWerks.Simulators.Tests
                     var decimalA = (byte)((a / 10) << 4) | (a % 10);
                     var decimalB = (byte)((b / 10) << 4) | (b % 10);
 
-                    byte[] memory = new byte[1024 * 64];
+                    var memory = new AccessCountingMemory();
                     var assembler = new Assembler(
                         [
                             $"   SED            ; decimal mode",
@@ -363,9 +362,9 @@ namespace InnoWerks.Simulators.Tests
                         0x0000
                     );
                     assembler.Assemble();
-                    Array.Copy(assembler.ObjectCode, 0, memory, 0, assembler.ObjectCode.Length);
+                    memory.LoadProgram(assembler.ObjectCode, 0);
 
-                    var cpu = RunTinyTest(memory);
+                    var cpu = RunTinyTest(memory, assembler.ProgramByAddress);
 
                     bool carryFlag;
                     bool overflowFlag = ((decimalA ^ decimalB) & 0x0080) != 0;

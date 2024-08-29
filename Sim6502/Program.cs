@@ -7,7 +7,7 @@ namespace InnoWerks.Simulators.Driver
     internal sealed class Program
     {
         // we have 64k to play with for now
-        private readonly byte[] memory = new byte[1024 * 64];
+        private readonly Memory memory = new();
 
         private static void Main(string[] _)
         {
@@ -18,13 +18,12 @@ namespace InnoWerks.Simulators.Driver
         private void Run(string filename, ushort org, ushort startAddr, Action<Cpu> test = null)
         {
             byte[] program = File.ReadAllBytes(filename);
-
-            Array.Copy(program, 0, memory, org, program.Length);
+            memory.LoadProgram(program, org);
 
             var cpu = new Cpu(
                 CpuClass.WDC65C02,
-                Read,
-                Write,
+                memory,
+                (cpu, programCounter) => { },
                 (cpu) =>
                 {
                     cpu.PrintStatus();
@@ -44,6 +43,7 @@ namespace InnoWerks.Simulators.Driver
             cpu.Reset();
 
             // run
+            Console.WriteLine();
             cpu.Run(stopOnBreak: true, writeInstructions: false);
             test?.Invoke(cpu);
 
@@ -60,30 +60,6 @@ namespace InnoWerks.Simulators.Driver
             memory[addr] = b;
         }
 
-        private void PrintPage(byte page)
-        {
-            for (var l = page * 0x100; l < (page + 1) * 0x100; l += 16)
-            {
-                Console.Write("{0:X4}:  ", l);
-
-                for (var b = 0; b < 8; b++)
-                {
-                    Console.Write("{0:X2} ", memory[l + b]);
-                }
-
-                Console.Write("  ");
-
-                for (var b = 8; b < 16; b++)
-                {
-                    Console.Write("{0:X2} ", memory[l + b]);
-                }
-
-                Console.WriteLine();
-            }
-
-            Console.WriteLine();
-        }
-
         private void PrintPage(byte page, byte lines)
         {
             for (var l = page * 0x100; l < (page + 1) * 0x100 && lines-- > 0; l += 16)
@@ -92,14 +68,14 @@ namespace InnoWerks.Simulators.Driver
 
                 for (var b = 0; b < 8; b++)
                 {
-                    Console.Write("{0:X2} ", memory[l + b]);
+                    Console.Write("{0:X2} ", memory[(ushort)(l + b)]);
                 }
 
                 Console.Write("  ");
 
                 for (var b = 8; b < 16; b++)
                 {
-                    Console.Write("{0:X2} ", memory[l + b]);
+                    Console.Write("{0:X2} ", memory[(ushort)(l + b)]);
                 }
 
                 Console.WriteLine();

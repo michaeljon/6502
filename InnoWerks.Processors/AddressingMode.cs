@@ -5,7 +5,7 @@
         Unknown,
 
         // 0 byte instruction, no argument provided
-        Implied,
+        Implicit,
 
         // 0 byte instruction, no argument (for "A" operands) or an explicit A
         Accumulator,

@@ -21,7 +21,7 @@ namespace InnoWerks.Assemblers.Tests
                 var lineInformation = assembler.Program[0];
 
                 Assert.AreEqual(opCode, lineInformation.OpCode);
-                Assert.AreEqual(AddressingMode.Implied, lineInformation.AddressingMode);
+                Assert.AreEqual(AddressingMode.Implicit, lineInformation.AddressingMode);
                 Assert.IsNull(lineInformation.Value);
 
                 var expectedInstructionCode = InstructionInformation.Instructions[(opCode, lineInformation.AddressingMode)].code;

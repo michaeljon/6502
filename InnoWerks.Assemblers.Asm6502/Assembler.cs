@@ -117,7 +117,14 @@ namespace InnoWerks.Assemblers
 
         public Collection<LineInformation> Program => new(programLines);
 
-        public IEnumerable<string> ProgramText => programLines.Select(l => $"{l.MachineCodeAsString,-10}|{l.InstructionText}");
+        public Dictionary<ushort, LineInformation> ProgramByAddress =>
+            programLines
+            .Where(l => l.LineType == LineType.Code)
+            .ToDictionary(l => l.EffectiveAddress, l => l);
+
+        public IEnumerable<string> ProgramText =>
+            programLines
+            .Select(l => $"{l.MachineCodeAsString,-10}|{l.InstructionText}");
 
 #pragma warning disable CA1819
         public byte[] ObjectCode
@@ -290,6 +297,35 @@ namespace InnoWerks.Assemblers
                     instruction.Value = instruction.ExtractedArgumentValue;
                 }
             }
+
+            foreach (var instruction in programLines.Where(i => i.LineType == LineType.Data))
+            {
+                // if this is a symbol then replace its value and reparse
+                if (string.IsNullOrEmpty(instruction.ExtractedArgument) == false && symbolTable.TryGetValue(instruction.ExtractedArgument, out var symbol) == true)
+                {
+                    instruction.ResolvedSymbol = symbol;
+
+                    var raw = instruction.RawArgument.Replace(instruction.ExtractedArgument, symbol.UnparsedValue, StringComparison.Ordinal);
+
+                    if (symbol.IsEquivalence == true)
+                    {
+                        instruction.RawArgumentWithReplacement = instruction.RawArgument.Replace(instruction.ExtractedArgument, "{" + symbol.UnparsedValue + "}", StringComparison.Ordinal);
+                    }
+
+                    instruction.Value = ExtractNumber(symbol.UnparsedValue, 0, 0);
+                }
+                else
+                {
+                    if (instruction.ExtractedArgumentValue.StartsWith('#'))
+                    {
+                        instruction.Value = ExtractNumber(instruction.ExtractedArgumentValue, 1, 0);
+                    }
+                    else
+                    {
+                        instruction.Value = ExtractNumber(instruction.ExtractedArgumentValue, 0, 0);
+                    }
+                }
+            }
         }
 
         private LineInformation ParseDataLine(int lineNumber, string line, Dictionary<string, string> captures)
@@ -311,6 +347,12 @@ namespace InnoWerks.Assemblers
                 EffectiveAddress = currentAddress,
                 Directive = Enum.Parse<Directive>(dir),
                 Label = label,
+
+                RawArgument = arg,
+                RawArgumentWithReplacement = arg,
+                ExtractedArgument = arg,
+                ExtractedArgumentValue = arg,
+
                 Value = ExtractNumber(arg, 0, 0),
                 Comment = ExtractComment(comment),
                 Line = line
@@ -482,7 +524,7 @@ namespace InnoWerks.Assemblers
                 }
                 else if (InstructionInformation.ImpliedOperations.Contains(opCode))
                 {
-                    return (AddressingMode.Implied, null);
+                    return (AddressingMode.Implicit, null);
                 }
 
                 throw new InvalidInstructionFormatException(lineNumber);

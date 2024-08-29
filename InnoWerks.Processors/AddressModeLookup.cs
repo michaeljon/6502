@@ -7,7 +7,7 @@ namespace InnoWerks.Processors
         private static readonly Dictionary<AddressingMode, string> addressingModeLookup = new()
         {
             { AddressingMode.Unknown,                   "         " },
-            { AddressingMode.Implied,                   "    i    " },
+            { AddressingMode.Implicit,                   "    i    " },
             { AddressingMode.Accumulator,               "    A    " },
             { AddressingMode.Immediate,                 "    #    " },
             { AddressingMode.Absolute,                  "    a    " },

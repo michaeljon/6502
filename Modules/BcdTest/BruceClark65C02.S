@@ -45,7 +45,7 @@ N1L      EQU   $11
 N2       EQU   $12
 N2H      EQU   $13
 N2L      EQU   $15
-ERROR    EQU   $30
+ERROR    EQU   $2F
                           ;
          ORG   $8000
                           ;
