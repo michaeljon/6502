@@ -92,14 +92,14 @@ namespace InnoWerks.Simulators
         }
 
         #region Execution
-        public void Run(ulong instructionsToProcess = ulong.MaxValue, bool stopOnBreak = false, bool writeInstructions = false)
+        public void Run(bool stopOnBreak = false, bool writeInstructions = false)
         {
             byte opcode;
             OpCodeDefinition opCodeDefinition;
 
             while (illegalOpCode == false)
             {
-                opcode = memory.Read(Registers.ProgramCounter++);
+                opcode = memory.Read(Registers.ProgramCounter);
 
                 if (CpuClass == CpuClass.WDC6502)
                 {
@@ -117,6 +117,8 @@ namespace InnoWerks.Simulators
                     break;
                 }
 
+                // we read above, now we need to move the pc
+                Registers.ProgramCounter++;
                 Execute(opCodeDefinition, writeInstructions);
 
                 instructionsProcessed++;
@@ -133,7 +135,7 @@ namespace InnoWerks.Simulators
             byte opcode;
             OpCodeDefinition opCodeDefinition;
 
-            opcode = memory.Read(Registers.ProgramCounter++);
+            opcode = memory.Read(Registers.ProgramCounter);
 
             if (CpuClass == CpuClass.WDC6502)
             {
@@ -151,6 +153,8 @@ namespace InnoWerks.Simulators
                 return;
             }
 
+            // we read above, now we need to move the pc
+            Registers.ProgramCounter++;
             Execute(opCodeDefinition, writeInstructions);
 
             instructionsProcessed++;

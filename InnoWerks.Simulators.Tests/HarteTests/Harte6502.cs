@@ -32,6 +32,7 @@ namespace InnoWerks.Simulators.Tests
             var files = Directory
                 .GetFiles("/Users/michaeljon/src/6502/working/65x02/6502/v1", "*.json")
                 .OrderBy(f => f)
+                .Skip(3)
                 .Take(1);
 
             foreach (var file in files)
@@ -60,8 +61,10 @@ namespace InnoWerks.Simulators.Tests
             var cpu = new Cpu(
                 Processors.CpuClass.WDC6502,
                 memory,
-                (cpu, pc) => FlagsTraceCallback(cpu, pc, memory),
-                (cpu) => FlagsLoggerCallback(cpu, memory, 0))
+                // (cpu, pc) => FlagsTraceCallback(cpu, pc, memory),
+                // (cpu) => FlagsLoggerCallback(cpu, memory, 0))
+                (cpu, pc) => DummyTraceCallback(cpu, pc, memory),
+                (cpu) => DummyLoggerCallback(cpu, memory, 0))
             {
                 SkipTimingWait = true
             };
@@ -78,7 +81,7 @@ namespace InnoWerks.Simulators.Tests
 
             // run test
             Console.WriteLine();
-            cpu.Step(stopOnBreak: true, writeInstructions: true);
+            cpu.Step(stopOnBreak: true, writeInstructions: false);
 
             // verify results
             Assert.AreEqual(test.Final.ProgramCounter, cpu.Registers.ProgramCounter, "ProgramCounter");
