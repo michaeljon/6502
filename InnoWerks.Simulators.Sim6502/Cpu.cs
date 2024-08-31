@@ -940,7 +940,7 @@ namespace InnoWerks.Simulators
         {
             int val = Registers.A - value;
 
-            Registers.Carry = ((~val >> 8) & 0x01) != 0;
+            Registers.Carry = Registers.A >= value;
             Registers.SetNZ(val);
 
             WaitCycles(cycles);
@@ -962,7 +962,7 @@ namespace InnoWerks.Simulators
         {
             int val = Registers.X - value;
 
-            Registers.Carry = ((~val >> 8) & 0x01) != 0;
+            Registers.Carry = Registers.X >= value;
             Registers.SetNZ(val);
 
             WaitCycles(cycles);
@@ -984,7 +984,7 @@ namespace InnoWerks.Simulators
         {
             int val = Registers.Y - value;
 
-            Registers.Carry = ((~val >> 8) & 0x01) != 0;
+            Registers.Carry = Registers.Y >= value;
             Registers.SetNZ(val);
 
             WaitCycles(cycles);
@@ -1642,39 +1642,36 @@ namespace InnoWerks.Simulators
         public void SBC_NMOS(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
             int adjustment = Registers.Carry ? 0x00 : 0x01;
-            int temp = value;
-            int temp2 = Registers.A - temp - adjustment;
+            int result = Registers.A - value - adjustment;
 
             if (Registers.Decimal == true)
             {
                 cycles++;
 
-                int val = (Registers.A & 0x0f) - (temp & 0x0f) - adjustment;
+                int val = (Registers.A & 0x0f) - (value & 0x0f) - adjustment;
                 if ((val & 0x10) != 0)
                 {
-                    val = ((val - 0x06) & 0x0f) | ((Registers.A & 0xf0) - (temp & 0xf0) - 0x10);
+                    val = ((val - 0x06) & 0x0f) | ((Registers.A & 0xf0) - (value & 0xf0) - 0x10);
                 }
                 else
                 {
-                    val = (val & 0x0f) | ((Registers.A & 0xf0) - (temp & 0xf0));
+                    val = (val & 0x0f) | ((Registers.A & 0xf0) - (value & 0xf0));
                 }
                 if ((val & 0x100) != 0)
                 {
                     val -= 0x60;
                 }
 
-                Registers.Carry = temp2 < 0x100;
-                Registers.SetNZ(temp2);
-                Registers.Overflow = ((Registers.A ^ temp2) & 0x80) != 0 && ((Registers.A ^ temp) & 0x80) != 0;
+                Registers.Carry = result < 0x100;
+                Registers.SetNZ(result);
+                Registers.Overflow = ((Registers.A ^ result) & 0x80) != 0 && ((Registers.A ^ value) & 0x80) != 0;
                 Registers.A = RegisterMath.TruncateToByte(val);
             }
             else
             {
-                int val = temp2;
-
-                Registers.Carry = val < 0x100;
-                Registers.Overflow = ((Registers.A & 0x80) != (temp & 0x80)) && ((Registers.A & 0x80) != (val & 0x80));
-                Registers.A = RegisterMath.TruncateToByte(val);
+                Registers.Carry = result < 0x100;
+                Registers.Overflow = ((Registers.A & 0x80) != (value & 0x80)) && ((Registers.A & 0x80) != (result & 0x80));
+                Registers.A = RegisterMath.TruncateToByte(result);
                 Registers.SetNZ(Registers.A);
             }
 
@@ -2041,7 +2038,6 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void IllegalInstruction(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
-
             cycles += pageCrossPenalty;
             WaitCycles(cycles);
         }
@@ -2293,7 +2289,6 @@ namespace InnoWerks.Simulators
 
             Registers.ProgramCounter += 2;
 
-
             ushort effectiveAddress = (ushort)(operand + Registers.X);
             return memory.ReadWord(effectiveAddress);
         }
@@ -2313,15 +2308,11 @@ namespace InnoWerks.Simulators
             var operand = memory.Read(Registers.ProgramCounter);
             OperandDisplay = $"(${operand:X2},X)";
 
-            ushort zeroL = RegisterMath.TruncateToByte(operand + Registers.X);
-            ushort zeroH = RegisterMath.TruncateToByte(zeroL + 1);
-
             Registers.ProgramCounter++;
 
-            var lo = memory.Read(zeroL);
-            var hi = memory.Read(zeroH);
+            ushort zeroL = RegisterMath.TruncateToByte(operand + Registers.X);
 
-            return RegisterMath.MakeShort(hi, lo);
+            return memory.ReadWord(zeroL);
         }
 
         /// <summary>
@@ -2339,7 +2330,7 @@ namespace InnoWerks.Simulators
             OperandDisplay = $"(${operand:X2}),Y";
 
             var lo = memory.Read(operand) + Registers.Y;
-            var hi = memory.Read((ushort)(operand + 1));
+            var hi = memory.Read((ushort)((operand + 1) & 0xff));
 
             Registers.ProgramCounter++;
 

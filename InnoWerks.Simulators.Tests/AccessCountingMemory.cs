@@ -52,12 +52,13 @@ namespace InnoWerks.Simulators.Tests
                     new JsonHarteTestBusAccess()
                     {
                         Address = (ushort)(address + 1),
-                        Value = memory[address],
+                        Value = memory[address + 1],
                         Type = CycleType.Read
                     }
                 );
 
                 readCounts[address]++;
+                readCounts[address + 1]++;
             }
 
             var lo = memory[address];

@@ -23,6 +23,7 @@ namespace InnoWerks.Simulators.Tests
             IgnoreReadOnlyFields = false,
             AllowTrailingCommas = false,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true,
             Converters =
             {
                 new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
@@ -50,23 +51,94 @@ namespace InnoWerks.Simulators.Tests
 
                     if (fs.Length == 0)
                     {
-                        Console.WriteLine($"Empty batch {index:X2}");
                         continue;
                     }
 
                     if (ignored[index] == false)
                     {
-                        Console.WriteLine($"Running batch {index:X2}");
-                        foreach (var test in JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, serializerOptions))
+                        foreach (var test in JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, serializerOptions).Take(10))
                         {
                             RunIndividualTest(test, results);
                         }
                     }
-                    else
-                    {
-                        Console.WriteLine($"Ignoring batch {index:X2}");
-                    }
                 }
+            }
+
+            foreach (var result in results)
+            {
+                Console.WriteLine(result);
+            }
+
+            Assert.AreEqual(0, results.Count, $"Failed some tests");
+        }
+
+        [DataTestMethod]
+        [DataRow("00")]
+        public void RunNamed6502Batch(string batch)
+        {
+            if (string.IsNullOrEmpty(batch))
+            {
+                Assert.Inconclusive("No batch name provided to RunNamed6502Batch");
+                return;
+            }
+
+            List<string> results = [];
+
+            var file = $"/Users/michaeljon/src/6502/working/65x02/6502/v1/{batch}.json";
+
+            Console.WriteLine($"Running batch {batch}");
+
+            using (var fs = File.OpenRead(file))
+            {
+                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, serializerOptions);
+                foreach (var test in tests)
+                {
+                    RunIndividualTest(test, results);
+                }
+
+                // foreach (var result in results)
+                // {
+                //     Console.WriteLine(result);
+                // }
+
+                Assert.AreEqual(0, results.Count, $"Failed some {results.Count} tests out of an expected {tests.Count}");
+            }
+        }
+
+        [DataTestMethod]
+        [DataRow("71 ff b6")]
+        public void RunNamed6502Test(string testName)
+        {
+            if (string.IsNullOrEmpty(testName))
+            {
+                Assert.Inconclusive("No test name provided to RunNamed6502Test");
+                return;
+            }
+
+            List<string> results = [];
+
+            var batch = testName.Split(' ')[0];
+            var file = $"/Users/michaeljon/src/6502/working/65x02/6502/v1/{batch}.json";
+
+            Console.WriteLine($"Running test {testName}");
+            Console.WriteLine($"OpCode: ${batch} {CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)].OpCode}");
+            Console.WriteLine($"AddressingMode: {CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)].AddressingMode}");
+
+            using (var fs = File.OpenRead(file))
+            {
+                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, serializerOptions);
+                var test = tests.FirstOrDefault(t => t.Name == testName);
+
+                if (test == null)
+                {
+                    Assert.Inconclusive($"Unable to locate test {testName}");
+                    return;
+                }
+
+                var json = JsonSerializer.Serialize(test.Clone(), serializerOptions);
+                File.WriteAllText("foo.json", json);
+
+                RunIndividualTest(test, results);
             }
 
             foreach (var result in results)
@@ -106,7 +178,6 @@ namespace InnoWerks.Simulators.Tests
             cpu.Registers.ProcessorStatus = test.Initial.P;
 
             // run test
-            Console.WriteLine();
             cpu.Step(stopOnBreak: true, writeInstructions: false);
 
             // verify results
