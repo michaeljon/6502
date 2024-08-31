@@ -38,7 +38,61 @@ namespace InnoWerks.Simulators.Tests
 
         public override void Write(Utf8JsonWriter writer, JsonHarteTestBusAccess value, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
+            ArgumentNullException.ThrowIfNull(writer);
+            ArgumentNullException.ThrowIfNull(value);
+            ArgumentNullException.ThrowIfNull(options);
+
+            writer.WriteStartArray();
+
+            writer.WriteNumberValue(value.Address);
+            writer.WriteNumberValue(value.Value);
+            writer.WriteStringValue(value.Type.ToString().ToLowerInvariant());
+
+            writer.WriteEndArray();
+        }
+    }
+
+    public class HarteRamConverter : JsonConverter<JsonHarteRamEntry>
+    {
+        public override bool CanConvert(Type typeToConvert) =>
+            typeof(JsonHarteRamEntry).IsAssignableFrom(typeToConvert);
+
+        public override JsonHarteRamEntry Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType != JsonTokenType.StartArray)
+            {
+                throw new JsonException($"JsonHarteTestCycle has incorrect form (not an array)");
+            }
+
+            var ram = new JsonHarteRamEntry();
+
+            reader.Read();
+            ram.Address = reader.GetUInt16();
+
+            reader.Read();
+            ram.Value = reader.GetByte();
+
+            reader.Read();
+            if (reader.TokenType != JsonTokenType.EndArray)
+            {
+                throw new JsonException($"JsonHarteRamEntry has incorrect form (too many values)");
+            }
+
+            return ram;
+        }
+
+        public override void Write(Utf8JsonWriter writer, JsonHarteRamEntry value, JsonSerializerOptions options)
+        {
+            ArgumentNullException.ThrowIfNull(writer);
+            ArgumentNullException.ThrowIfNull(value);
+            ArgumentNullException.ThrowIfNull(options);
+
+            writer.WriteStartArray();
+
+            writer.WriteNumberValue(value.Address);
+            writer.WriteNumberValue(value.Value);
+
+            writer.WriteEndArray();
         }
     }
 }

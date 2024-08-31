@@ -35,6 +35,37 @@ namespace InnoWerks.Simulators.Tests
             return memory[address];
         }
 
+        public ushort ReadWord(ushort address, bool countAccess = true)
+        {
+            if (countAccess == true)
+            {
+                busAccesses.Add(
+                    new JsonHarteTestBusAccess()
+                    {
+                        Address = address,
+                        Value = memory[address],
+                        Type = CycleType.Read
+                    }
+                );
+
+                busAccesses.Add(
+                    new JsonHarteTestBusAccess()
+                    {
+                        Address = (ushort)(address + 1),
+                        Value = memory[address],
+                        Type = CycleType.Read
+                    }
+                );
+
+                readCounts[address]++;
+            }
+
+            var lo = memory[address];
+            var hi = memory[address + 1];
+
+            return (ushort)((hi << 8) | lo);
+        }
+
         public void Write(ushort address, byte value, bool countAccess = true)
         {
             if (countAccess == true)
@@ -54,6 +85,36 @@ namespace InnoWerks.Simulators.Tests
             memory[address] = value;
         }
 
+        public void WriteWord(ushort address, ushort value, bool countAccess = true)
+        {
+            if (countAccess == true)
+            {
+                busAccesses.Add(
+                    new JsonHarteTestBusAccess()
+                    {
+                        Address = address,
+                        Value = value,
+                        Type = CycleType.Write
+                    }
+                );
+
+                busAccesses.Add(
+                    new JsonHarteTestBusAccess()
+                    {
+                        Address = (ushort)(address + 1),
+                        Value = value,
+                        Type = CycleType.Write
+                    }
+                );
+
+                writeCounts[address]++;
+                writeCounts[address + 1]++;
+            }
+
+            memory[address] = (byte)(value & 0x00ff);
+            memory[address + 1] = (byte)((value >> 8) & 0xff);
+        }
+
         public byte this[ushort address]
         {
             get
@@ -67,13 +128,13 @@ namespace InnoWerks.Simulators.Tests
             }
         }
 
-        public void Initialize(IEnumerable<List<int>> mem)
+        public void Initialize(IEnumerable<JsonHarteRamEntry> mem)
         {
             ArgumentNullException.ThrowIfNull(mem);
 
             foreach (var m in mem)
             {
-                memory[m[0]] = (byte)m[1];
+                memory[m.Address] = m.Value;
             }
         }
 
@@ -84,15 +145,15 @@ namespace InnoWerks.Simulators.Tests
             Array.Copy(objectCode, 0, memory, origin, objectCode.Length);
         }
 
-        public (bool matches, ushort differsAtAddr, byte expectedValue, byte actualValue) ValidateMemory(IEnumerable<List<int>> mem)
+        public (bool matches, ushort differsAtAddr, byte expectedValue, byte actualValue) ValidateMemory(IEnumerable<JsonHarteRamEntry> mem)
         {
             ArgumentNullException.ThrowIfNull(mem);
 
             foreach (var m in mem)
             {
-                if (m[1] != memory[m[0]])
+                if (m.Value != memory[m.Address])
                 {
-                    return (false, (ushort)m[0], (byte)m[1], memory[m[0]]);
+                    return (false, m.Address, m.Value, memory[m.Address]);
                 }
             }
 

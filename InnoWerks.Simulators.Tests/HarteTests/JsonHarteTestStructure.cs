@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 #pragma warning disable CA1002, CA2227
@@ -10,6 +12,13 @@ namespace InnoWerks.Simulators.Tests
         Read,
 
         Write
+    }
+
+    public class JsonHarteRamEntry
+    {
+        public ushort Address { get; set; }
+
+        public byte Value { get; set; }
     }
 
     public class JsonHarteTestState
@@ -33,9 +42,17 @@ namespace InnoWerks.Simulators.Tests
         public byte P { get; set; }
 
         [JsonPropertyName("ram")]
-        public List<List<int>> Ram { get; set; }
+        public List<JsonHarteRamEntry> Ram { get; set; }
+
+        public JsonHarteTestState Clone()
+        {
+            var clone = (JsonHarteTestState)MemberwiseClone();
+            clone.Ram = this.Ram.OrderBy(r => r.Address).ToList();
+            return clone;
+        }
     }
 
+    [DebuggerDisplay("{Address} {Value} {Type}")]
     public class JsonHarteTestBusAccess
     {
         public ushort Address { get; set; }
@@ -45,6 +62,7 @@ namespace InnoWerks.Simulators.Tests
         public CycleType Type { get; set; }
     }
 
+    [DebuggerDisplay("{Name}")]
     public class JsonHarteTestStructure
     {
         [JsonPropertyName("name")]
@@ -58,5 +76,16 @@ namespace InnoWerks.Simulators.Tests
 
         [JsonPropertyName("cycles")]
         public IEnumerable<JsonHarteTestBusAccess> BusAccesses { get; set; }
+
+        public JsonHarteTestStructure Clone()
+        {
+            return new JsonHarteTestStructure
+            {
+                Name = this.Name,
+                Initial = this.Initial.Clone(),
+                Final = this.Final.Clone(),
+                BusAccesses = this.BusAccesses
+            };
+        }
     }
 }

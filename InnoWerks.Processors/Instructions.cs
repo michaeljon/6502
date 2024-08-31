@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
-using InnoWerks.Processors;
 
-namespace InnoWerks.Assemblers
+namespace InnoWerks.Processors
 {
     public static class InstructionInformation
     {

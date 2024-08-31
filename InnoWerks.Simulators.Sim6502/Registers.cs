@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace InnoWerks.Simulators
 {
-    [DebuggerDisplay("{InternalGetFlagsDisplay}")]
+    [DebuggerDisplay("{InternalGetFlagsDisplay} {ProcessorStatus}")]
     public class Registers
     {
         public void Reset()
@@ -92,8 +92,8 @@ namespace InnoWerks.Simulators
 
                 ps |= (byte)(Negative ? ProcessorStatusBit.Negative : 0);
                 ps |= (byte)(Overflow ? ProcessorStatusBit.Overflow : 0);
+                ps |= (byte)(Unused ? ProcessorStatusBit.Unused : 0);
                 ps |= (byte)(Break ? ProcessorStatusBit.BreakCommand : 0);
-                ps |= (byte)ProcessorStatusBit.Unused;
                 ps |= (byte)(Decimal ? ProcessorStatusBit.DecimalMode : 0);
                 ps |= (byte)(Interrupt ? ProcessorStatusBit.InterruptDisable : 0);
                 ps |= (byte)(Zero ? ProcessorStatusBit.Zero : 0);
@@ -106,6 +106,7 @@ namespace InnoWerks.Simulators
             {
                 Negative = (byte)(value & (byte)ProcessorStatusBit.Negative) != 0;
                 Overflow = (byte)(value & (byte)ProcessorStatusBit.Overflow) != 0;
+                Unused = (byte)(value & (byte)ProcessorStatusBit.Unused) != 0;
                 Break = (byte)(value & (byte)ProcessorStatusBit.BreakCommand) != 0;
                 Decimal = (byte)(value & (byte)ProcessorStatusBit.DecimalMode) != 0;
                 Interrupt = (byte)(value & (byte)ProcessorStatusBit.InterruptDisable) != 0;
@@ -148,6 +149,11 @@ namespace InnoWerks.Simulators
         /// direct access to the BRK flag in the processor status register
         /// </summary>
         public bool Break { get; set; }
+
+        /// <summary>
+        /// reserved value
+        /// </summary>
+        public bool Unused { get; set; }
 
         /// <summary>
         /// direct access to the overflow flag in the processor status register

@@ -13,7 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace InnoWerks.Simulators.Tests
 {
     [TestClass]
-    public class Harte6502 : TestBase
+    public class Harte65C02 : TestBase
     {
         private static readonly JsonSerializerOptions serializerOptions = new()
         {
@@ -23,6 +23,7 @@ namespace InnoWerks.Simulators.Tests
             IgnoreReadOnlyFields = false,
             AllowTrailingCommas = false,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true,
             Converters =
             {
                 new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
@@ -32,12 +33,12 @@ namespace InnoWerks.Simulators.Tests
         };
 
         [TestMethod]
-        public void RunAll6502Tests()
+        public void RunAll65C02Tests()
         {
             List<string> results = [];
 
             var files = Directory
-                .GetFiles("/Users/michaeljon/src/6502/working/65x02/6502/v1", "*.json")
+                .GetFiles("/Users/michaeljon/src/6502/working/65x02/wdc65c02/v1", "*.json")
                 .OrderBy(f => f);
 
             var ignored = LoadIgnored();
@@ -50,23 +51,94 @@ namespace InnoWerks.Simulators.Tests
 
                     if (fs.Length == 0)
                     {
-                        Console.WriteLine($"Empty batch {index:X2}");
                         continue;
                     }
 
                     if (ignored[index] == false)
                     {
-                        Console.WriteLine($"Running batch {index:X2}");
-                        foreach (var test in JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, serializerOptions))
+                        foreach (var test in JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, serializerOptions).Take(10))
                         {
                             RunIndividualTest(test, results);
                         }
                     }
-                    else
-                    {
-                        Console.WriteLine($"Ignoring batch {index:X2}");
-                    }
                 }
+            }
+
+            foreach (var result in results)
+            {
+                Console.WriteLine(result);
+            }
+
+            Assert.AreEqual(0, results.Count, $"Failed some tests");
+        }
+
+        [DataTestMethod]
+        [DataRow("40")]
+        public void RunNamed65C02Batch(string batch)
+        {
+            if (string.IsNullOrEmpty(batch))
+            {
+                Assert.Inconclusive("No batch name provided to RunNamed65C02Batch");
+                return;
+            }
+
+            List<string> results = [];
+
+            var file = $"/Users/michaeljon/src/6502/working/65x02/wdc65c02/v1/{batch}.json";
+
+            Console.WriteLine($"Running batch {batch}");
+
+            using (var fs = File.OpenRead(file))
+            {
+                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, serializerOptions);
+                foreach (var test in tests)
+                {
+                    RunIndividualTest(test, results);
+                }
+
+                // foreach (var result in results)
+                // {
+                //     Console.WriteLine(result);
+                // }
+
+                Assert.AreEqual(0, results.Count, $"Failed some {results.Count} tests out of an expected {tests.Count}");
+            }
+        }
+
+        [DataTestMethod]
+        [DataRow("7c 1b e8")]
+        public void RunNamed65C02Test(string testName)
+        {
+            if (string.IsNullOrEmpty(testName))
+            {
+                Assert.Inconclusive("No test name provided to RunNamed65C02Test");
+                return;
+            }
+
+            List<string> results = [];
+
+            var batch = testName.Split(' ')[0];
+            var file = $"/Users/michaeljon/src/6502/working/65x02/wdc65c02/v1/{batch}.json";
+
+            Console.WriteLine($"Running test {testName}");
+            Console.WriteLine($"OpCode: ${batch} {CpuInstructions.OpCode65C02[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)].OpCode}");
+            Console.WriteLine($"AddressingMode: {CpuInstructions.OpCode65C02[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)].AddressingMode}");
+
+            using (var fs = File.OpenRead(file))
+            {
+                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, serializerOptions);
+                var test = tests.FirstOrDefault(t => t.Name == testName);
+
+                if (test == null)
+                {
+                    Assert.Inconclusive($"Unable to locate test {testName}");
+                    return;
+                }
+
+                var json = JsonSerializer.Serialize(test.Clone(), serializerOptions);
+                File.WriteAllText("foo.json", json);
+
+                RunIndividualTest(test, results);
             }
 
             foreach (var result in results)
@@ -85,7 +157,7 @@ namespace InnoWerks.Simulators.Tests
             memory.Initialize(test.Initial.Ram);
 
             var cpu = new Cpu(
-                CpuClass.WDC6502,
+                CpuClass.WDC65C02,
                 memory,
                 // (cpu, pc) => FlagsTraceCallback(cpu, pc, memory),
                 // (cpu) => FlagsLoggerCallback(cpu, memory, 0))
@@ -106,7 +178,6 @@ namespace InnoWerks.Simulators.Tests
             cpu.Registers.ProcessorStatus = test.Initial.P;
 
             // run test
-            Console.WriteLine();
             cpu.Step(stopOnBreak: true, writeInstructions: false);
 
             // verify results
@@ -134,7 +205,7 @@ namespace InnoWerks.Simulators.Tests
 
             for (var o = 0; o < 256; o++)
             {
-                ignored[o] = CpuInstructions.OpCode6502[(byte)o].AddressingMode == AddressingMode.Unknown;
+                ignored[o] = CpuInstructions.OpCode65C02[(byte)o].AddressingMode == AddressingMode.Unknown;
             }
 
             return ignored;

@@ -94,20 +94,20 @@ namespace InnoWerks.Simulators
         #region Execution
         public void Run(bool stopOnBreak = false, bool writeInstructions = false)
         {
-            byte opcode;
+            byte operation;
             OpCodeDefinition opCodeDefinition;
 
-            while (illegalOpCode == false)
+            while (true)
             {
-                opcode = memory.Read(Registers.ProgramCounter);
+                operation = memory.Read(Registers.ProgramCounter);
 
                 if (CpuClass == CpuClass.WDC6502)
                 {
-                    opCodeDefinition = CpuInstructions.OpCode6502[opcode];
+                    opCodeDefinition = CpuInstructions.OpCode6502[operation];
                 }
                 else
                 {
-                    opCodeDefinition = CpuInstructions.OpCode65C02[opcode];
+                    opCodeDefinition = CpuInstructions.OpCode65C02[operation];
                 }
 
                 if (opCodeDefinition.OpCode == OpCode.Unknown)
@@ -119,7 +119,7 @@ namespace InnoWerks.Simulators
 
                 // we read above, now we need to move the pc
                 Registers.ProgramCounter++;
-                Execute(opCodeDefinition, writeInstructions);
+                Execute(opCodeDefinition, operation, writeInstructions);
 
                 instructionsProcessed++;
 
@@ -132,30 +132,23 @@ namespace InnoWerks.Simulators
 
         public void Step(bool stopOnBreak = false, bool writeInstructions = false)
         {
-            byte opcode;
+            byte operation;
             OpCodeDefinition opCodeDefinition;
 
-            opcode = memory.Read(Registers.ProgramCounter);
+            operation = memory.Read(Registers.ProgramCounter);
 
             if (CpuClass == CpuClass.WDC6502)
             {
-                opCodeDefinition = CpuInstructions.OpCode6502[opcode];
+                opCodeDefinition = CpuInstructions.OpCode6502[operation];
             }
             else
             {
-                opCodeDefinition = CpuInstructions.OpCode65C02[opcode];
-            }
-
-            if (opCodeDefinition.OpCode == OpCode.Unknown)
-            {
-                // illegal opcode encountered, should dump core here
-                illegalOpCode = true;
-                return;
+                opCodeDefinition = CpuInstructions.OpCode65C02[operation];
             }
 
             // we read above, now we need to move the pc
             Registers.ProgramCounter++;
-            Execute(opCodeDefinition, writeInstructions);
+            Execute(opCodeDefinition, operation, writeInstructions);
 
             instructionsProcessed++;
         }
@@ -165,8 +158,8 @@ namespace InnoWerks.Simulators
             Registers.Reset();
 
             // load PC from reset vector
-            byte pcl = memory.Read(RstVectorL);
-            byte pch = memory.Read(RstVectorH);
+            byte pcl = memory.Read(RstVectorL, false);
+            byte pch = memory.Read(RstVectorH, false);
 
             Registers.ProgramCounter = RegisterMath.MakeShort(pch, pcl);
 
@@ -175,8 +168,7 @@ namespace InnoWerks.Simulators
 
         public void NMI()
         {
-            StackPush(RegisterMath.HighByte(Registers.ProgramCounter));
-            StackPush(RegisterMath.LowByte(Registers.ProgramCounter));
+            StackPushWord(Registers.ProgramCounter);
             StackPush((byte)((Registers.ProcessorStatus & 0xef) | (byte)ProcessorStatusBit.Unused));
 
             // 65c02 clears the decimal flag, 6502 leaves is undefined
@@ -234,7 +226,7 @@ namespace InnoWerks.Simulators
             t.Wait();
         }
 
-        private void Execute(OpCodeDefinition opCodeDefinition, bool writeInstructions)
+        private void Execute(OpCodeDefinition opCodeDefinition, byte operation, bool writeInstructions)
         {
             // we pulled one byte to decode the instruction, so we'll use that for display
             ushort savePC = (ushort)(Registers.ProgramCounter - 1);
@@ -243,6 +235,11 @@ namespace InnoWerks.Simulators
 
             // decode the operand based on the opcode and addressing mode
             ushort addr = opCodeDefinition.DecodeOperand(this);
+
+            if (illegalOpCode == true)
+            {
+                throw new IllegalOpCodeException(savePC, operation);
+            }
 
             var stepToExecute = $"{savePC:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}";
             if (writeInstructions)
@@ -273,19 +270,26 @@ namespace InnoWerks.Simulators
         private void StackPush(byte b)
         {
             memory.Write((ushort)(StackBase + Registers.StackPointer), b);
-            Registers.StackPointer--;
-        }
 
-        private void StackPush(int i)
-        {
-            memory.Write((ushort)(StackBase + Registers.StackPointer), RegisterMath.TruncateToByte(i));
-            Registers.StackPointer--;
+            Registers.StackPointer = (byte)((Registers.StackPointer - 1) & 0xff);
         }
 
         private byte StackPop()
         {
-            Registers.StackPointer++;
+            Registers.StackPointer = (byte)((Registers.StackPointer + 1) & 0xff);
+
             return memory.Read((ushort)(StackBase + Registers.StackPointer));
+        }
+
+        private void StackPushWord(ushort s)
+        {
+            StackPush((byte)(s >> 8));
+            StackPush((byte)(s & 0xff));
+        }
+
+        private ushort StackPopWord()
+        {
+            return (ushort)((0xff & StackPop()) | (0xff00 & (StackPop() << 8)));
         }
         #endregion
 
@@ -449,6 +453,10 @@ namespace InnoWerks.Simulators
 
             // todo: deal with http://forum.6502.org/viewtopic.php?f=4&t=1617&view=previous
 
+            // dummy read (at least in 65c02)
+            memory.Read(addr);
+            memory.Write(addr, value);
+
             WaitCycles(cycles);
         }
 
@@ -489,17 +497,27 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void BBR(ushort addr, byte value, byte bit, long cycles, long pageCrossPenalty = 0)
         {
-            if ((addr & (0x01 << bit)) == 0)
+            // because this reads twice
+            value = memory.Read(addr);
+
+            if ((value & (0x01 << bit)) == 0)
             {
-                ushort savePC = Registers.ProgramCounter;
+                ushort oldPC = Registers.ProgramCounter;
+                ushort newPC = (ushort)(Registers.ProgramCounter + 1);
 
-                sbyte offset = (sbyte)memory.Read(Registers.ProgramCounter++);
-                Registers.ProgramCounter = (ushort)(Registers.ProgramCounter + offset);
+                sbyte offset = (sbyte)memory.Read(oldPC);
+                Registers.ProgramCounter = (ushort)(newPC + offset);
 
-                if ((savePC & 0xff00) != (Registers.ProgramCounter & 0xff00))
+                cycles++;
+
+                if ((oldPC & 0xff00) != (Registers.ProgramCounter & 0xff00))
                 {
                     cycles += pageCrossPenalty;
                 }
+            }
+            else
+            {
+                Registers.ProgramCounter++;
             }
 
             WaitCycles(cycles);
@@ -534,17 +552,27 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void BBS(ushort addr, byte value, byte bit, long cycles, long pageCrossPenalty = 0)
         {
-            if ((addr & (0x01 << bit)) != 0)
+            // because this reads twice
+            value = memory.Read(addr);
+
+            if ((value & (0x01 << bit)) != 0)
             {
-                ushort savePC = Registers.ProgramCounter;
+                ushort oldPC = Registers.ProgramCounter;
+                ushort newPC = (ushort)(Registers.ProgramCounter + 1);
 
-                sbyte offset = (sbyte)memory.Read(Registers.ProgramCounter++);
-                Registers.ProgramCounter = (ushort)(Registers.ProgramCounter + offset);
+                sbyte offset = (sbyte)memory.Read(oldPC);
+                Registers.ProgramCounter = (ushort)(newPC + offset);
 
-                if ((savePC & 0xff00) != (Registers.ProgramCounter & 0xff00))
+                cycles++;
+
+                if ((oldPC & 0xff00) != (Registers.ProgramCounter & 0xff00))
                 {
                     cycles += pageCrossPenalty;
                 }
+            }
+            else
+            {
+                Registers.ProgramCounter++;
             }
 
             WaitCycles(cycles);
@@ -776,9 +804,8 @@ namespace InnoWerks.Simulators
 
             Registers.ProgramCounter++;
 
-            StackPush(RegisterMath.HighByte(Registers.ProgramCounter));
-            StackPush(RegisterMath.LowByte(Registers.ProgramCounter));
-            StackPush(Registers.ProcessorStatus | 0x10);
+            StackPushWord(Registers.ProgramCounter);
+            StackPush((byte)(Registers.ProcessorStatus | 0x10));
 
             // 65c02 clears the decimal flag, 6502 leaves is undefined
             if (CpuClass == CpuClass.WDC65C02)
@@ -1078,11 +1105,10 @@ namespace InnoWerks.Simulators
         public void INC(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
             byte val = RegisterMath.Inc(value);
-
-            memory.Write(addr, val);
-            memory.Write(addr, val);
-
             Registers.SetNZ(val);
+
+            memory.Write(addr, val);
+            memory.Write(addr, val);
 
             WaitCycles(cycles);
         }
@@ -1184,8 +1210,7 @@ namespace InnoWerks.Simulators
 
             Registers.ProgramCounter--;
 
-            StackPush(RegisterMath.HighByte(Registers.ProgramCounter));
-            StackPush(RegisterMath.LowByte(Registers.ProgramCounter));
+            StackPushWord(Registers.ProgramCounter);
 
             Registers.ProgramCounter = addr;
 
@@ -1271,12 +1296,14 @@ namespace InnoWerks.Simulators
         public void LSR(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
             Registers.Carry = (value & 0x01) != 0;
+            Registers.Negative = false;
 
-            value = RegisterMath.TruncateToByte((value >> 1) & 0x7f);
-            Registers.SetNZ(value);
+            value >>= 1;
+            Registers.Zero = RegisterMath.IsZero(value);
 
-            memory.Write(addr, RegisterMath.TruncateToByte(value));
-            memory.Write(addr, RegisterMath.TruncateToByte(value));
+            // dummy read (at least in 65c02)
+            memory.Read(addr);
+            memory.Write(addr, value);
 
             WaitCycles(cycles);
         }
@@ -1284,8 +1311,10 @@ namespace InnoWerks.Simulators
         public void LSR_A(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
             Registers.Carry = (Registers.A & 0x01) != 0;
-            Registers.A = RegisterMath.TruncateToByte((Registers.A >> 1) & 0x7f);
-            Registers.SetNZ(Registers.A);
+            Registers.Negative = false;
+
+            Registers.A >>= 1;
+            Registers.Zero = RegisterMath.IsZero(Registers.A);
 
             WaitCycles(cycles);
         }
@@ -1351,7 +1380,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void PHP(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
-            StackPush(Registers.ProcessorStatus | 0x10);
+            StackPush((byte)(Registers.ProcessorStatus | 0x10));
 
             WaitCycles(cycles);
         }
@@ -1500,9 +1529,13 @@ namespace InnoWerks.Simulators
         public void ROL(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
             var adjustment = Registers.Carry ? 0x01 : 0x00;
-            Registers.Carry = (Registers.A >> 7) != 0;
-            Registers.A = RegisterMath.TruncateToByte((Registers.A << 1) | adjustment);
-            Registers.SetNZ(Registers.A);
+            Registers.Carry = RegisterMath.IsHighBitSet(value);
+            value = RegisterMath.TruncateToByte((value << 1) | adjustment);
+            Registers.SetNZ(value);
+
+            // dummy read (at least in 65c02)
+            memory.Read(addr);
+            memory.Write(addr, value);
 
             WaitCycles(cycles);
         }
@@ -1535,8 +1568,10 @@ namespace InnoWerks.Simulators
             Registers.Carry = (value & 1) != 0;
             value = RegisterMath.TruncateToByte((value >> 1) | adjustment);
             Registers.SetNZ(value);
-            memory.Write(addr, RegisterMath.TruncateToByte(value));
-            memory.Write(addr, RegisterMath.TruncateToByte(value));
+
+            // dummy read (at least in 65c02)
+            memory.Read(addr);
+            memory.Write(addr, value);
 
             WaitCycles(cycles);
         }
@@ -1564,15 +1599,11 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void RTI(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
-            // this should probably be delegated "up" so that
-            // the cpu can notify the caller
+            // throw away
+            memory.Read(Registers.ProgramCounter);
 
             Registers.ProcessorStatus = StackPop();
-
-            byte lo = StackPop();
-            byte hi = StackPop();
-
-            Registers.ProgramCounter = RegisterMath.MakeShort(hi, lo);
+            Registers.ProgramCounter = StackPopWord();
 
             WaitCycles(cycles);
         }
@@ -1590,10 +1621,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void RTS(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
-            byte lo = StackPop();
-            byte hi = StackPop();
-
-            Registers.ProgramCounter = RegisterMath.MakeShort(hi, lo);
+            Registers.ProgramCounter = (ushort)(StackPopWord() + 1);
 
             WaitCycles(cycles);
         }
@@ -1774,6 +1802,7 @@ namespace InnoWerks.Simulators
         {
             int flag = 0x01 << bit;
             value |= (byte)flag;
+
             memory.Write(addr, RegisterMath.TruncateToByte(value));
 
             WaitCycles(cycles);
@@ -1899,6 +1928,7 @@ namespace InnoWerks.Simulators
         {
             Registers.Zero = RegisterMath.IsZero(Registers.A & value);
             value &= (byte)~Registers.A;
+
             memory.Write(addr, RegisterMath.TruncateToByte(value));
 
             WaitCycles(cycles);
@@ -1928,8 +1958,8 @@ namespace InnoWerks.Simulators
         public void TSB(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
             Registers.Zero = RegisterMath.IsZero(Registers.A & value);
-
             value |= Registers.A;
+
             memory.Write(addr, RegisterMath.TruncateToByte(value));
 
             WaitCycles(cycles);
@@ -2011,7 +2041,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void IllegalInstruction(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
-            illegalOpCode = true;
+
+            cycles += pageCrossPenalty;
+            WaitCycles(cycles);
         }
 
         public void WAI(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
@@ -2029,9 +2061,16 @@ namespace InnoWerks.Simulators
         #endregion
 
         #region InstructionDecoders
-        public ushort DecodeUndefined()
+        public ushort DecodeUndefined(int instructionSize)
         {
-            illegalOpCode = true;
+            if (instructionSize == 0)
+            {
+                illegalOpCode = true;
+                return 0;
+            }
+
+            // we're going to just move the PC and not really process the "operand" here
+            Registers.ProgramCounter = (ushort)(Registers.ProgramCounter + instructionSize);
 
             OperandDisplay = "";
 
@@ -2096,9 +2135,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeAbsolute()
         {
-            byte addrLo = memory.Read(Registers.ProgramCounter);
-            byte addrHi = memory.Read((ushort)(Registers.ProgramCounter + 1));
-            ushort operand = RegisterMath.MakeShort(addrHi, addrLo);
+            ushort operand = memory.ReadWord(Registers.ProgramCounter);
 
             OperandDisplay = $"${operand:X$}";
 
@@ -2136,9 +2173,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeAbsoluteXIndexed()
         {
-            byte addrLo = memory.Read(Registers.ProgramCounter);
-            byte addrHi = memory.Read((ushort)(Registers.ProgramCounter + 1));
-            ushort operand = RegisterMath.MakeShort(addrHi, addrLo);
+            ushort operand = memory.ReadWord(Registers.ProgramCounter);
 
             OperandDisplay = $"${operand:X4},X";
 
@@ -2159,9 +2194,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeAbsoluteYIndexed()
         {
-            byte addrLo = memory.Read(Registers.ProgramCounter);
-            byte addrHi = memory.Read((ushort)(Registers.ProgramCounter + 1));
-            ushort operand = RegisterMath.MakeShort(addrHi, addrLo);
+            ushort operand = memory.ReadWord(Registers.ProgramCounter);
 
             OperandDisplay = $"${operand:X4},Y";
 
@@ -2183,8 +2216,7 @@ namespace InnoWerks.Simulators
         public ushort DecodeZeroPageXIndexed()
         {
             var operand = memory.Read(Registers.ProgramCounter);
-
-            OperandDisplay = $"${operand:X2},X";
+            OperandDisplay = $"${operand:X2},X)";
 
             Registers.ProgramCounter++;
 
@@ -2223,13 +2255,12 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeRelative()
         {
-            OperandDisplay = $"${memory.Read(Registers.ProgramCounter, false):X2}";
+            var operand = memory.Read(Registers.ProgramCounter);
+            OperandDisplay = $"${operand:X2}";
 
-            ushort offset = memory.Read(Registers.ProgramCounter++);
+            Registers.ProgramCounter++;
 
-            if ((offset & 0x80) != 0) { offset -= 0x100; }
-
-            return (ushort)(Registers.ProgramCounter + offset);
+            return (ushort)(Registers.ProgramCounter + ((sbyte)operand < 0 ? (sbyte)operand : operand));
         }
 
         /// <summary>
@@ -2238,15 +2269,15 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeZeroPageIndirect()
         {
-            byte addrLo = memory.Read(Registers.ProgramCounter);
-            byte addrHi = memory.Read((ushort)(Registers.ProgramCounter + 1));
-            ushort operand = RegisterMath.MakeShort(addrHi, addrLo);
+            var operand = memory.Read(Registers.ProgramCounter);
+            OperandDisplay = $"(${operand:X2})";
 
-            OperandDisplay = $"(${operand:X4})";
+            var lo = memory.Read(operand);
+            var hi = memory.Read((ushort)(operand + 1));
 
-            Registers.ProgramCounter += 2;
+            Registers.ProgramCounter++;
 
-            return operand;
+            return RegisterMath.MakeShort(hi, lo);
         }
 
         /// <summary>
@@ -2256,15 +2287,15 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeAbsoluteIndexedIndirect()
         {
-            byte addrLo = memory.Read(Registers.ProgramCounter);
-            byte addrHi = memory.Read((ushort)(Registers.ProgramCounter + 1));
-            ushort operand = RegisterMath.MakeShort(addrHi, addrLo);
+            ushort operand = memory.ReadWord(Registers.ProgramCounter);
 
             OperandDisplay = $"(${operand:X4},X)";
 
             Registers.ProgramCounter += 2;
 
-            return (ushort)(operand + Registers.X);
+
+            ushort effectiveAddress = (ushort)(operand + Registers.X);
+            return memory.ReadWord(effectiveAddress);
         }
 
         /// <summary>
@@ -2287,7 +2318,10 @@ namespace InnoWerks.Simulators
 
             Registers.ProgramCounter++;
 
-            return (ushort)((memory.Read(zeroH) << 8) | memory.Read(zeroL));
+            var lo = memory.Read(zeroL);
+            var hi = memory.Read(zeroH);
+
+            return RegisterMath.MakeShort(hi, lo);
         }
 
         /// <summary>
@@ -2309,6 +2343,7 @@ namespace InnoWerks.Simulators
 
             Registers.ProgramCounter++;
 
+            // not MakeShort here because we're using the carry from the lo byte
             return (ushort)((hi << 8) + lo);
         }
 
@@ -2323,9 +2358,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeAbsoluteIndirect()
         {
-            byte addrLo = memory.Read(Registers.ProgramCounter);
-            byte addrHi = memory.Read((ushort)(Registers.ProgramCounter + 1));
-            ushort operand = RegisterMath.MakeShort(addrHi, addrLo);
+            ushort operand = memory.ReadWord(Registers.ProgramCounter);
 
             OperandDisplay = $"(${operand:X4})";
 
@@ -2334,7 +2367,7 @@ namespace InnoWerks.Simulators
             byte effL = memory.Read(operand);
             byte effH = (CpuClass == CpuClass.WDC65C02) ?
                 memory.Read((ushort)(operand + 1)) :
-                memory.Read((ushort)((operand & 0xFF00) + ((operand + 1) & 0x00ff)));
+                memory.Read((ushort)((operand & 0xff00) + ((operand + 1) & 0x00ff)));
 
             return RegisterMath.MakeShort(effH, effL);
         }

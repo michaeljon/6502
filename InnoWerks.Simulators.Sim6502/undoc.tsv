@@ -1,0 +1,94 @@
+addressing	asm	opc	bytes	cycles	note
+(indirect,X)	SLO (oper,X)	03	2	8
+zeropage	NOP zp	04	2	3
+zeropage	SLO oper	07	2	5
+(indirect),Y	SLO (oper),Y	13	2	8
+zeropage,X	NOP zp,X	14	2	4
+zeropage,X	SLO oper,X	17	2	6
+(indirect,X)	RLA (oper,X)	23	2	8
+zeropage	RLA oper	27	2	5
+(indirect),Y	RLA (oper),Y	33	2	8
+zeropage,X	NOP zp,X	34	2	4
+zeropage,X	RLA oper,X	37	2	6
+(indirect,X)	SRE (oper,X)	43	2	8
+zeropage	NOP zp	44	2	3
+zeropage	SRE oper	47	2	5
+(indirect),Y	SRE (oper),Y	53	2	8
+zeropage,X	NOP zp,X	54	2	4
+zeropage,X	SRE oper,X	57	2	6
+(indirect,X)	RRA (oper,X)	63	2	8
+zeropage	NOP zp	64	2	3
+zeropage	RRA oper	67	2	5
+(indirect),Y	RRA (oper),Y	73	2	8
+zeropage,X	NOP zp,X	74	2	4
+zeropage,X	RRA oper,X	77	2	6
+immediate	NOP #oper	80	2	2
+immediate	NOP #oper	82	2	2
+(indirect,X)	SAX (oper,X)	83	2	6
+zeropage	SAX oper	87	2	3
+immediate	NOP #oper	89	2	2
+(indirect),Y	SHA (oper),Y	93	2	6	†
+zeropage,Y	SAX oper,Y	97	2	4
+immediate	ANC #oper	0B	2	2
+absolute	NOP oper	0C	3	4
+absolute	SLO oper	0F	3	6
+implied	NOP 	1A	1	2
+absolut,Y	SLO oper,Y	1B	3	7
+absolut,X	NOP oper,X	1C	3	4*
+absolut,X	SLO oper,X	1F	3	7
+immediate	ANC #oper	2B	2	2
+absolute	RLA oper	2F	3	6
+implied	NOP 	3A	1	2
+absolut,Y	RLA oper,Y	3B	3	7
+absolut,X	NOP oper,X	3C	3	4*
+absolut,X	RLA oper,X	3F	3	7
+immediate	ALR #oper	4B	2	2
+absolute	SRE oper	4F	3	6
+implied	NOP 	5A	1	2
+absolut,Y	SRE oper,Y	5B	3	7
+absolut,X	NOP oper,X	5C	3	4*
+absolut,X	SRE oper,X	5F	3	7
+immediate	ARR #oper	6B	2	2
+absolute	RRA oper	6F	3	6
+implied	NOP 	7A	1	2
+absolut,Y	RRA oper,Y	7B	3	7
+absolut,X	NOP oper,X	7C	3	4*
+absolut,X	RRA oper,X	7F	3	7
+immediate	ANE #oper	8B	2	2
+absolute	SAX oper	8F	3	4
+absolut,Y	TAS oper,Y	9B	3	5	†
+absolut,X	SHY oper,X	9C	3	5	†
+absolut,Y	SHX oper,Y	9E	3	5	†
+absolut,Y	SHA oper,Y	9F	3	5	†
+(indirect,X)	LAX (oper,X)	A3	2	6
+zeropage	LAX oper	A7	2	3
+immediate	LXA #oper	AB	2	2
+absolute	LAX oper	AF	3	4
+(indirect),Y	LAX (oper),Y	B3	2	5*
+zeropage,Y	LAX oper,Y	B7	2	4
+absolut,Y	LAS oper,Y	BB	3	4*
+absolut,Y	LAX oper,Y	BF	3	4*
+immediate	NOP #oper	C2	2	2
+(indirect,X)	DCP (oper,X)	C3	2	8
+zeropage	DCP oper	C7	2	5
+immediate	SBX #oper	CB	2	2
+absolute	DCP oper	CF	3	6
+(indirect),Y	DCP (oper),Y	D3	2	8
+zeropage,X	NOP zp,X	D4	2	4
+zeropage,X	DCP oper,X	D7	2	6
+implied	NOP 	DA	1	2
+absolut,Y	DCP oper,Y	DB	3	7
+absolut,X	NOP oper,X	DC	3	4*
+absolut,X	DCP oper,X	DF	3	7
+immediate	NOP #oper	E2	2	2
+(indirect,X)	ISC (oper,X)	E3	2	8
+zeropage	ISC oper	E7	2	5
+immediate	USBC #oper	EB	2	2
+absolute	ISC oper	EF	3	6
+(indirect),Y	ISC (oper),Y	F3	2	8
+zeropage,X	NOP zp,X	F4	2	4
+zeropage,X	ISC oper,X	F7	2	6
+implied	NOP 	FA	1	2
+absolut,Y	ISC oper,Y	FB	3	7
+absolut,X	NOP oper,X	FC	3	4*
+absolut,X	ISC oper,X	FF	3	7

@@ -1,4 +1,3 @@
-using InnoWerks.Assemblers;
 using InnoWerks.Simulators;
 
 namespace InnoWerks.Processors.Tests
