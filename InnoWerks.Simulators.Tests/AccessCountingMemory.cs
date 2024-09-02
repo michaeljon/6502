@@ -10,17 +10,20 @@ namespace InnoWerks.Simulators.Tests
     {
         private readonly byte[] memory = new byte[64 * 1024];
 
-        private readonly List<JsonHarteTestBusAccess> busAccesses = new();
-
         private readonly int[] readCounts = new int[64 * 1024];
 
         private readonly int[] writeCounts = new int[64 * 1024];
+
+        public AccessCountingMemory()
+        {
+            BusAccesses = [];
+        }
 
         public byte Read(ushort address, bool countAccess = true)
         {
             if (countAccess == true)
             {
-                busAccesses.Add(
+                BusAccesses.Add(
                     new JsonHarteTestBusAccess()
                     {
                         Address = address,
@@ -39,7 +42,7 @@ namespace InnoWerks.Simulators.Tests
         {
             if (countAccess == true)
             {
-                busAccesses.Add(
+                BusAccesses.Add(
                     new JsonHarteTestBusAccess()
                     {
                         Address = address,
@@ -48,21 +51,21 @@ namespace InnoWerks.Simulators.Tests
                     }
                 );
 
-                busAccesses.Add(
+                BusAccesses.Add(
                     new JsonHarteTestBusAccess()
                     {
                         Address = (ushort)(address + 1),
-                        Value = memory[address + 1],
+                        Value = memory[(ushort)(address + 1)],
                         Type = CycleType.Read
                     }
                 );
 
                 readCounts[address]++;
-                readCounts[address + 1]++;
+                readCounts[(ushort)(address + 1)]++;
             }
 
             var lo = memory[address];
-            var hi = memory[address + 1];
+            var hi = memory[(ushort)(address + 1)];
 
             return (ushort)((hi << 8) | lo);
         }
@@ -71,7 +74,7 @@ namespace InnoWerks.Simulators.Tests
         {
             if (countAccess == true)
             {
-                busAccesses.Add(
+                BusAccesses.Add(
                     new JsonHarteTestBusAccess()
                     {
                         Address = address,
@@ -90,7 +93,7 @@ namespace InnoWerks.Simulators.Tests
         {
             if (countAccess == true)
             {
-                busAccesses.Add(
+                BusAccesses.Add(
                     new JsonHarteTestBusAccess()
                     {
                         Address = address,
@@ -99,7 +102,7 @@ namespace InnoWerks.Simulators.Tests
                     }
                 );
 
-                busAccesses.Add(
+                BusAccesses.Add(
                     new JsonHarteTestBusAccess()
                     {
                         Address = (ushort)(address + 1),
@@ -109,11 +112,11 @@ namespace InnoWerks.Simulators.Tests
                 );
 
                 writeCounts[address]++;
-                writeCounts[address + 1]++;
+                writeCounts[(ushort)(address + 1)]++;
             }
 
             memory[address] = (byte)(value & 0x00ff);
-            memory[address + 1] = (byte)((value >> 8) & 0xff);
+            memory[(ushort)(address + 1)] = (byte)((value >> 8) & 0xff);
         }
 
         public byte this[ushort address]
@@ -167,7 +170,7 @@ namespace InnoWerks.Simulators.Tests
 
             var expectedCount = expectedBusAccesses.Count();
 
-            if (expectedCount != busAccesses.Count)
+            if (expectedCount != BusAccesses.Count)
             {
                 return (false, 0, null, null);
             }
@@ -175,7 +178,7 @@ namespace InnoWerks.Simulators.Tests
             for (var a = 0; a < expectedCount; a++)
             {
                 var expected = expectedBusAccesses.ElementAt(a);
-                var actual = busAccesses[a];
+                var actual = BusAccesses[a];
 
                 if (expected.Address != actual.Address || expected.Value != actual.Value || expected.Type != actual.Type)
                 {
@@ -186,6 +189,6 @@ namespace InnoWerks.Simulators.Tests
             return (true, 0, null, null);
         }
 
-        public List<JsonHarteTestBusAccess> BusAccesses => busAccesses;
+        public List<JsonHarteTestBusAccess> BusAccesses { get; init; }
     }
 }

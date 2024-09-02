@@ -3,5 +3,19 @@
   "merlin6502.version": "Merlin 8",
   "files.watcherExclude": {
     "65x02/**": true
-  }
+  },
+  "editor.formatOnSave": false,
+  "dotnetAcquisitionExtension.existingDotnetPath":
+  [
+    {
+      "extensionId": "ms-dotnettools.csharp",
+      "path": "/usr/local/share/dotnet/dotnet"
+    },
+    {
+      "extensionId": "formulahendry.dotnet-test-explorer",
+      "path": "/usr/local/share/dotnet/dotnet"
+    }
+  ],
+  "dotnet-test-explorer.enableTelemetry": false,
+  "dotnet-test-explorer.runInParallel": true
 }

@@ -448,6 +448,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ASL(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Carry = ((byte)(value & 0x80)) != 0x00;
             value = RegisterMath.TruncateToByte(0xfe & (value << 1));
             Registers.SetNZ(value);
@@ -463,6 +466,9 @@ namespace InnoWerks.Simulators
 
         public void ASL_A(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Carry = ((Registers.A >> 7) & 0x01) != 0;
             Registers.A = RegisterMath.TruncateToByte(0xfe & (Registers.A << 1));
             Registers.SetNZ(Registers.A);
@@ -559,20 +565,31 @@ namespace InnoWerks.Simulators
             if ((value & (0x01 << bit)) != 0)
             {
                 ushort oldPC = Registers.ProgramCounter;
-                ushort newPC = (ushort)(Registers.ProgramCounter + 1);
 
                 sbyte offset = (sbyte)memory.Read(oldPC);
-                Registers.ProgramCounter = (ushort)(newPC + offset);
+                ushort newPC = (ushort)(oldPC + offset + 1);
+
+                Registers.ProgramCounter = newPC;
 
                 cycles++;
 
-                if ((oldPC & 0xff00) != (Registers.ProgramCounter & 0xff00))
+                if ((oldPC & 0xff00) != (newPC & 0xff00))
                 {
                     cycles += pageCrossPenalty;
+
+                    // discard
+                    // memory.Read((ushort)(oldPC + 1));
                 }
+
+                // discard
+                memory.Read((ushort)(oldPC + 1));
+                memory.Read((ushort)(oldPC + 1));
             }
             else
             {
+                // discard
+                memory.Read(Registers.ProgramCounter);
+
                 Registers.ProgramCounter++;
             }
 
@@ -873,6 +890,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CLC(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Carry = false;
 
             WaitCycles(cycles);
@@ -888,6 +908,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CLD(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Decimal = false;
 
             WaitCycles(cycles);
@@ -903,6 +926,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CLI(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Interrupt = false;
 
             // this should probably be reported "up" so that a
@@ -921,6 +947,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void CLV(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Overflow = false;
 
             WaitCycles(cycles);
@@ -1004,6 +1033,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void DEC(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             value = RegisterMath.Dec(value);
 
             memory.Write(addr, value);
@@ -1027,6 +1059,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void DEA(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.A = RegisterMath.Dec(Registers.A);
             Registers.SetNZ(Registers.A);
 
@@ -1046,6 +1081,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void DEX(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.X = RegisterMath.Dec(Registers.X);
             Registers.SetNZ(Registers.X);
 
@@ -1065,6 +1103,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void DEY(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Y = RegisterMath.Dec(Registers.Y);
             Registers.SetNZ(Registers.Y);
 
@@ -1105,6 +1146,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void INC(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(addr);
+
             byte val = RegisterMath.Inc(value);
             Registers.SetNZ(val);
 
@@ -1127,6 +1171,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void INA(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.A = RegisterMath.Inc(Registers.A);
             Registers.SetNZ(Registers.A);
 
@@ -1146,6 +1193,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void INX(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.X = RegisterMath.Inc(Registers.X);
             Registers.SetNZ(Registers.X);
 
@@ -1165,6 +1215,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void INY(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Y = RegisterMath.Inc(Registers.Y);
             Registers.SetNZ(Registers.Y);
 
@@ -1296,6 +1349,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void LSR(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Carry = (value & 0x01) != 0;
             Registers.Negative = false;
 
@@ -1311,6 +1367,9 @@ namespace InnoWerks.Simulators
 
         public void LSR_A(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Carry = (Registers.A & 0x01) != 0;
             Registers.Negative = false;
 
@@ -1328,6 +1387,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void NOP(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             WaitCycles(cycles);
         }
 
@@ -1450,10 +1512,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void PLP(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
-            // dummy read at program counter - discarded
-            memory.Read(Registers.ProgramCounter);
-            // dummy pop of stack
-            StackPop();
+            // dummy read top of stack
+            memory.Read((ushort)(StackBase + Registers.StackPointer));
 
             Registers.ProcessorStatus = StackPop();
             Registers.Break = false;
@@ -1536,6 +1596,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ROL(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             var adjustment = Registers.Carry ? 0x01 : 0x00;
             Registers.Carry = RegisterMath.IsHighBitSet(value);
             value = RegisterMath.TruncateToByte((value << 1) | adjustment);
@@ -1550,6 +1613,9 @@ namespace InnoWerks.Simulators
 
         public void ROL_A(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             var adjustment = Registers.Carry ? 0x01 : 0x00;
             Registers.Carry = (Registers.A >> 7) != 0;
             Registers.A = RegisterMath.TruncateToByte((Registers.A << 1) | adjustment);
@@ -1572,6 +1638,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void ROR(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             var adjustment = (Registers.Carry ? 0x01 : 0x00) << 7;
             Registers.Carry = (value & 1) != 0;
             value = RegisterMath.TruncateToByte((value >> 1) | adjustment);
@@ -1586,6 +1655,9 @@ namespace InnoWerks.Simulators
 
         public void ROR_A(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             var adjustment = (Registers.Carry ? 0x01 : 0x00) << 7;
             Registers.Carry = (Registers.A & 1) != 0;
             Registers.A = RegisterMath.TruncateToByte((Registers.A >> 1) | adjustment);
@@ -1608,10 +1680,16 @@ namespace InnoWerks.Simulators
         public void RTI(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
             // throw away
-            memory.Read((ushort)(Registers.ProgramCounter + 1));
+            memory.Read(Registers.ProgramCounter);
+
+            // discard top of stack
+            memory.Read((ushort)(StackBase + Registers.StackPointer));
 
             Registers.ProcessorStatus = StackPop();
             Registers.ProgramCounter = StackPopWord();
+
+            Registers.Break = false;
+            Registers.Unused = true;
 
             WaitCycles(cycles);
         }
@@ -1757,6 +1835,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void SEC(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Carry = true;
 
             WaitCycles(cycles);
@@ -1772,6 +1853,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void SED(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Decimal = true;
 
             WaitCycles(cycles);
@@ -1787,6 +1871,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void SEI(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Interrupt = true;
 
             WaitCycles(cycles);
@@ -1885,6 +1972,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TAX(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.X = Registers.A;
             Registers.SetNZ(Registers.X);
 
@@ -1903,6 +1993,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TAY(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.Y = Registers.A;
             Registers.SetNZ(Registers.Y);
 
@@ -1982,6 +2075,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TSX(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.X = Registers.StackPointer;
             Registers.SetNZ(Registers.X);
 
@@ -2000,6 +2096,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TXA(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.A = Registers.X;
             Registers.SetNZ(Registers.A);
 
@@ -2018,6 +2117,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TXS(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.StackPointer = Registers.X;
 
             WaitCycles(cycles);
@@ -2035,6 +2137,9 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void TYA(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // discard read
+            memory.Read(Registers.ProgramCounter);
+
             Registers.A = Registers.Y;
             Registers.SetNZ(Registers.A);
 
@@ -2277,7 +2382,7 @@ namespace InnoWerks.Simulators
             OperandDisplay = $"(${operand:X2})";
 
             var lo = memory.Read(operand);
-            var hi = memory.Read((ushort)(operand + 1));
+            var hi = memory.Read((byte)((operand + 1) & 0xff));
 
             Registers.ProgramCounter++;
 
@@ -2316,11 +2421,18 @@ namespace InnoWerks.Simulators
             var operand = memory.Read(Registers.ProgramCounter);
             OperandDisplay = $"(${operand:X2},X)";
 
+            // is there a dummy read here?
+            memory.Read((ushort)(operand + Registers.X));
+
+            byte zeroLo = RegisterMath.TruncateToByte(operand + Registers.X);
+            byte zeroHi = (byte)((operand + Registers.X + 1) & 0xff);
+
+            byte wordLo = memory.Read(zeroLo);
+            byte wordHi = memory.Read(zeroHi);
+
             Registers.ProgramCounter++;
 
-            ushort zeroL = RegisterMath.TruncateToByte(operand + Registers.X);
-
-            return memory.ReadWord(zeroL);
+            return RegisterMath.MakeShort(wordHi, wordLo);
         }
 
         /// <summary>

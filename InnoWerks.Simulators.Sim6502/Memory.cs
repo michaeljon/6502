@@ -14,7 +14,7 @@ namespace InnoWerks.Simulators
         public ushort ReadWord(ushort address, bool countAccess = true)
         {
             var lo = memory[address];
-            var hi = memory[address + 1];
+            var hi = memory[(ushort)(address + 1)];
 
             return (ushort)((hi << 8) | lo);
         }
@@ -27,7 +27,7 @@ namespace InnoWerks.Simulators
         public void WriteWord(ushort address, ushort value, bool countAccess = true)
         {
             memory[address] = (byte)(value & 0x00ff);
-            memory[address + 1] = (byte)((value >> 8) & 0xff);
+            memory[(ushort)(address + 1)] = (byte)((value >> 8) & 0xff);
         }
 
         public void LoadProgram(byte[] objectCode, ushort origin)

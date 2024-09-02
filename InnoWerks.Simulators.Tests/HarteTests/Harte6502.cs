@@ -1,3 +1,5 @@
+#define DUMP_TEST_DATA
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -177,8 +179,41 @@ namespace InnoWerks.Simulators.Tests
             cpu.Registers.Y = test.Initial.Y;
             cpu.Registers.ProcessorStatus = test.Initial.P;
 
+            // initial registers in local format
+            var initialRegisters = new Registers()
+            {
+                ProgramCounter = test.Initial.ProgramCounter,
+                StackPointer = test.Initial.S,
+                A = test.Initial.A,
+                X = test.Initial.X,
+                Y = test.Initial.Y,
+                ProcessorStatus = test.Initial.P,
+            };
+
             // run test
             cpu.Step(stopOnBreak: true, writeInstructions: false);
+
+            var finalRegisters = new Registers()
+            {
+                ProgramCounter = test.Final.ProgramCounter,
+                StackPointer = test.Final.S,
+                A = test.Final.A,
+                X = test.Final.X,
+                Y = test.Final.Y,
+                ProcessorStatus = test.Final.P,
+            };
+
+#if DUMP_TEST_DATA
+            Console.WriteLine($"TestName {test.Name}");
+            Console.WriteLine($"Initial registers  {initialRegisters}");
+            Console.WriteLine($"Expected registers {finalRegisters}");
+            Console.WriteLine($"Actual registers   {cpu.Registers}");
+
+            foreach (var busAccess in memory.BusAccesses)
+            {
+                Console.WriteLine(busAccess);
+            }
+#endif
 
             // verify results
             if (test.Final.ProgramCounter != cpu.Registers.ProgramCounter) results.Add($"{test.Name}: ProgramCounter expected {test.Final.ProgramCounter:X4} actual {cpu.Registers.ProgramCounter:X4}");
@@ -194,9 +229,16 @@ namespace InnoWerks.Simulators.Tests
             if (ramMatches == false) results.Add($"{test.Name}: Expected memory at {ramDiffersAtAddr} to be {ramExpectedValue} but is {ramActualValue}");
 
             // verify bus accesses
-            // (var cyclesMatches, var cyclesDiffersAtAddr, var cyclesExpectedValue, var cyclesActualValue) =
-            //     memory.ValidateCycles(test.BusAccesses);
-            // if (cyclesMatches == false) results.Add($"{test.Name}: Expected cycles at {cyclesDiffersAtAddr} to be {cyclesExpectedValue} but is {cyclesActualValue}");
+            if (test.BusAccesses.Count() != memory.BusAccesses.Count)
+            {
+                results.Add($"{test.Name}: Expected {test.BusAccesses.Count()} memory accesses but got {memory.BusAccesses.Count} instead ");
+            }
+            else
+            {
+                (var cyclesMatches, var cyclesDiffersAtAddr, var cyclesExpectedValue, var cyclesActualValue) =
+                    memory.ValidateCycles(test.BusAccesses);
+                if (cyclesMatches == false) results.Add($"{test.Name}: Expected access at {cyclesDiffersAtAddr} to be {cyclesExpectedValue} but is {cyclesActualValue}");
+            }
         }
 
         private static bool[] LoadIgnored()

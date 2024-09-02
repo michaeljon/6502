@@ -1,3 +1,5 @@
+// #define DUMP_TEST_DATA
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -15,6 +17,8 @@ namespace InnoWerks.Simulators.Tests
     [TestClass]
     public class Harte65C02 : TestBase
     {
+        private static readonly List<byte> testsToSkip = [];
+
         private static readonly JsonSerializerOptions serializerOptions = new()
         {
             ReadCommentHandling = JsonCommentHandling.Skip,
@@ -42,6 +46,10 @@ namespace InnoWerks.Simulators.Tests
                 .OrderBy(f => f);
 
             var ignored = LoadIgnored();
+            foreach (var skipped in testsToSkip)
+            {
+                ignored[skipped] = true;
+            }
 
             foreach (var file in files)
             {
@@ -56,7 +64,7 @@ namespace InnoWerks.Simulators.Tests
 
                     if (ignored[index] == false)
                     {
-                        foreach (var test in JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, serializerOptions).Take(10))
+                        foreach (var test in JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, serializerOptions))
                         {
                             RunIndividualTest(test, results);
                         }
@@ -73,7 +81,7 @@ namespace InnoWerks.Simulators.Tests
         }
 
         [DataTestMethod]
-        [DataRow("28")]
+        [DataRow("ff")]
         public void RunNamed65C02Batch(string batch)
         {
             if (string.IsNullOrEmpty(batch))
@@ -96,17 +104,17 @@ namespace InnoWerks.Simulators.Tests
                     RunIndividualTest(test, results);
                 }
 
-                // foreach (var result in results)
-                // {
-                //     Console.WriteLine(result);
-                // }
+                foreach (var result in results)
+                {
+                    Console.WriteLine(result);
+                }
 
                 Assert.AreEqual(0, results.Count, $"Failed some {results.Count} tests out of an expected {tests.Count}");
             }
         }
 
         [DataTestMethod]
-        [DataRow("28 77 67")]
+        [DataRow("fe 98 fe")]
         public void RunNamed65C02Test(string testName)
         {
             if (string.IsNullOrEmpty(testName))
@@ -177,42 +185,41 @@ namespace InnoWerks.Simulators.Tests
             cpu.Registers.Y = test.Initial.Y;
             cpu.Registers.ProcessorStatus = test.Initial.P;
 
+            // initial registers in local format
+            var initialRegisters = new Registers()
+            {
+                ProgramCounter = test.Initial.ProgramCounter,
+                StackPointer = test.Initial.S,
+                A = test.Initial.A,
+                X = test.Initial.X,
+                Y = test.Initial.Y,
+                ProcessorStatus = test.Initial.P,
+            };
+
             // run test
             cpu.Step(stopOnBreak: true, writeInstructions: false);
 
-
-            // initialize processor
+            var finalRegisters = new Registers()
             {
-                var initialRegisters = new Registers()
-                {
-                    ProgramCounter = test.Initial.ProgramCounter,
-                    StackPointer = test.Initial.S,
-                    A = test.Initial.A,
-                    X = test.Initial.X,
-                    Y = test.Initial.Y,
-                    ProcessorStatus = test.Initial.P,
-                };
+                ProgramCounter = test.Final.ProgramCounter,
+                StackPointer = test.Final.S,
+                A = test.Final.A,
+                X = test.Final.X,
+                Y = test.Final.Y,
+                ProcessorStatus = test.Final.P,
+            };
 
-                var finalRegisters = new Registers()
-                {
-                    ProgramCounter = test.Final.ProgramCounter,
-                    StackPointer = test.Final.S,
-                    A = test.Final.A,
-                    X = test.Final.X,
-                    Y = test.Final.Y,
-                    ProcessorStatus = test.Final.P,
-                };
+#if DUMP_TEST_DATA
+            Console.WriteLine($"TestName {test.Name}");
+            Console.WriteLine($"Initial registers  {initialRegisters}");
+            Console.WriteLine($"Expected registers {finalRegisters}");
+            Console.WriteLine($"Actual registers   {cpu.Registers}");
 
-                Console.WriteLine($"TestName {test.Name}");
-                Console.WriteLine($"Initial registers  {initialRegisters}");
-                Console.WriteLine($"Expected registers {finalRegisters}");
-                Console.WriteLine($"Actual registers   {cpu.Registers}");
-
-                foreach (var busAccess in memory.BusAccesses)
-                {
-                    Console.WriteLine(busAccess);
-                }
+            foreach (var busAccess in memory.BusAccesses)
+            {
+                Console.WriteLine(busAccess);
             }
+#endif
 
             // verify results
             if (test.Final.ProgramCounter != cpu.Registers.ProgramCounter) results.Add($"{test.Name}: ProgramCounter expected {test.Final.ProgramCounter:X4} actual {cpu.Registers.ProgramCounter:X4}");
@@ -221,16 +228,24 @@ namespace InnoWerks.Simulators.Tests
             if (test.Final.X != cpu.Registers.X) results.Add($"{test.Name}: X expected {test.Final.X:X2} actual {cpu.Registers.Y:X2}");
             if (test.Final.Y != cpu.Registers.Y) results.Add($"{test.Name}: Y expected {test.Final.Y:X2} actual {cpu.Registers.X:X2}");
             if (test.Final.P != cpu.Registers.ProcessorStatus) results.Add($"{test.Name}: ProcessorStatus expected {test.Final.P:X2} actual {cpu.Registers.ProcessorStatus:X2}");
+            if (test.Final.P != cpu.Registers.ProcessorStatus) results.Add($"{test.Name}: ProcessorStatus expected {finalRegisters} actual {cpu.Registers}");
 
             // verify memory
             (var ramMatches, var ramDiffersAtAddr, byte ramExpectedValue, byte ramActualValue) =
                 memory.ValidateMemory(test.Final.Ram);
             if (ramMatches == false) results.Add($"{test.Name}: Expected memory at {ramDiffersAtAddr} to be {ramExpectedValue} but is {ramActualValue}");
 
-            // verify bus accesses
-            // (var cyclesMatches, var cyclesDiffersAtAddr, var cyclesExpectedValue, var cyclesActualValue) =
-            //     memory.ValidateCycles(test.BusAccesses);
-            // if (cyclesMatches == false) results.Add($"{test.Name}: Expected cycles at {cyclesDiffersAtAddr} to be {cyclesExpectedValue} but is {cyclesActualValue}");
+            // // verify bus accesses
+            // if (test.BusAccesses.Count() != memory.BusAccesses.Count)
+            // {
+            //     results.Add($"{test.Name}: Expected {test.BusAccesses.Count()} memory accesses but got {memory.BusAccesses.Count} instead ");
+            // }
+            // else
+            // {
+            //     (var cyclesMatches, var cyclesDiffersAtAddr, var cyclesExpectedValue, var cyclesActualValue) =
+            //         memory.ValidateCycles(test.BusAccesses);
+            //     if (cyclesMatches == false) results.Add($"{test.Name}: Expected access at {cyclesDiffersAtAddr} to be {cyclesExpectedValue} but is {cyclesActualValue}");
+            // }
         }
 
         private static bool[] LoadIgnored()

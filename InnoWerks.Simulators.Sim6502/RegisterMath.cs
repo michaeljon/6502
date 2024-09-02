@@ -13,6 +13,6 @@ namespace InnoWerks.Simulators
 
         public static byte LowByte(ushort a) => (byte)(a & 0xff);
         public static byte HighByte(ushort a) => (byte)((a >> 8) & 0xff);
-        public static ushort MakeShort(byte hi, byte lo) => (ushort)((hi << 8) | lo);
+        public static ushort MakeShort(byte hi, byte lo) => (ushort)((ushort)((hi << 8) | lo) & 0xffff);
     }
 }
