@@ -73,7 +73,7 @@ namespace InnoWerks.Simulators.Tests
         }
 
         [DataTestMethod]
-        [DataRow("40")]
+        [DataRow("28")]
         public void RunNamed65C02Batch(string batch)
         {
             if (string.IsNullOrEmpty(batch))
@@ -106,7 +106,7 @@ namespace InnoWerks.Simulators.Tests
         }
 
         [DataTestMethod]
-        [DataRow("7c 1b e8")]
+        [DataRow("28 77 67")]
         public void RunNamed65C02Test(string testName)
         {
             if (string.IsNullOrEmpty(testName))
@@ -179,6 +179,40 @@ namespace InnoWerks.Simulators.Tests
 
             // run test
             cpu.Step(stopOnBreak: true, writeInstructions: false);
+
+
+            // initialize processor
+            {
+                var initialRegisters = new Registers()
+                {
+                    ProgramCounter = test.Initial.ProgramCounter,
+                    StackPointer = test.Initial.S,
+                    A = test.Initial.A,
+                    X = test.Initial.X,
+                    Y = test.Initial.Y,
+                    ProcessorStatus = test.Initial.P,
+                };
+
+                var finalRegisters = new Registers()
+                {
+                    ProgramCounter = test.Final.ProgramCounter,
+                    StackPointer = test.Final.S,
+                    A = test.Final.A,
+                    X = test.Final.X,
+                    Y = test.Final.Y,
+                    ProcessorStatus = test.Final.P,
+                };
+
+                Console.WriteLine($"TestName {test.Name}");
+                Console.WriteLine($"Initial registers  {initialRegisters}");
+                Console.WriteLine($"Expected registers {finalRegisters}");
+                Console.WriteLine($"Actual registers   {cpu.Registers}");
+
+                foreach (var busAccess in memory.BusAccesses)
+                {
+                    Console.WriteLine(busAccess);
+                }
+            }
 
             // verify results
             if (test.Final.ProgramCounter != cpu.Registers.ProgramCounter) results.Add($"{test.Name}: ProgramCounter expected {test.Final.ProgramCounter:X4} actual {cpu.Registers.ProgramCounter:X4}");

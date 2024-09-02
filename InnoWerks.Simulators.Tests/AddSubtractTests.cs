@@ -22,7 +22,6 @@ namespace InnoWerks.Simulators.Tests
                             $"   CLC            ; clear carry ",
                             $"   LDA #${a:x2}   ; a",
                             $"   ADC #${b:x2}   ; b",
-                            $"   BRK"
                         ],
                         0x0000
                     );
@@ -53,7 +52,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   CLC            ; clear carry ",
                     $"   LDA #${a:x2}   ; a",
                     $"   ADC #${b:x2}   ; b",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -80,7 +78,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   CPY #$01       ; ",
                     $"   LDA #$80       ; 128 ",
                     $"   ADC #$80       ; + 128",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -107,7 +104,6 @@ namespace InnoWerks.Simulators.Tests
                             $"   CLC            ; clear carry ",
                             $"   LDA #${a:x2}   ; a",
                             $"   SBC #${b:x2}   ; b",
-                            $"   BRK"
                         ],
                         0x0000
                     );
@@ -143,7 +139,6 @@ namespace InnoWerks.Simulators.Tests
                             $"   CLC            ; clear carry ",
                             $"   LDA #${decimalA:x2}   ; a",
                             $"   ADC #${decimalB:x2}   ; b",
-                            $"   BRK"
                         ],
                         0x0000
                     );
@@ -181,7 +176,6 @@ namespace InnoWerks.Simulators.Tests
                             $"   CLC            ; clear carry ",
                             $"   LDA #${decimalA:x2}   ; a",
                             $"   SBC #${decimalB:x2}   ; b",
-                            $"   BRK"
                         ],
                         0x0000
                     );
@@ -252,7 +246,6 @@ namespace InnoWerks.Simulators.Tests
                             $"   SEC            ; set carry ",
                             $"   LDA #${a:x2}   ; a",
                             $"   ADC #${b:x2}   ; b",
-                            $"   BRK"
                         ],
                         0x0000
                     );
@@ -284,7 +277,6 @@ namespace InnoWerks.Simulators.Tests
                             $"   SEC            ; set carry ",
                             $"   LDA #${a:x2}   ; a",
                             $"   SBC #${b:x2}   ; b",
-                            $"   BRK"
                         ],
                         0x0000
                     );
@@ -319,7 +311,6 @@ namespace InnoWerks.Simulators.Tests
                             $"   SEC            ; set carry ",
                             $"   LDA #${decimalA:x2}   ; a",
                             $"   ADC #${decimalB:x2}   ; b",
-                            $"   BRK"
                         ],
                         0x0000
                     );
@@ -357,7 +348,6 @@ namespace InnoWerks.Simulators.Tests
                             $"   SEC            ; set carry ",
                             $"   LDA #${decimalA:x2}   ; a",
                             $"   SBC #${decimalB:x2}   ; b",
-                            $"   BRK"
                         ],
                         0x0000
                     );

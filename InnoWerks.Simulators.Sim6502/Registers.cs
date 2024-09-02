@@ -84,36 +84,8 @@ namespace InnoWerks.Simulators
         /// pulling the P register from stack or by using the flag set or
         /// clear instructions.</para>
         /// </summary>
-        public byte ProcessorStatus
-        {
-            get
-            {
-                byte ps = 0;
-
-                ps |= (byte)(Negative ? ProcessorStatusBit.Negative : 0);
-                ps |= (byte)(Overflow ? ProcessorStatusBit.Overflow : 0);
-                ps |= (byte)(Unused ? ProcessorStatusBit.Unused : 0);
-                ps |= (byte)(Break ? ProcessorStatusBit.BreakCommand : 0);
-                ps |= (byte)(Decimal ? ProcessorStatusBit.DecimalMode : 0);
-                ps |= (byte)(Interrupt ? ProcessorStatusBit.InterruptDisable : 0);
-                ps |= (byte)(Zero ? ProcessorStatusBit.Zero : 0);
-                ps |= (byte)(Carry ? ProcessorStatusBit.Carry : 0);
-
-                return ps;
-            }
-
-            set
-            {
-                Negative = (byte)(value & (byte)ProcessorStatusBit.Negative) != 0;
-                Overflow = (byte)(value & (byte)ProcessorStatusBit.Overflow) != 0;
-                Unused = (byte)(value & (byte)ProcessorStatusBit.Unused) != 0;
-                Break = (byte)(value & (byte)ProcessorStatusBit.BreakCommand) != 0;
-                Decimal = (byte)(value & (byte)ProcessorStatusBit.DecimalMode) != 0;
-                Interrupt = (byte)(value & (byte)ProcessorStatusBit.InterruptDisable) != 0;
-                Zero = (byte)(value & (byte)ProcessorStatusBit.Zero) != 0;
-                Carry = (byte)(value & (byte)ProcessorStatusBit.Carry) != 0;
-            }
-        }
+        [DebuggerDisplay("{ProcessorStatus:X2}")]
+        public byte ProcessorStatus { get; set; }
 
         public string GetRegisterDisplay =>
              $"A:{A:X2} X:{X:X2} Y:{Y:X2} SP:{StackPointer:X2} PS:{ProcessorStatus:X2}";
@@ -124,45 +96,201 @@ namespace InnoWerks.Simulators
         public string InternalGetFlagsDisplay =>
             $"{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}-{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
 
+        public override string ToString()
+        {
+            var flags = $"{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}-{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
+            var values = $"A:{A:X2} X:{X:X2} Y:{Y:X2} SP:{StackPointer:X2} PS:{ProcessorStatus:X2}";
+
+            return $"{values} PC:{ProgramCounter:X4} {flags}";
+        }
+
         /// <summary>
         /// direct access to the carry flag in the processor status register
         /// </summary>
-        public bool Carry { get; set; }
+        public bool Carry
+        {
+            get
+            {
+                return (ProcessorStatus & (byte)ProcessorStatusBit.Carry) != 0;
+            }
+
+            set
+            {
+                if (value == true)
+                {
+                    ProcessorStatus |= (byte)ProcessorStatusBit.Carry;
+                }
+                else
+                {
+                    ProcessorStatus &= (byte)~ProcessorStatusBit.Carry;
+                }
+            }
+        }
 
         /// <summary>
         /// direct access to the zero flag in the processor status register
         /// </summary>
-        public bool Zero { get; set; }
+        public bool Zero
+        {
+            get
+            {
+                return (ProcessorStatus & (byte)ProcessorStatusBit.Zero) != 0;
+            }
+
+            set
+            {
+                if (value == true)
+                {
+                    ProcessorStatus |= (byte)ProcessorStatusBit.Zero;
+                }
+                else
+                {
+                    ProcessorStatus &= (byte)~ProcessorStatusBit.Zero;
+                }
+            }
+        }
 
         /// <summary>
         /// direct access to the interrupt flag in the processor status register
         /// </summary>
-        public bool Interrupt { get; set; }
+        public bool Interrupt
+        {
+            get
+            {
+                return (ProcessorStatus & (byte)ProcessorStatusBit.InterruptDisable) != 0;
+            }
+
+            set
+            {
+                if (value == true)
+                {
+                    ProcessorStatus |= (byte)ProcessorStatusBit.InterruptDisable;
+                }
+                else
+                {
+                    ProcessorStatus &= (byte)~ProcessorStatusBit.InterruptDisable;
+                }
+            }
+        }
 
         /// <summary>
         /// direct access to the decimal flag in the processor status register
         /// </summary>
 #pragma warning disable CA1720
-        public bool Decimal { get; set; }
+        public bool Decimal
+        {
+            get
+            {
+                return (ProcessorStatus & (byte)ProcessorStatusBit.DecimalMode) != 0;
+            }
+
+            set
+            {
+                if (value == true)
+                {
+                    ProcessorStatus |= (byte)ProcessorStatusBit.DecimalMode;
+                }
+                else
+                {
+                    ProcessorStatus &= (byte)~ProcessorStatusBit.DecimalMode;
+                }
+            }
+        }
+
 
         /// <summary>
         /// direct access to the BRK flag in the processor status register
         /// </summary>
-        public bool Break { get; set; }
+        public bool Break
+        {
+            get
+            {
+                return (ProcessorStatus & (byte)ProcessorStatusBit.BreakCommand) != 0;
+            }
+
+            set
+            {
+                if (value == true)
+                {
+                    ProcessorStatus |= (byte)ProcessorStatusBit.BreakCommand;
+                }
+                else
+                {
+                    ProcessorStatus &= (byte)~ProcessorStatusBit.BreakCommand;
+                }
+            }
+        }
+
 
         /// <summary>
         /// reserved value
         /// </summary>
-        public bool Unused { get; set; }
+        public bool Unused
+        {
+            get
+            {
+                return (ProcessorStatus & (byte)ProcessorStatusBit.Unused) != 0;
+            }
+
+            set
+            {
+                if (value == true)
+                {
+                    ProcessorStatus |= (byte)ProcessorStatusBit.Unused;
+                }
+                else
+                {
+                    ProcessorStatus &= (byte)~ProcessorStatusBit.Unused;
+                }
+            }
+        }
+
 
         /// <summary>
         /// direct access to the overflow flag in the processor status register
         /// </summary>
-        public bool Overflow { get; set; }
+        public bool Overflow
+        {
+            get
+            {
+                return (ProcessorStatus & (byte)ProcessorStatusBit.Overflow) != 0;
+            }
+
+            set
+            {
+                if (value == true)
+                {
+                    ProcessorStatus |= (byte)ProcessorStatusBit.Overflow;
+                }
+                else
+                {
+                    ProcessorStatus &= (byte)~ProcessorStatusBit.Overflow;
+                }
+            }
+        }
+
 
         /// <summary>
         /// direct access to the negative flag in the processor status register
         /// </summary>
-        public bool Negative { get; set; }
+        public bool Negative
+        {
+            get
+            {
+                return (ProcessorStatus & (byte)ProcessorStatusBit.Negative) != 0;
+            }
+
+            set
+            {
+                if (value == true)
+                {
+                    ProcessorStatus |= (byte)ProcessorStatusBit.Negative;
+                }
+                else
+                {
+                    ProcessorStatus &= (byte)~ProcessorStatusBit.Negative;
+                }
+            }
+        }
     }
 }

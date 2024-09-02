@@ -81,8 +81,17 @@ namespace InnoWerks.Simulators.Tests
             };
 
             cpu.Reset();
-            Console.WriteLine();
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            if (code != null)
+            {
+                for (var s = 0; s < code.Count; s++)
+                {
+                    cpu.Step(stopOnBreak: true, writeInstructions: false);
+                }
+            }
+            else
+            {
+                cpu.Run(stopOnBreak: true, writeInstructions: false);
+            }
 
             return cpu;
         }

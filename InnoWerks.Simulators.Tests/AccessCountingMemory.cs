@@ -185,5 +185,7 @@ namespace InnoWerks.Simulators.Tests
 
             return (true, 0, null, null);
         }
+
+        public List<JsonHarteTestBusAccess> BusAccesses => busAccesses;
     }
 }

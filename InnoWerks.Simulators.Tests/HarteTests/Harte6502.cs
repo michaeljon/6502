@@ -73,7 +73,7 @@ namespace InnoWerks.Simulators.Tests
         }
 
         [DataTestMethod]
-        [DataRow("00")]
+        [DataRow("40")]
         public void RunNamed6502Batch(string batch)
         {
             if (string.IsNullOrEmpty(batch))

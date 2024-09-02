@@ -21,7 +21,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   LDA #$05",
                     $"   CLC",
                     $"   ADC #$05",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -41,7 +40,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   SED",
                     $"   LDA #$05",
                     $"   ASL",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -62,7 +60,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   LDA #$09",
                     $"   CLC",
                     $"   ADC #$01",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -82,8 +79,7 @@ namespace InnoWerks.Simulators.Tests
                     $"   SED            ; Decimal mode (has no effect on this sequence)",
                     $"   LDA #$09",
                     $"   STA $E0",
-                    $"   INC $E0",
-                    $"   BRK            ; NUM (assuming it is an ordinary RAM location) will contain $0A."
+                    $"   INC $E0        ; NUM (assuming it is an ordinary RAM location) will contain $0A."
                 ],
                 0x0000
             );
@@ -104,7 +100,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   SEC            ; Note: carry is set, not clear!",
                     $"   LDA #$58       ; 88",
                     $"   ADC #$46       ; 70 (after this instruction, C = 0, A = $9F = 159)",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -126,7 +121,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   SEC            ; Note: carry is set, not clear!",
                     $"   LDA #$58",
                     $"   ADC #$46       ; After this instruction, C = 1, A = $05",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -148,7 +142,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   CLC            ; Note: carry is set, not clear!",
                     $"   LDA #$12",
                     $"   ADC #$34       ; After this instruction, C = 0, A = $46",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -170,7 +163,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   CLC            ; Note: carry is set, not clear!",
                     $"   LDA #$15",
                     $"   ADC #$26       ; After this instruction, C = 0, A = $41",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -192,7 +184,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   CLC            ; Note: carry is set, not clear!",
                     $"   LDA #$81",
                     $"   ADC #$92       ; After this instruction, C = 1, A = $73",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -214,7 +205,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   SEC            ; Note: carry is set, not clear!",
                     $"   LDA #$46",
                     $"   SBC #$12       ; After this instruction, C = 1, A = $34)",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -236,7 +226,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   SEC            ; Note: carry is set, not clear!",
                     $"   LDA #$40",
                     $"   SBC #$13       ; After this instruction, C = 1, A = $27)",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -258,7 +247,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   CLC            ; Note: carry is set, not clear!",
                     $"   LDA #$32",
                     $"   SBC #$02       ; After this instruction, C = 1, A = $29)",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -280,7 +268,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   SEC            ; Note: carry is set, not clear!",
                     $"   LDA #$12",
                     $"   SBC #$21       ; After this instruction, C = 0, A = $91)",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -302,7 +289,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   SEC            ; Note: carry is set, not clear!",
                     $"   LDA #$21",
                     $"   SBC #$34       ; After this instruction, C = 0, A = $87)",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -324,7 +310,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   CLC",
                     $"   LDA #$90",
                     $"   ADC #$90",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -345,7 +330,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   SEC",
                     $"   LDA #$01",
                     $"   SBC #$01",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -367,7 +351,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   CLC",
                     $"   LDA #$99",
                     $"   ADC #$01",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -389,7 +372,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   CLC",
                     $"   LDA #$99",
                     $"   ADC #$01",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -411,7 +393,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   SEC",
                     $"   LDA #$00",
                     $"   SBC #$00",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -437,7 +418,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   CLC",
                     $"   LDA #${xx:x2}",
                     $"   ADC #${yy:x2}",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -465,7 +445,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   SEC",
                     $"   LDA #${xx:x2}",
                     $"   SBC #${yy:x2}",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -491,7 +470,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   SEC",
                     $"   LDA #${xx:x2}",
                     $"   ADC #${yy:x2}",
-                    $"   BRK"
                 ],
                 0x0000
             );
@@ -517,7 +495,6 @@ namespace InnoWerks.Simulators.Tests
                     $"   CLC",
                     $"   LDA #${xx:x2}",
                     $"   SBC #${yy:x2}",
-                    $"   BRK"
                 ],
                 0x0000
             );

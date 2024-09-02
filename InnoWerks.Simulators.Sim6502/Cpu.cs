@@ -7,6 +7,7 @@ using InnoWerks.Processors;
 
 //
 // things to note: http://www.6502.org/tutorials/65c02opcodes.html
+//                 https://xotmatrix.github.io/6502/6502-single-cycle-execution.html
 //
 
 namespace InnoWerks.Simulators
@@ -805,7 +806,7 @@ namespace InnoWerks.Simulators
             Registers.ProgramCounter++;
 
             StackPushWord(Registers.ProgramCounter);
-            StackPush((byte)(Registers.ProcessorStatus | 0x10));
+            StackPush((byte)(Registers.ProcessorStatus | (byte)ProcessorStatusBit.BreakCommand));
 
             // 65c02 clears the decimal flag, 6502 leaves is undefined
             if (CpuClass == CpuClass.WDC65C02)
@@ -1380,7 +1381,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void PHP(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
-            StackPush((byte)(Registers.ProcessorStatus | 0x10));
+            StackPush((byte)(Registers.ProcessorStatus | (byte)ProcessorStatusBit.BreakCommand));
 
             WaitCycles(cycles);
         }
@@ -1449,7 +1450,14 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void PLP(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
+            // dummy read at program counter - discarded
+            memory.Read(Registers.ProgramCounter);
+            // dummy pop of stack
+            StackPop();
+
             Registers.ProcessorStatus = StackPop();
+            Registers.Break = false;
+            Registers.Unused = true;
 
             WaitCycles(cycles);
         }
@@ -1600,7 +1608,7 @@ namespace InnoWerks.Simulators
         public void RTI(ushort _1, byte _2, long cycles, long pageCrossPenalty = 0)
         {
             // throw away
-            memory.Read(Registers.ProgramCounter);
+            memory.Read((ushort)(Registers.ProgramCounter + 1));
 
             Registers.ProcessorStatus = StackPop();
             Registers.ProgramCounter = StackPopWord();

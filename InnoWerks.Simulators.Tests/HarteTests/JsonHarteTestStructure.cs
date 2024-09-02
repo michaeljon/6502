@@ -60,6 +60,11 @@ namespace InnoWerks.Simulators.Tests
         public int Value { get; set; }
 
         public CycleType Type { get; set; }
+
+        public override string ToString()
+        {
+            return $"${Address:X4}: ${Value:X2} ({Address}:{Value}) {Type.ToString().ToLowerInvariant()}";
+        }
     }
 
     [DebuggerDisplay("{Name}")]
