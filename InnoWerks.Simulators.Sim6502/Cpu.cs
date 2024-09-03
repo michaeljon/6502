@@ -234,31 +234,59 @@ namespace InnoWerks.Simulators
 
             preExecutionCallback?.Invoke(this, savePC);
 
-            // decode the operand based on the opcode and addressing mode
-            ushort addr = opCodeDefinition.DecodeOperand(this);
-
-            if (illegalOpCode == true)
+            // handle JSR for now
+            if (opCodeDefinition.OpCode == OpCode.JSR)
             {
-                throw new IllegalOpCodeException(savePC, operation);
-            }
+                // Fetch Low-Order Byte of Subroutine Address
+                byte lo = memory.Read(Registers.ProgramCounter);
 
-            var stepToExecute = $"{savePC:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}";
-            if (writeInstructions)
-            {
-                Console.Write(stepToExecute);
-            }
+                // dummy read top of stack
+                memory.Read((ushort)(StackBase + Registers.StackPointer));
 
-            if (multiByteAddressModes.Contains(opCodeDefinition.AddressingMode))
-            {
-                byte value = memory.Read(addr);
-                opCodeDefinition.Execute(this, addr, value);
+                // Push High-Order Byte of Program Counter to Stack
+                StackPushWord((ushort)(Registers.ProgramCounter + 1));
+
+                // Fetch Low-Order Byte of Subroutine Address
+                byte hi = memory.Read((ushort)(Registers.ProgramCounter + 1));
+
+                ushort operand = RegisterMath.MakeShort(hi, lo);
+
+                OperandDisplay = $"${operand:X4}";
+                var stepToExecute = $"{savePC:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}";
+                if (writeInstructions)
+                {
+                    Console.Write(stepToExecute);
+                }
+
+                Registers.ProgramCounter = operand;
             }
             else
             {
-                // ignored, since this is stack, implied, or accumulator
-                opCodeDefinition.Execute(this, addr, 255);
-            }
+                // decode the operand based on the opcode and addressing mode
+                ushort addr = opCodeDefinition.DecodeOperand(this);
 
+                if (illegalOpCode == true)
+                {
+                    throw new IllegalOpCodeException(savePC, operation);
+                }
+
+                var stepToExecute = $"{savePC:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}";
+                if (writeInstructions)
+                {
+                    Console.Write(stepToExecute);
+                }
+
+                if (multiByteAddressModes.Contains(opCodeDefinition.AddressingMode))
+                {
+                    byte value = memory.Read(addr);
+                    opCodeDefinition.Execute(this, addr, value);
+                }
+                else
+                {
+                    // ignored, since this is stack, implied, or accumulator
+                    opCodeDefinition.Execute(this, addr, 255);
+                }
+            }
             if (writeInstructions)
             {
                 Console.Write($"  {Registers.GetRegisterDisplay} ");
@@ -1730,6 +1758,12 @@ namespace InnoWerks.Simulators
             int adjustment = Registers.Carry ? 0x00 : 0x01;
             int result = Registers.A - value - adjustment;
 
+            bool borrowNeeded = false;
+            if (result < 0)
+            {
+                borrowNeeded = true;
+            }
+
             if (Registers.Decimal == true)
             {
                 cycles++;
@@ -1748,14 +1782,16 @@ namespace InnoWerks.Simulators
                     val -= 0x60;
                 }
 
-                Registers.Carry = result < 0x100;
+                // Registers.Carry = result < 0x100;
+                Registers.Carry = !borrowNeeded;
                 Registers.SetNZ(result);
                 Registers.Overflow = ((Registers.A ^ result) & 0x80) != 0 && ((Registers.A ^ value) & 0x80) != 0;
                 Registers.A = RegisterMath.TruncateToByte(val);
             }
             else
             {
-                Registers.Carry = result < 0x100;
+                // Registers.Carry = result < 0x100;
+                Registers.Carry = !borrowNeeded;
                 Registers.Overflow = ((Registers.A & 0x80) != (value & 0x80)) && ((Registers.A & 0x80) != (result & 0x80));
                 Registers.A = RegisterMath.TruncateToByte(result);
                 Registers.SetNZ(Registers.A);
@@ -2246,7 +2282,7 @@ namespace InnoWerks.Simulators
         {
             ushort operand = memory.ReadWord(Registers.ProgramCounter);
 
-            OperandDisplay = $"${operand:X$}";
+            OperandDisplay = $"${operand:X4}";
 
             Registers.ProgramCounter += 2;
 
@@ -2326,6 +2362,9 @@ namespace InnoWerks.Simulators
         {
             var operand = memory.Read(Registers.ProgramCounter);
             OperandDisplay = $"${operand:X2},X)";
+
+            // discard
+            memory.Read(operand);
 
             Registers.ProgramCounter++;
 
