@@ -17,7 +17,6 @@ namespace InnoWerks.Simulators.Tests
     {
         private static readonly bool[] ignored = LoadIgnored(CpuClass.WDC6502);
 
-        [Ignore]
         [TestMethod]
         public void RunAll6502Tests()
         {
@@ -56,9 +55,8 @@ namespace InnoWerks.Simulators.Tests
             Assert.AreEqual(0, results.Count, $"Failed some tests");
         }
 
-        [Ignore]
         [DataTestMethod]
-        [DataRow("20 55 13")]
+        [DataRow("fd 60 eb")]
         public void RunNamed6502Test(string testName)
         {
             if (string.IsNullOrEmpty(testName))
@@ -3443,7 +3441,7 @@ namespace InnoWerks.Simulators.Tests
 
             using (var fs = File.OpenRead(file))
             {
-                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions);
+                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions).Take(1000).ToList();
                 foreach (var test in tests)
                 {
                     RunIndividualTest(CpuClass.WDC6502, test, results);

@@ -1,8 +1,10 @@
 using System;
+using System.Diagnostics;
 using InnoWerks.Processors;
 
 namespace InnoWerks.Simulators
 {
+    [DebuggerDisplay("{OpCode} {AddressingMode}")]
     public record OpCodeDefinition(
         OpCode OpCode,
         Action<Cpu, ushort, byte> Execute,

@@ -1174,13 +1174,12 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void INC(ushort addr, byte value, long cycles, long pageCrossPenalty = 0)
         {
-            // discard read
-            memory.Read(addr);
+            // discard write
+            memory.Write(addr, value);
 
             byte val = RegisterMath.Inc(value);
             Registers.SetNZ(val);
 
-            memory.Write(addr, val);
             memory.Write(addr, val);
 
             WaitCycles(cycles);
@@ -2318,9 +2317,17 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeAbsoluteXIndexed()
         {
-            ushort operand = memory.ReadWord(Registers.ProgramCounter);
+            // t1 - Fetch Low-Order Byte of Base Address
+            byte lo = memory.Read(Registers.ProgramCounter);
 
+            // t2 - Fetch High-Order Byte of Base Address
+            byte hi = memory.Read((ushort)(Registers.ProgramCounter + 1));
+
+            var operand = RegisterMath.MakeShort(hi, lo);
             OperandDisplay = $"${operand:X4},X";
+
+            var discard = RegisterMath.MakeShort(hi, (byte)((lo + Registers.X) & 0xff));
+            memory.Read(discard);
 
             Registers.ProgramCounter += 2;
 
@@ -2339,9 +2346,17 @@ namespace InnoWerks.Simulators
         /// </summary>
         public ushort DecodeAbsoluteYIndexed()
         {
-            ushort operand = memory.ReadWord(Registers.ProgramCounter);
+            // t1 - Fetch Low-Order Byte of Base Address
+            byte lo = memory.Read(Registers.ProgramCounter);
 
-            OperandDisplay = $"${operand:X4},Y";
+            // t2 - Fetch High-Order Byte of Base Address
+            byte hi = memory.Read((ushort)(Registers.ProgramCounter + 1));
+
+            var operand = RegisterMath.MakeShort(hi, lo);
+            OperandDisplay = $"${operand:X4},X";
+
+            var discard = RegisterMath.MakeShort(hi, (byte)((lo + Registers.Y) & 0xff));
+            memory.Read(discard);
 
             Registers.ProgramCounter += 2;
 

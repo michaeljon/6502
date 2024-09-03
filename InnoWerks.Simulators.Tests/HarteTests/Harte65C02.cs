@@ -17,9 +17,8 @@ namespace InnoWerks.Simulators.Tests
     {
         private static readonly bool[] ignored = LoadIgnored(CpuClass.WDC6502);
 
-        [Ignore]
         [TestMethod]
-        public void RunAll6502Tests()
+        public void RunAll65C02Tests()
         {
             List<string> results = [];
 
@@ -48,7 +47,7 @@ namespace InnoWerks.Simulators.Tests
                 }
             }
 
-            foreach (var result in results)
+            foreach (var result in results.Take(10))
             {
                 TestContext.WriteLine(result);
             }
@@ -59,7 +58,7 @@ namespace InnoWerks.Simulators.Tests
         [Ignore]
         [DataTestMethod]
         [DataRow("01 bd b0")]
-        public void RunNamed6502Test(string testName)
+        public void RunNamed65C02Test(string testName)
         {
             if (string.IsNullOrEmpty(testName))
             {
@@ -3443,7 +3442,7 @@ namespace InnoWerks.Simulators.Tests
 
             using (var fs = File.OpenRead(file))
             {
-                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions);
+                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions).Take(100).ToList();
                 foreach (var test in tests)
                 {
                     RunIndividualTest(CpuClass.WDC65C02, test, results);

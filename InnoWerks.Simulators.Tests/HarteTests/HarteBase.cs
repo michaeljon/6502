@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Collections.Generic;
 using InnoWerks.Processors;
 using System;
+using System.Linq;
 
 #pragma warning disable CA1002
 
@@ -110,16 +111,16 @@ namespace InnoWerks.Simulators.Tests
             if (ramMatches == false) results.Add($"{test.Name}: Expected memory at {ramDiffersAtAddr} to be {ramExpectedValue} but is {ramActualValue}");
 
             // verify bus accesses
-            // if (test.BusAccesses.Count() != memory.BusAccesses.Count)
-            // {
-            //     results.Add($"{test.Name}: Expected {test.BusAccesses.Count()} memory accesses but got {memory.BusAccesses.Count} instead ");
-            // }
-            // else
-            // {
-            //     (var cyclesMatches, var cyclesDiffersAtAddr, var cyclesExpectedValue, var cyclesActualValue) =
-            //         memory.ValidateCycles(test.BusAccesses);
-            //     if (cyclesMatches == false) results.Add($"{test.Name}: Expected access at {cyclesDiffersAtAddr} to be {cyclesExpectedValue} but is {cyclesActualValue}");
-            // }
+            if (test.BusAccesses.Count() != memory.BusAccesses.Count)
+            {
+                results.Add($"{test.Name}: Expected {test.BusAccesses.Count()} memory accesses but got {memory.BusAccesses.Count} instead ");
+            }
+            else
+            {
+                (var cyclesMatches, var cyclesDiffersAtAddr, var cyclesExpectedValue, var cyclesActualValue) =
+                    memory.ValidateCycles(test.BusAccesses);
+                if (cyclesMatches == false) results.Add($"{test.Name}: Expected access at {cyclesDiffersAtAddr} to be {cyclesExpectedValue} but is {cyclesActualValue}");
+            }
         }
 
         protected static bool[] LoadIgnored(CpuClass cpuClass)
