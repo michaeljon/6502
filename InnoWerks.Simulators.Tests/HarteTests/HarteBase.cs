@@ -1,6 +1,6 @@
 #define DUMP_TEST_DATA
 #define POST_STEP_MEMORY
-// #define VALIDATE_BUS_ACCESSES
+#define VALIDATE_BUS_ACCESSES
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text.Json.Serialization;

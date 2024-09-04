@@ -696,6 +696,24 @@ namespace InnoWerks.Simulators
                 // A. 5.8. Branch Operation -- BCC, BCS, BEQ, BMI, BNE, BPL, BVC, BVS (2, 3, or 4 Cycles)
                 case OpCode.BRA:
 
+                case OpCode.BCC:
+                case OpCode.BCS:
+                case OpCode.BEQ:
+                case OpCode.BMI:
+                case OpCode.BNE:
+                case OpCode.BPL:
+                case OpCode.BVC:
+                case OpCode.BVS:
+                    {
+                        // T1
+                        var offset = memory.Read((ushort)(Registers.ProgramCounter + 1));
+
+                        // T2 - T3
+                        var addr = (ushort)(Registers.ProgramCounter + 2 + ((sbyte)offset < 0 ? (sbyte)offset : offset));
+                        opCodeDefinition.Execute(this, addr, offset);
+                    }
+                    break;
+
                 case OpCode.BBR0:
                 case OpCode.BBR1:
                 case OpCode.BBR2:
@@ -713,22 +731,17 @@ namespace InnoWerks.Simulators
                 case OpCode.BBS5:
                 case OpCode.BBS6:
                 case OpCode.BBS7:
-
-                case OpCode.BCC:
-                case OpCode.BCS:
-                case OpCode.BEQ:
-                case OpCode.BMI:
-                case OpCode.BNE:
-                case OpCode.BPL:
-                case OpCode.BVC:
-                case OpCode.BVS:
                     {
                         // T1
-                        var offset = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                        var zp = memory.Read((ushort)(Registers.ProgramCounter + 1));
 
-                        // T2 - T3
-                        var addr = (ushort)(Registers.ProgramCounter + 2 + ((sbyte)offset < 0 ? (sbyte)offset : offset));
-                        opCodeDefinition.Execute(this, addr, offset);
+                        // T2
+                        /* discarded */
+                        memory.Read(zp);
+                        var data = memory.Read(zp);
+
+                        // T3 - T5
+                        opCodeDefinition.Execute(this, 0, data);
                     }
                     break;
 

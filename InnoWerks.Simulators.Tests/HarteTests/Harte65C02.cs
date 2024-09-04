@@ -59,7 +59,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void RunNamed65C02Test()
         {
-            var testName = "1c 93 bc";
+            var testName = "0f 1";
 
             List<string> results = [];
 
@@ -3439,7 +3439,7 @@ namespace InnoWerks.Simulators.Tests
 
             using (var fs = File.OpenRead(file))
             {
-                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions).Take(10).ToList();
+                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions).ToList();
                 foreach (var test in tests)
                 {
                     RunIndividualTest(CpuClass.WDC65C02, test, results);

@@ -310,9 +310,15 @@ namespace InnoWerks.Simulators
         /// address is calculated, the result is loaded into the program counter,
         /// transferring control to that location.</para>
         /// </summary>
-        public void BBR(ushort addr, byte value, byte bit)
+        public void BBR(ushort _, byte value, byte bit)
         {
-            DoBranch((value & (0x01 << bit)) == 0, addr, 0);
+            // T3
+            var offset = memory.Read((ushort)(Registers.ProgramCounter + 2));
+
+            // T2 - T3
+            var addr = (ushort)(Registers.ProgramCounter + 3 + ((sbyte)offset < 0 ? (sbyte)offset : offset));
+
+            DoBranch65C02((value & (0x01 << bit)) == 0, addr, 0);
         }
 
         /// <summary>
@@ -342,9 +348,15 @@ namespace InnoWerks.Simulators
         /// the result is loaded into the program counter, transferring control
         /// to that location.</para>
         /// </summary>
-        public void BBS(ushort addr, byte value, byte bit)
+        public void BBS(ushort _, byte value, byte bit)
         {
-            DoBranch((value & (0x01 << bit)) != 0, addr, 0);
+            // T3
+            var offset = memory.Read((ushort)(Registers.ProgramCounter + 2));
+
+            // T2 - T3
+            var addr = (ushort)(Registers.ProgramCounter + 3 + ((sbyte)offset < 0 ? (sbyte)offset : offset));
+
+            DoBranch65C02((value & (0x01 << bit)) != 0, addr, 0);
         }
 
         /// <summary>
@@ -1606,22 +1618,48 @@ namespace InnoWerks.Simulators
 
         private void DoBranch(bool condition, ushort addr, byte offset)
         {
+            ushort next = 2;
+            ushort pc = (ushort)(Registers.ProgramCounter + next);
+
             if (condition == false)
             {
-                Registers.ProgramCounter += 2;
+                Registers.ProgramCounter += next;
             }
             else
             {
                 /* discarded */
-                memory.Read((ushort)(Registers.ProgramCounter + 2));
+                memory.Read(pc);
 
-                if ((addr & 0xff00) != ((ushort)(Registers.ProgramCounter + 2) & 0xff00))
+                if ((addr & 0xff00) != (pc & 0xff00))
                 {
                     var lo = addr & 0x00ff;
                     var hi = ((sbyte)offset < 0) ? ((addr & 0xff00) >> 8) + 1 : ((addr & 0xff00) >> 8) - 1;
 
                     /* discarded */
                     memory.Read((ushort)((hi << 8) | lo));
+                }
+
+                Registers.ProgramCounter = addr;
+            }
+        }
+
+        private void DoBranch65C02(bool condition, ushort addr, byte offset)
+        {
+            ushort next = 3;
+            ushort pc = (ushort)(Registers.ProgramCounter + next);
+
+            if (condition == false)
+            {
+                Registers.ProgramCounter += next;
+            }
+            else
+            {
+                /* discarded */
+                memory.Read(pc);
+
+                if ((addr & 0xff00) != (pc & 0xff00))
+                {
+                    memory.Read(pc);
                 }
 
                 Registers.ProgramCounter = addr;
