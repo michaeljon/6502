@@ -1,4 +1,4 @@
-#define DUMP_TEST_DATA
+// #define DUMP_TEST_DATA
 #define POST_STEP_MEMORY
 #define VALIDATE_BUS_ACCESSES
 
@@ -38,7 +38,7 @@ namespace InnoWerks.Simulators.Tests
             }
         };
 
-        protected void RunIndividualTest(CpuClass cpuClass, JsonHarteTestStructure test, List<string> results)
+        protected static void RunIndividualTest(CpuClass cpuClass, JsonHarteTestStructure test, List<string> results)
         {
             ArgumentNullException.ThrowIfNull(test);
             ArgumentNullException.ThrowIfNull(results);
@@ -126,9 +126,9 @@ namespace InnoWerks.Simulators.Tests
             }
 #endif
 
-#if DUMP_TEST_DATA
             if (testFailed == true)
             {
+#if DUMP_TEST_DATA
                 TestContext.WriteLine("");
                 TestContext.WriteLine($"Failed TestName      {test.Name}");
                 TestContext.WriteLine($"OpCode:              ${batch} {ocd.OpCode} {ocd.AddressingMode}");
@@ -141,8 +141,8 @@ namespace InnoWerks.Simulators.Tests
                 {
                     TestContext.WriteLine($"T{time++}: {busAccess}");
                 }
-            }
 #endif
+            }
         }
 
         protected static bool[] LoadIgnored(CpuClass cpuClass)

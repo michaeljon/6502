@@ -276,20 +276,52 @@ namespace InnoWerks.Simulators
                                 // T3
                                 var bah = memory.Read((ushort)((ial + 1) & 0xff));
 
+                                // not ADC
+                                if (CpuClass == CpuClass.WDC65C02)
+                                {
+                                    /* discarded */
+                                    memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                }
+
                                 // T4
-                                var adl = (bal + Registers.Y) & 0xff;     // Fetch Data (No Page Crossing)
-                                var adh = bah + 0;                  // Carry is 0 or 1 as Required from Previous Add Operation
-                                var ad = (ushort)((adh << 8) + adl);
+                                var adl = (bal + Registers.Y);          // Fetch Data (No Page Crossing)
+                                var adh = bah;                          // Carry is 0 or 1 as Required from Previous Add Operation
+                                var ad = CpuClass == CpuClass.WDC6502 ?
+                                    (ushort)((adh << 8) + (adl & 0xff)) :
+                                    (ushort)((adh << 8) + adl);
                                 var data = memory.Read(ad);
 
-                                // T5
-                                var adWithIndex = (ushort)((adh << 8) + bal + Registers.Y);
-                                var adWithoutIndex = (ushort)((adh << 8) + bal);
-
-                                if ((adWithIndex & 0xff00) != (adWithoutIndex & 0xff00))
+                                if (CpuClass == CpuClass.WDC6502)
                                 {
-                                    data = memory.Read((ushort)((bah << 8) + bal + Registers.Y));
+                                    // T5
+                                    var adWithIndex = (ushort)((adh << 8) + bal + Registers.Y);
+                                    var adWithoutIndex = (ushort)((adh << 8) + bal);
+
+                                    if ((adWithIndex & 0xff00) != (adWithoutIndex & 0xff00))
+                                    {
+                                        data = memory.Read((ushort)((bah << 8) + bal + Registers.Y));
+                                    }
                                 }
+
+                                opCodeDefinition.Execute(this, 0, data);
+
+                                Registers.ProgramCounter += 2;
+                            }
+                            break;
+
+                        // new 65c 02 adressing mode
+                        case AddressingMode.ZeroPageIndirect:
+                            {
+                                // T1
+                                var ial = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                // T2
+                                var bal = memory.Read((ushort)(ial));
+                                // T3
+                                var bah = memory.Read((ushort)((ial + 1) & 0xff));
+
+                                // T4
+                                var ad = (ushort)((bah << 8) | bal);
+                                var data = memory.Read(ad);
 
                                 opCodeDefinition.Execute(this, 0, data);
 
@@ -437,6 +469,24 @@ namespace InnoWerks.Simulators
                             }
                             break;
 
+                        case AddressingMode.ZeroPageIndirect:
+                            {
+                                // T1
+                                var ial = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                // T2
+                                var bal = memory.Read((ushort)(ial));
+                                // T3
+                                var bah = memory.Read((ushort)((ial + 1) & 0xff));
+
+                                // T4
+                                var ad = (ushort)((bah << 8) | bal);
+
+                                opCodeDefinition.Execute(this, ad, 0);
+
+                                Registers.ProgramCounter += 2;
+                            }
+                            break;
+
                         default:
                             throw new UnhandledAddressingModeException(Registers.ProgramCounter, operation, opCodeDefinition.OpCode, opCodeDefinition.AddressingMode);
                     }
@@ -462,7 +512,16 @@ namespace InnoWerks.Simulators
                                 // T2
                                 var data = memory.Read(adl);
                                 // T3
-                                memory.Write(adl, data);
+                                if (CpuClass == CpuClass.WDC6502)
+                                {
+                                    /* discarded */
+                                    memory.Write(adl, data);
+                                }
+                                else
+                                {
+                                    /* discarded */
+                                    memory.Read(adl);
+                                }
                                 // T4
                                 opCodeDefinition.Execute(this, adl, data);
 
@@ -481,7 +540,16 @@ namespace InnoWerks.Simulators
                                 var ad = (ushort)((adh << 8) | adl);
                                 var data = memory.Read(ad);
                                 // T4
-                                memory.Write(ad, data);
+                                if (CpuClass == CpuClass.WDC6502)
+                                {
+                                    /* discarded */
+                                    memory.Write(ad, data);
+                                }
+                                else
+                                {
+                                    /* discarded */
+                                    memory.Read(ad);
+                                }
                                 // T3
                                 opCodeDefinition.Execute(this, ad, data);
 
@@ -501,7 +569,16 @@ namespace InnoWerks.Simulators
                                 var ad = (ushort)((bal + Registers.X) & 0xff);
                                 var data = memory.Read(ad);
                                 // T4
-                                memory.Write(ad, data);
+                                if (CpuClass == CpuClass.WDC6502)
+                                {
+                                    /* discarded */
+                                    memory.Write(ad, data);
+                                }
+                                else
+                                {
+                                    /* discarded */
+                                    memory.Read(ad);
+                                }
                                 // T5
                                 opCodeDefinition.Execute(this, ad, data);
 
@@ -516,14 +593,28 @@ namespace InnoWerks.Simulators
                                 var bal = memory.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
                                 var bah = memory.Read((ushort)(Registers.ProgramCounter + 2));
-                                // T3
-                                /* var discarded = */
-                                memory.Read((ushort)((bah << 8) | ((bal + Registers.X) & 0xff)));
+
+                                if (CpuClass == CpuClass.WDC6502)
+                                {
+                                    // T3
+                                    /* var discarded = */
+                                    memory.Read((ushort)((bah << 8) | ((bal + Registers.X) & 0xff)));
+                                }
+
                                 // T4
                                 var ad = (ushort)((bah << 8) + bal + Registers.X);
                                 var data = memory.Read(ad);
                                 // T5
-                                memory.Write(ad, data);
+                                if (CpuClass == CpuClass.WDC6502)
+                                {
+                                    /* discarded */
+                                    memory.Write(ad, data);
+                                }
+                                else
+                                {
+                                    /* discarded */
+                                    memory.Read(ad);
+                                }
                                 // T6
                                 opCodeDefinition.Execute(this, ad, data);
 
@@ -584,9 +675,23 @@ namespace InnoWerks.Simulators
                                 // T3
                                 var ad = RegisterMath.MakeShort(iah, ial);
                                 var adl = memory.Read(ad);
+
                                 // T4
-                                ad = RegisterMath.MakeShort(iah, (byte)((ial + 1) & 0xff));
-                                var adh = memory.Read(ad);
+                                var aa = RegisterMath.MakeShort(iah, (byte)((ial + 1) & 0xff));
+                                var adh = memory.Read(aa);
+
+                                if (CpuClass == CpuClass.WDC65C02)
+                                {
+                                    if (ial == 0xff)
+                                    {
+                                        adh = memory.Read((ushort)(ad + 1));
+                                    }
+                                    else
+                                    {
+                                        /* discarded */
+                                        memory.Read(aa);
+                                    }
+                                }
 
                                 opCodeDefinition.Execute(this, RegisterMath.MakeShort(adh, adl), 0);
                             }

@@ -1,4 +1,4 @@
-#define DUMP_TEST_DATA
+// #define VERBOSE_BATCH_OUTPUT
 
 using System.Collections.Generic;
 using System.Globalization;
@@ -8,7 +8,7 @@ using System.Text.Json;
 using InnoWerks.Processors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-#pragma warning disable CA1851
+#pragma warning disable CA1822
 
 namespace InnoWerks.Simulators.Tests
 {
@@ -3439,18 +3439,25 @@ namespace InnoWerks.Simulators.Tests
 
             using (var fs = File.OpenRead(file))
             {
+                if (fs.Length == 0)
+                {
+                    return;
+                }
+
                 var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions).ToList();
                 foreach (var test in tests)
                 {
                     RunIndividualTest(CpuClass.WDC6502, test, results);
                 }
 
+#if VERBOSE_BATCH_OUTPUT
                 foreach (var result in results)
                 {
                     TestContext.WriteLine(result);
                 }
+#endif
 
-                Assert.AreEqual(0, results.Count, $"Failed some {results.Count} tests out of an expected {tests.Count}");
+                Assert.IsTrue(results.Count == 0, $"Failed with {results.Count} messages");
             }
         }
     }
