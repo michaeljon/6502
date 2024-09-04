@@ -47,7 +47,7 @@ namespace InnoWerks.Simulators.Tests
         public JsonHarteTestState Clone()
         {
             var clone = (JsonHarteTestState)MemberwiseClone();
-            clone.Ram = this.Ram.OrderBy(r => r.Address).ToList();
+            clone.Ram = [.. Ram.OrderBy(r => r.Address)];
             return clone;
         }
     }
@@ -63,7 +63,7 @@ namespace InnoWerks.Simulators.Tests
 
         public override string ToString()
         {
-            return $"${Address:X4}: ${Value:X2} ({Address}:{Value}) {Type.ToString().ToLowerInvariant()}";
+            return $"${Address:X4}:${Value:X2} ({Address}:{Value}) {Type.ToString().ToLowerInvariant()}";
         }
     }
 
@@ -86,10 +86,10 @@ namespace InnoWerks.Simulators.Tests
         {
             return new JsonHarteTestStructure
             {
-                Name = this.Name,
-                Initial = this.Initial.Clone(),
-                Final = this.Final.Clone(),
-                BusAccesses = this.BusAccesses
+                Name = Name,
+                Initial = Initial.Clone(),
+                Final = Final.Clone(),
+                BusAccesses = BusAccesses
             };
         }
     }

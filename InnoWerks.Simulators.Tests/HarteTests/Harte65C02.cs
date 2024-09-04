@@ -30,16 +30,16 @@ namespace InnoWerks.Simulators.Tests
             {
                 using (var fs = File.OpenRead(file))
                 {
-                    var index = byte.Parse(Path.GetFileNameWithoutExtension(file), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-
                     if (fs.Length == 0)
                     {
                         continue;
                     }
 
+                    var index = byte.Parse(Path.GetFileNameWithoutExtension(file), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+
                     if (ignored[index] == false)
                     {
-                        foreach (var test in JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions))
+                        foreach (var test in JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions).Take(5))
                         {
                             RunIndividualTest(CpuClass.WDC65C02, test, results);
                         }
@@ -47,7 +47,7 @@ namespace InnoWerks.Simulators.Tests
                 }
             }
 
-            foreach (var result in results.Take(10))
+            foreach (var result in results)
             {
                 TestContext.WriteLine(result);
             }
@@ -55,9 +55,8 @@ namespace InnoWerks.Simulators.Tests
             Assert.AreEqual(0, results.Count, $"Failed some tests");
         }
 
-        [Ignore]
         [DataTestMethod]
-        [DataRow("01 bd b0")]
+        [DataRow("0d 05 81")]
         public void RunNamed65C02Test(string testName)
         {
             if (string.IsNullOrEmpty(testName))

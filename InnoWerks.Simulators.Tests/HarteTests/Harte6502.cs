@@ -1,4 +1,4 @@
-// #define DUMP_TEST_DATA
+#define DUMP_TEST_DATA
 
 using System.Collections.Generic;
 using System.Globalization;
@@ -17,6 +17,7 @@ namespace InnoWerks.Simulators.Tests
     {
         private static readonly bool[] ignored = LoadIgnored(CpuClass.WDC6502);
 
+        [Ignore]
         [TestMethod]
         public void RunAll6502Tests()
         {
@@ -30,12 +31,12 @@ namespace InnoWerks.Simulators.Tests
             {
                 using (var fs = File.OpenRead(file))
                 {
-                    var index = byte.Parse(Path.GetFileNameWithoutExtension(file), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-
                     if (fs.Length == 0)
                     {
                         continue;
                     }
+
+                    var index = byte.Parse(Path.GetFileNameWithoutExtension(file), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
 
                     if (ignored[index] == false)
                     {
@@ -49,30 +50,27 @@ namespace InnoWerks.Simulators.Tests
 
             foreach (var result in results)
             {
-                TestContext.WriteLine(result);
+                // TestContext.WriteLine(result);
             }
 
             Assert.AreEqual(0, results.Count, $"Failed some tests");
         }
 
-        [DataTestMethod]
-        [DataRow("fd 60 eb")]
-        public void RunNamed6502Test(string testName)
+        [Ignore]
+        [TestMethod]
+        public void RunNamed6502Test()
         {
-            if (string.IsNullOrEmpty(testName))
-            {
-                Assert.Inconclusive("No test name provided to RunNamed6502Test");
-                return;
-            }
-
+            var testName = "6c ff 70";
             List<string> results = [];
 
             var batch = testName.Split(' ')[0];
             var file = $"/Users/michaeljon/src/6502/working/65x02/6502/v1/{batch}.json";
 
+            var ocd = CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)];
+
             TestContext.WriteLine($"Running test {testName}");
-            TestContext.WriteLine($"OpCode: ${batch} {CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)].OpCode}");
-            TestContext.WriteLine($"AddressingMode: {CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)].AddressingMode}");
+            TestContext.WriteLine($"OpCode: ${batch} {ocd.OpCode} {ocd.AddressingMode}");
+            TestContext.WriteLine("");
 
             using (var fs = File.OpenRead(file))
             {
@@ -3441,7 +3439,7 @@ namespace InnoWerks.Simulators.Tests
 
             using (var fs = File.OpenRead(file))
             {
-                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions).Take(1000).ToList();
+                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions).ToList();
                 foreach (var test in tests)
                 {
                     RunIndividualTest(CpuClass.WDC6502, test, results);

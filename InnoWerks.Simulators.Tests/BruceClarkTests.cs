@@ -36,18 +36,15 @@ namespace InnoWerks.Simulators.Tests
                 CpuClass.WDC6502,
                 memory,
                 (cpu, pc) => TraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
-                (cpu) => FlagsLoggerCallback(cpu, memory, 2))
-            {
-                SkipTimingWait = true
-            };
+                (cpu) => FlagsLoggerCallback(cpu, memory, 2));
 
             cpu.Reset();
 
             // run
             Console.WriteLine();
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            var instructionsProcessed = cpu.Run(stopOnBreak: true, writeInstructions: false);
 
-            TestContext.WriteLine($"INST: {cpu.InstructionsProcessed}");
+            TestContext.WriteLine($"INST: {instructionsProcessed}");
             Assert.AreEqual(0x00, memory[ERROR]);
         }
 
@@ -78,18 +75,15 @@ namespace InnoWerks.Simulators.Tests
                 CpuClass.WDC65C02,
                 memory,
                 (cpu, pc) => TraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
-                (cpu) => FlagsLoggerCallback(cpu, memory, 2))
-            {
-                SkipTimingWait = true
-            };
+                (cpu) => FlagsLoggerCallback(cpu, memory, 2));
 
             cpu.Reset();
 
             // run
             Console.WriteLine();
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            var instructionsProcessed = cpu.Run(stopOnBreak: true, writeInstructions: false);
 
-            TestContext.WriteLine($"INST: {cpu.InstructionsProcessed}");
+            TestContext.WriteLine($"INST: {instructionsProcessed}");
             Assert.AreEqual(0x00, memory[ERROR]);
         }
 
@@ -120,18 +114,15 @@ namespace InnoWerks.Simulators.Tests
                 CpuClass.WDC65C02,
                 memory,
                 (cpu, pc) => TraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
-                (cpu) => FlagsLoggerCallback(cpu, memory, 0))
-            {
-                SkipTimingWait = true
-            };
+                (cpu) => FlagsLoggerCallback(cpu, memory, 0));
 
             cpu.Reset();
 
             // run
             Console.WriteLine();
-            cpu.Run(stopOnBreak: true, writeInstructions: false);
+            var instructionsProcessed = cpu.Run(stopOnBreak: true, writeInstructions: false);
 
-            TestContext.WriteLine($"INST: {cpu.InstructionsProcessed}");
+            TestContext.WriteLine($"INST: {instructionsProcessed}");
             Assert.AreEqual(0x00, memory[ERROR]);
         }
     }

@@ -2,13 +2,17 @@ namespace InnoWerks.Simulators
 {
     public interface IMemory
     {
-        byte Read(ushort address, bool countAccess = true);
+        byte Read(ushort address);
 
-        void Write(ushort address, byte value, bool countAccess = true);
+        byte Peek(ushort address);
 
-        ushort ReadWord(ushort address, bool countAccess = true);
+        void Write(ushort address, byte value);
 
-        void WriteWord(ushort address, ushort value, bool countAccess = true);
+        ushort ReadWord(ushort address);
+
+        ushort PeekWord(ushort address);
+
+        void WriteWord(ushort address, ushort value);
 
         void LoadProgram(byte[] objectCode, ushort origin);
 

@@ -8,9 +8,8 @@ namespace InnoWerks.Simulators
     public record OpCodeDefinition(
         OpCode OpCode,
         Action<Cpu, ushort, byte> Execute,
-        Func<Cpu, ushort> DecodeOperand,
-        AddressingMode AddressingMode,
-        long PageCrossPenalty = 0)
+        Func<Cpu, bool> DecodeOperand,
+        AddressingMode AddressingMode)
     {
         /// <summary>
         ///
@@ -20,7 +19,7 @@ namespace InnoWerks.Simulators
         /// <summary>
         ///
         /// </summary>
-        public Func<Cpu, ushort> DecodeOperand { get; init; } = DecodeOperand;
+        public Func<Cpu, bool> DecodeOperand { get; init; } = DecodeOperand;
 
         /// <summary>
         ///
@@ -31,11 +30,6 @@ namespace InnoWerks.Simulators
         ///
         /// </summary>
         public AddressingMode AddressingMode { get; init; } = AddressingMode;
-
-        /// <summary>
-        ///
-        /// </summary>
-        public long PageCrossPenalty { get; init; } = PageCrossPenalty;
 
         public override string ToString()
         {

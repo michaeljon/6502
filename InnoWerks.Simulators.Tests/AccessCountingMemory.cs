@@ -19,50 +19,49 @@ namespace InnoWerks.Simulators.Tests
             BusAccesses = [];
         }
 
-        public byte Read(ushort address, bool countAccess = true)
+        public byte Read(ushort address)
         {
-            if (countAccess == true)
-            {
-                BusAccesses.Add(
-                    new JsonHarteTestBusAccess()
-                    {
-                        Address = address,
-                        Value = memory[address],
-                        Type = CycleType.Read
-                    }
-                );
+            BusAccesses.Add(
+                new JsonHarteTestBusAccess()
+                {
+                    Address = address,
+                    Value = memory[address],
+                    Type = CycleType.Read
+                }
+            );
 
-                readCounts[address]++;
-            }
+            readCounts[address]++;
 
             return memory[address];
         }
 
-        public ushort ReadWord(ushort address, bool countAccess = true)
+        public byte Peek(ushort address)
         {
-            if (countAccess == true)
-            {
-                BusAccesses.Add(
-                    new JsonHarteTestBusAccess()
-                    {
-                        Address = address,
-                        Value = memory[address],
-                        Type = CycleType.Read
-                    }
-                );
+            return memory[address];
+        }
 
-                BusAccesses.Add(
-                    new JsonHarteTestBusAccess()
-                    {
-                        Address = (ushort)(address + 1),
-                        Value = memory[(ushort)(address + 1)],
-                        Type = CycleType.Read
-                    }
-                );
+        public ushort ReadWord(ushort address)
+        {
+            BusAccesses.Add(
+                new JsonHarteTestBusAccess()
+                {
+                    Address = address,
+                    Value = memory[address],
+                    Type = CycleType.Read
+                }
+            );
 
-                readCounts[address]++;
-                readCounts[(ushort)(address + 1)]++;
-            }
+            BusAccesses.Add(
+                new JsonHarteTestBusAccess()
+                {
+                    Address = (ushort)(address + 1),
+                    Value = memory[(ushort)(address + 1)],
+                    Type = CycleType.Read
+                }
+            );
+
+            readCounts[address]++;
+            readCounts[(ushort)(address + 1)]++;
 
             var lo = memory[address];
             var hi = memory[(ushort)(address + 1)];
@@ -70,50 +69,52 @@ namespace InnoWerks.Simulators.Tests
             return (ushort)((hi << 8) | lo);
         }
 
-        public void Write(ushort address, byte value, bool countAccess = true)
+        public ushort PeekWord(ushort address)
         {
-            if (countAccess == true)
-            {
-                BusAccesses.Add(
-                    new JsonHarteTestBusAccess()
-                    {
-                        Address = address,
-                        Value = value,
-                        Type = CycleType.Write
-                    }
-                );
+            var lo = memory[address];
+            var hi = memory[(ushort)(address + 1)];
 
-                writeCounts[address]++;
-            }
+            return (ushort)((hi << 8) | lo);
+        }
+
+        public void Write(ushort address, byte value)
+        {
+            BusAccesses.Add(
+                new JsonHarteTestBusAccess()
+                {
+                    Address = address,
+                    Value = value,
+                    Type = CycleType.Write
+                }
+            );
+
+            writeCounts[address]++;
 
             memory[address] = value;
         }
 
-        public void WriteWord(ushort address, ushort value, bool countAccess = true)
+        public void WriteWord(ushort address, ushort value)
         {
-            if (countAccess == true)
-            {
-                BusAccesses.Add(
-                    new JsonHarteTestBusAccess()
-                    {
-                        Address = address,
-                        Value = value,
-                        Type = CycleType.Write
-                    }
-                );
+            BusAccesses.Add(
+                new JsonHarteTestBusAccess()
+                {
+                    Address = address,
+                    Value = value,
+                    Type = CycleType.Write
+                }
+            );
 
-                BusAccesses.Add(
-                    new JsonHarteTestBusAccess()
-                    {
-                        Address = (ushort)(address + 1),
-                        Value = value,
-                        Type = CycleType.Write
-                    }
-                );
+            BusAccesses.Add(
+                new JsonHarteTestBusAccess()
+                {
+                    Address = (ushort)(address + 1),
+                    Value = value,
+                    Type = CycleType.Write
+                }
+            );
 
-                writeCounts[address]++;
-                writeCounts[(ushort)(address + 1)]++;
-            }
+            writeCounts[address]++;
+            writeCounts[(ushort)(address + 1)]++;
 
             memory[address] = (byte)(value & 0x00ff);
             memory[(ushort)(address + 1)] = (byte)((value >> 8) & 0xff);

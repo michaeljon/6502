@@ -75,17 +75,14 @@ namespace InnoWerks.Simulators.Tests
                 cpuClass,
                 memory,
                 (cpu, pc) => DummyTraceCallback(cpu, pc, memory, code),
-                (cpu) => DummyLoggerCallback(cpu, memory, lines))
-            {
-                SkipTimingWait = true
-            };
+                (cpu) => DummyLoggerCallback(cpu, memory, lines));
 
             cpu.Reset();
             if (code != null)
             {
                 for (var s = 0; s < code.Count; s++)
                 {
-                    cpu.Step(stopOnBreak: true, writeInstructions: false);
+                    cpu.Step(writeInstructions: false);
                 }
             }
             else

@@ -6,12 +6,17 @@ namespace InnoWerks.Simulators
     {
         private readonly byte[] memory = new byte[64 * 1024];
 
-        public byte Read(ushort address, bool countAccess = true)
+        public byte Read(ushort address)
         {
             return memory[address];
         }
 
-        public ushort ReadWord(ushort address, bool countAccess = true)
+        public byte Peek(ushort address)
+        {
+            return memory[address];
+        }
+
+        public ushort ReadWord(ushort address)
         {
             var lo = memory[address];
             var hi = memory[(ushort)(address + 1)];
@@ -19,12 +24,20 @@ namespace InnoWerks.Simulators
             return (ushort)((hi << 8) | lo);
         }
 
-        public void Write(ushort address, byte value, bool countAccess = true)
+        public ushort PeekWord(ushort address)
+        {
+            var lo = memory[address];
+            var hi = memory[(ushort)(address + 1)];
+
+            return (ushort)((hi << 8) | lo);
+        }
+
+        public void Write(ushort address, byte value)
         {
             memory[address] = value;
         }
 
-        public void WriteWord(ushort address, ushort value, bool countAccess = true)
+        public void WriteWord(ushort address, ushort value)
         {
             memory[address] = (byte)(value & 0x00ff);
             memory[(ushort)(address + 1)] = (byte)((value >> 8) & 0xff);

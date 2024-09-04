@@ -1,11 +1,14 @@
 ﻿namespace InnoWerks.Processors
 {
+#pragma warning disable CA1707
+
     public enum OpCode
     {
         Unknown,
         ADC,
         AND,
         ASL,
+        ASL_A,
         BBR0,
         BBR1,
         BBR2,
@@ -55,6 +58,7 @@
         LDX,
         LDY,
         LSR,
+        LSR_A,
         NOP,
         ORA,
         PHA,
@@ -74,7 +78,9 @@
         RMB6,
         RMB7,
         ROL,
+        ROL_A,
         ROR,
+        ROR_A,
         RTI,
         RTS,
         SBC,
