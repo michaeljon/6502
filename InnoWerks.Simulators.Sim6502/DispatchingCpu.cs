@@ -592,6 +592,23 @@ namespace InnoWerks.Simulators
                             }
                             break;
 
+                        case AddressingMode.AbsoluteIndexedIndirect:
+                            // 65C02 only
+                            {
+                                // T1
+                                var adl = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                // T2
+                                var adh = memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                var ad = (ushort)(((adh << 8) | adl) + Registers.X);
+
+                                var ial = memory.Read((ushort)ad);
+                                var iah = memory.Read((ushort)(ad + 1));
+
+                                ad = (ushort)((iah << 8) | ial);
+                                opCodeDefinition.Execute(this, ad, 0);
+                            }
+                            break;
+
                         default:
                             throw new UnhandledAddressingModeException(Registers.ProgramCounter, operation, opCodeDefinition.OpCode, opCodeDefinition.AddressingMode);
                     }
@@ -619,6 +636,8 @@ namespace InnoWerks.Simulators
                 // A. 5.1. Push Operations -- PHP, PHA (3 Cycles)
                 case OpCode.PHA:
                 case OpCode.PHP:
+                case OpCode.PHX:
+                case OpCode.PHY:
                     {
                         // T1
                         /* var discarded = */
@@ -633,6 +652,8 @@ namespace InnoWerks.Simulators
                 // A. 5.2. Pull Operations -- PLP, PLA (4 Cycles)
                 case OpCode.PLA:
                 case OpCode.PLP:
+                case OpCode.PLX:
+                case OpCode.PLY:
                     {
                         // T1
                         /* var discarded = */
@@ -708,6 +729,86 @@ namespace InnoWerks.Simulators
                         // T2 - T3
                         var addr = (ushort)(Registers.ProgramCounter + 2 + ((sbyte)offset < 0 ? (sbyte)offset : offset));
                         opCodeDefinition.Execute(this, addr, offset);
+                    }
+                    break;
+
+                case OpCode.SMB0:
+                case OpCode.SMB1:
+                case OpCode.SMB2:
+                case OpCode.SMB3:
+                case OpCode.SMB4:
+                case OpCode.SMB5:
+                case OpCode.SMB6:
+                case OpCode.SMB7:
+
+                case OpCode.RMB0:
+                case OpCode.RMB1:
+                case OpCode.RMB2:
+                case OpCode.RMB3:
+                case OpCode.RMB4:
+                case OpCode.RMB5:
+                case OpCode.RMB6:
+                case OpCode.RMB7:
+                    {
+                        var addr = memory.Read((ushort)(Registers.ProgramCounter + 1));
+
+                        /* dicarded */
+                        memory.Read(addr);
+
+                        var value = memory.Read(addr);
+
+                        opCodeDefinition.Execute(this, addr, value);
+
+                        Registers.ProgramCounter += 2;
+                    }
+                    break;
+
+                case OpCode.TSB:
+                case OpCode.TRB:
+                    switch (opCodeDefinition.AddressingMode)
+                    {
+                        case AddressingMode.Absolute:
+                            {
+                                // T1
+                                var adl = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                // T2
+                                var adh = memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                var ad = (ushort)((adh << 8) | adl);
+                                // T3
+                                /* discarded */
+                                memory.Read(ad);
+                                // T4
+                                var value = memory.Read(ad);
+
+                                // T5
+                                opCodeDefinition.Execute(this, ad, value);
+
+                                Registers.ProgramCounter += 3;
+                            }
+
+                            break;
+
+                        case AddressingMode.ZeroPage:
+                            {
+                                // T1
+                                var addr = memory.Read((ushort)(Registers.ProgramCounter + 1));
+
+                                // T2
+                                /* discarded */
+                                memory.Read(addr);
+
+                                // T3
+                                var value = memory.Read(addr);
+
+                                // T4
+                                opCodeDefinition.Execute(this, addr, value);
+
+                                Registers.ProgramCounter += 2;
+                            }
+                            break;
+
+                        default:
+                            throw new UnhandledAddressingModeException(Registers.ProgramCounter, operation, opCodeDefinition.OpCode, opCodeDefinition.AddressingMode);
                     }
                     break;
 

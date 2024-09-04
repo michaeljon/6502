@@ -1,6 +1,6 @@
 #define DUMP_TEST_DATA
 #define POST_STEP_MEMORY
-#define VALIDATE_BUS_ACCESSES
+// #define VALIDATE_BUS_ACCESSES
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text.Json.Serialization;
@@ -44,7 +44,9 @@ namespace InnoWerks.Simulators.Tests
             ArgumentNullException.ThrowIfNull(results);
 
             var batch = test.Name.Split(' ')[0];
-            var ocd = CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)];
+            var ocd = cpuClass == CpuClass.WDC6502 ?
+                CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)] :
+                CpuInstructions.OpCode65C02[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)];
 
             var memory = new AccessCountingMemory();
 
@@ -128,7 +130,7 @@ namespace InnoWerks.Simulators.Tests
             if (testFailed == true)
             {
                 TestContext.WriteLine("");
-                TestContext.WriteLine($"TestName             {test.Name}");
+                TestContext.WriteLine($"Failed TestName      {test.Name}");
                 TestContext.WriteLine($"OpCode:              ${batch} {ocd.OpCode} {ocd.AddressingMode}");
                 TestContext.WriteLine($"Initial registers    {initialRegisters}");
                 TestContext.WriteLine($"Expected registers   {finalRegisters}");

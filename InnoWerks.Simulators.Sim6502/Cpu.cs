@@ -1101,7 +1101,8 @@ namespace InnoWerks.Simulators
         {
             int flag = 0x01 << bit;
             value &= (byte)~flag;
-            memory.Write(addr, RegisterMath.TruncateToByte(value));
+
+            memory.Write(addr, value);
         }
 
         /// <summary>
@@ -1379,7 +1380,7 @@ namespace InnoWerks.Simulators
             int flag = 0x01 << bit;
             value |= (byte)flag;
 
-            memory.Write(addr, RegisterMath.TruncateToByte(value));
+            memory.Write(addr, value);
         }
 
         /// <summary>

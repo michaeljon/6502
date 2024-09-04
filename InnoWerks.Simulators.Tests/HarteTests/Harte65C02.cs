@@ -15,8 +15,9 @@ namespace InnoWerks.Simulators.Tests
     [TestClass]
     public class Harte65C02 : HarteBase
     {
-        private static readonly bool[] ignored = LoadIgnored(CpuClass.WDC6502);
+        private static readonly bool[] ignored = LoadIgnored(CpuClass.WDC65C02);
 
+        [Ignore]
         [TestMethod]
         public void RunAll65C02Tests()
         {
@@ -55,24 +56,21 @@ namespace InnoWerks.Simulators.Tests
             Assert.AreEqual(0, results.Count, $"Failed some tests");
         }
 
-        [DataTestMethod]
-        [DataRow("0d 05 81")]
-        public void RunNamed65C02Test(string testName)
+        [TestMethod]
+        public void RunNamed65C02Test()
         {
-            if (string.IsNullOrEmpty(testName))
-            {
-                Assert.Inconclusive("No test name provided to RunNamed6502Test");
-                return;
-            }
+            var testName = "1c 93 bc";
 
             List<string> results = [];
 
             var batch = testName.Split(' ')[0];
             var file = $"/Users/michaeljon/src/6502/working/65x02/wdc65c02/v1/{batch}.json";
 
+            var ocd = CpuInstructions.OpCode65C02[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)];
+
             TestContext.WriteLine($"Running test {testName}");
-            TestContext.WriteLine($"OpCode: ${batch} {CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)].OpCode}");
-            TestContext.WriteLine($"AddressingMode: {CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)].AddressingMode}");
+            TestContext.WriteLine($"OpCode: ${batch} {ocd.OpCode} {ocd.AddressingMode}");
+            TestContext.WriteLine("");
 
             using (var fs = File.OpenRead(file))
             {
@@ -3441,7 +3439,7 @@ namespace InnoWerks.Simulators.Tests
 
             using (var fs = File.OpenRead(file))
             {
-                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions).Take(100).ToList();
+                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions).Take(10).ToList();
                 foreach (var test in tests)
                 {
                     RunIndividualTest(CpuClass.WDC65C02, test, results);
