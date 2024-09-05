@@ -1,5 +1,6 @@
 // #define VERBOSE_BATCH_OUTPUT
 
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -17,6 +18,8 @@ namespace InnoWerks.Simulators.Tests
     {
         private static readonly bool[] ignored = LoadIgnored(CpuClass.WDC6502);
 
+        protected override string BasePath => Environment.ExpandEnvironmentVariables("%HOME%/src/6502/working/65x02/6502/v1");
+
         [Ignore]
         [TestMethod]
         public void RunAll6502Tests()
@@ -24,7 +27,7 @@ namespace InnoWerks.Simulators.Tests
             List<string> results = [];
 
             var files = Directory
-                .GetFiles("/Users/michaeljon/src/6502/working/65x02/6502/v1", "*.json")
+                .GetFiles(BasePath, "*.json")
                 .OrderBy(f => f);
 
             foreach (var file in files)
@@ -48,11 +51,12 @@ namespace InnoWerks.Simulators.Tests
                 }
             }
 
+#if VERBOSE_BATCH_OUTPUT
             foreach (var result in results)
             {
-                // TestContext.WriteLine(result);
+                TestContext.WriteLine(result);
             }
-
+#endif
             Assert.AreEqual(0, results.Count, $"Failed some tests");
         }
 
@@ -64,7 +68,7 @@ namespace InnoWerks.Simulators.Tests
             List<string> results = [];
 
             var batch = testName.Split(' ')[0];
-            var file = $"/Users/michaeljon/src/6502/working/65x02/6502/v1/{batch}.json";
+            var file = $"{BasePath}/{batch}.json";
 
             var ocd = CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)];
 
@@ -106,7 +110,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("00");
+                RunNamedBatch(CpuClass.WDC6502, "00");
             }
         }
 
@@ -119,7 +123,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("01");
+                RunNamedBatch(CpuClass.WDC6502, "01");
             }
         }
 
@@ -132,7 +136,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("02");
+                RunNamedBatch(CpuClass.WDC6502, "02");
             }
         }
 
@@ -145,7 +149,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("03");
+                RunNamedBatch(CpuClass.WDC6502, "03");
             }
         }
 
@@ -158,7 +162,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("04");
+                RunNamedBatch(CpuClass.WDC6502, "04");
             }
         }
 
@@ -171,7 +175,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("05");
+                RunNamedBatch(CpuClass.WDC6502, "05");
             }
         }
 
@@ -184,7 +188,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("06");
+                RunNamedBatch(CpuClass.WDC6502, "06");
             }
         }
 
@@ -197,7 +201,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("07");
+                RunNamedBatch(CpuClass.WDC6502, "07");
             }
         }
 
@@ -210,7 +214,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("08");
+                RunNamedBatch(CpuClass.WDC6502, "08");
             }
         }
 
@@ -223,7 +227,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("09");
+                RunNamedBatch(CpuClass.WDC6502, "09");
             }
         }
 
@@ -236,7 +240,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("0a");
+                RunNamedBatch(CpuClass.WDC6502, "0a");
             }
         }
 
@@ -249,7 +253,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("0b");
+                RunNamedBatch(CpuClass.WDC6502, "0b");
             }
         }
 
@@ -262,7 +266,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("0c");
+                RunNamedBatch(CpuClass.WDC6502, "0c");
             }
         }
 
@@ -275,7 +279,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("0d");
+                RunNamedBatch(CpuClass.WDC6502, "0d");
             }
         }
 
@@ -288,7 +292,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("0e");
+                RunNamedBatch(CpuClass.WDC6502, "0e");
             }
         }
 
@@ -301,7 +305,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("0f");
+                RunNamedBatch(CpuClass.WDC6502, "0f");
             }
         }
 
@@ -314,7 +318,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("10");
+                RunNamedBatch(CpuClass.WDC6502, "10");
             }
         }
 
@@ -327,7 +331,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("11");
+                RunNamedBatch(CpuClass.WDC6502, "11");
             }
         }
 
@@ -340,7 +344,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("12");
+                RunNamedBatch(CpuClass.WDC6502, "12");
             }
         }
 
@@ -353,7 +357,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("13");
+                RunNamedBatch(CpuClass.WDC6502, "13");
             }
         }
 
@@ -366,7 +370,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("14");
+                RunNamedBatch(CpuClass.WDC6502, "14");
             }
         }
 
@@ -379,7 +383,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("15");
+                RunNamedBatch(CpuClass.WDC6502, "15");
             }
         }
 
@@ -392,7 +396,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("16");
+                RunNamedBatch(CpuClass.WDC6502, "16");
             }
         }
 
@@ -405,7 +409,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("17");
+                RunNamedBatch(CpuClass.WDC6502, "17");
             }
         }
 
@@ -418,7 +422,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("18");
+                RunNamedBatch(CpuClass.WDC6502, "18");
             }
         }
 
@@ -431,7 +435,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("19");
+                RunNamedBatch(CpuClass.WDC6502, "19");
             }
         }
 
@@ -444,7 +448,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("1a");
+                RunNamedBatch(CpuClass.WDC6502, "1a");
             }
         }
 
@@ -457,7 +461,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("1b");
+                RunNamedBatch(CpuClass.WDC6502, "1b");
             }
         }
 
@@ -470,7 +474,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("1c");
+                RunNamedBatch(CpuClass.WDC6502, "1c");
             }
         }
 
@@ -483,7 +487,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("1d");
+                RunNamedBatch(CpuClass.WDC6502, "1d");
             }
         }
 
@@ -496,7 +500,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("1e");
+                RunNamedBatch(CpuClass.WDC6502, "1e");
             }
         }
 
@@ -509,7 +513,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("1f");
+                RunNamedBatch(CpuClass.WDC6502, "1f");
             }
         }
 
@@ -522,7 +526,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("20");
+                RunNamedBatch(CpuClass.WDC6502, "20");
             }
         }
 
@@ -535,7 +539,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("21");
+                RunNamedBatch(CpuClass.WDC6502, "21");
             }
         }
 
@@ -548,7 +552,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("22");
+                RunNamedBatch(CpuClass.WDC6502, "22");
             }
         }
 
@@ -561,7 +565,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("23");
+                RunNamedBatch(CpuClass.WDC6502, "23");
             }
         }
 
@@ -574,7 +578,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("24");
+                RunNamedBatch(CpuClass.WDC6502, "24");
             }
         }
 
@@ -587,7 +591,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("25");
+                RunNamedBatch(CpuClass.WDC6502, "25");
             }
         }
 
@@ -600,7 +604,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("26");
+                RunNamedBatch(CpuClass.WDC6502, "26");
             }
         }
 
@@ -613,7 +617,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("27");
+                RunNamedBatch(CpuClass.WDC6502, "27");
             }
         }
 
@@ -626,7 +630,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("28");
+                RunNamedBatch(CpuClass.WDC6502, "28");
             }
         }
 
@@ -639,7 +643,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("29");
+                RunNamedBatch(CpuClass.WDC6502, "29");
             }
         }
 
@@ -652,7 +656,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("2a");
+                RunNamedBatch(CpuClass.WDC6502, "2a");
             }
         }
 
@@ -665,7 +669,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("2b");
+                RunNamedBatch(CpuClass.WDC6502, "2b");
             }
         }
 
@@ -678,7 +682,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("2c");
+                RunNamedBatch(CpuClass.WDC6502, "2c");
             }
         }
 
@@ -691,7 +695,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("2d");
+                RunNamedBatch(CpuClass.WDC6502, "2d");
             }
         }
 
@@ -704,7 +708,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("2e");
+                RunNamedBatch(CpuClass.WDC6502, "2e");
             }
         }
 
@@ -717,7 +721,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("2f");
+                RunNamedBatch(CpuClass.WDC6502, "2f");
             }
         }
 
@@ -730,7 +734,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("30");
+                RunNamedBatch(CpuClass.WDC6502, "30");
             }
         }
 
@@ -743,7 +747,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("31");
+                RunNamedBatch(CpuClass.WDC6502, "31");
             }
         }
 
@@ -756,7 +760,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("32");
+                RunNamedBatch(CpuClass.WDC6502, "32");
             }
         }
 
@@ -769,7 +773,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("33");
+                RunNamedBatch(CpuClass.WDC6502, "33");
             }
         }
 
@@ -782,7 +786,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("34");
+                RunNamedBatch(CpuClass.WDC6502, "34");
             }
         }
 
@@ -795,7 +799,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("35");
+                RunNamedBatch(CpuClass.WDC6502, "35");
             }
         }
 
@@ -808,7 +812,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("36");
+                RunNamedBatch(CpuClass.WDC6502, "36");
             }
         }
 
@@ -821,7 +825,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("37");
+                RunNamedBatch(CpuClass.WDC6502, "37");
             }
         }
 
@@ -834,7 +838,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("38");
+                RunNamedBatch(CpuClass.WDC6502, "38");
             }
         }
 
@@ -847,7 +851,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("39");
+                RunNamedBatch(CpuClass.WDC6502, "39");
             }
         }
 
@@ -860,7 +864,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("3a");
+                RunNamedBatch(CpuClass.WDC6502, "3a");
             }
         }
 
@@ -873,7 +877,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("3b");
+                RunNamedBatch(CpuClass.WDC6502, "3b");
             }
         }
 
@@ -886,7 +890,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("3c");
+                RunNamedBatch(CpuClass.WDC6502, "3c");
             }
         }
 
@@ -899,7 +903,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("3d");
+                RunNamedBatch(CpuClass.WDC6502, "3d");
             }
         }
 
@@ -912,7 +916,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("3e");
+                RunNamedBatch(CpuClass.WDC6502, "3e");
             }
         }
 
@@ -925,7 +929,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("3f");
+                RunNamedBatch(CpuClass.WDC6502, "3f");
             }
         }
 
@@ -938,7 +942,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("40");
+                RunNamedBatch(CpuClass.WDC6502, "40");
             }
         }
 
@@ -951,7 +955,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("41");
+                RunNamedBatch(CpuClass.WDC6502, "41");
             }
         }
 
@@ -964,7 +968,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("42");
+                RunNamedBatch(CpuClass.WDC6502, "42");
             }
         }
 
@@ -977,7 +981,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("43");
+                RunNamedBatch(CpuClass.WDC6502, "43");
             }
         }
 
@@ -990,7 +994,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("44");
+                RunNamedBatch(CpuClass.WDC6502, "44");
             }
         }
 
@@ -1003,7 +1007,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("45");
+                RunNamedBatch(CpuClass.WDC6502, "45");
             }
         }
 
@@ -1016,7 +1020,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("46");
+                RunNamedBatch(CpuClass.WDC6502, "46");
             }
         }
 
@@ -1029,7 +1033,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("47");
+                RunNamedBatch(CpuClass.WDC6502, "47");
             }
         }
 
@@ -1042,7 +1046,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("48");
+                RunNamedBatch(CpuClass.WDC6502, "48");
             }
         }
 
@@ -1055,7 +1059,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("49");
+                RunNamedBatch(CpuClass.WDC6502, "49");
             }
         }
 
@@ -1068,7 +1072,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("4a");
+                RunNamedBatch(CpuClass.WDC6502, "4a");
             }
         }
 
@@ -1081,7 +1085,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("4b");
+                RunNamedBatch(CpuClass.WDC6502, "4b");
             }
         }
 
@@ -1094,7 +1098,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("4c");
+                RunNamedBatch(CpuClass.WDC6502, "4c");
             }
         }
 
@@ -1107,7 +1111,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("4d");
+                RunNamedBatch(CpuClass.WDC6502, "4d");
             }
         }
 
@@ -1120,7 +1124,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("4e");
+                RunNamedBatch(CpuClass.WDC6502, "4e");
             }
         }
 
@@ -1133,7 +1137,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("4f");
+                RunNamedBatch(CpuClass.WDC6502, "4f");
             }
         }
 
@@ -1146,7 +1150,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("50");
+                RunNamedBatch(CpuClass.WDC6502, "50");
             }
         }
 
@@ -1159,7 +1163,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("51");
+                RunNamedBatch(CpuClass.WDC6502, "51");
             }
         }
 
@@ -1172,7 +1176,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("52");
+                RunNamedBatch(CpuClass.WDC6502, "52");
             }
         }
 
@@ -1185,7 +1189,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("53");
+                RunNamedBatch(CpuClass.WDC6502, "53");
             }
         }
 
@@ -1198,7 +1202,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("54");
+                RunNamedBatch(CpuClass.WDC6502, "54");
             }
         }
 
@@ -1211,7 +1215,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("55");
+                RunNamedBatch(CpuClass.WDC6502, "55");
             }
         }
 
@@ -1224,7 +1228,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("56");
+                RunNamedBatch(CpuClass.WDC6502, "56");
             }
         }
 
@@ -1237,7 +1241,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("57");
+                RunNamedBatch(CpuClass.WDC6502, "57");
             }
         }
 
@@ -1250,7 +1254,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("58");
+                RunNamedBatch(CpuClass.WDC6502, "58");
             }
         }
 
@@ -1263,7 +1267,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("59");
+                RunNamedBatch(CpuClass.WDC6502, "59");
             }
         }
 
@@ -1276,7 +1280,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("5a");
+                RunNamedBatch(CpuClass.WDC6502, "5a");
             }
         }
 
@@ -1289,7 +1293,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("5b");
+                RunNamedBatch(CpuClass.WDC6502, "5b");
             }
         }
 
@@ -1302,7 +1306,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("5c");
+                RunNamedBatch(CpuClass.WDC6502, "5c");
             }
         }
 
@@ -1315,7 +1319,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("5d");
+                RunNamedBatch(CpuClass.WDC6502, "5d");
             }
         }
 
@@ -1328,7 +1332,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("5e");
+                RunNamedBatch(CpuClass.WDC6502, "5e");
             }
         }
 
@@ -1341,7 +1345,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("5f");
+                RunNamedBatch(CpuClass.WDC6502, "5f");
             }
         }
 
@@ -1354,7 +1358,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("60");
+                RunNamedBatch(CpuClass.WDC6502, "60");
             }
         }
 
@@ -1367,7 +1371,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("61");
+                RunNamedBatch(CpuClass.WDC6502, "61");
             }
         }
 
@@ -1380,7 +1384,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("62");
+                RunNamedBatch(CpuClass.WDC6502, "62");
             }
         }
 
@@ -1393,7 +1397,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("63");
+                RunNamedBatch(CpuClass.WDC6502, "63");
             }
         }
 
@@ -1406,7 +1410,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("64");
+                RunNamedBatch(CpuClass.WDC6502, "64");
             }
         }
 
@@ -1419,7 +1423,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("65");
+                RunNamedBatch(CpuClass.WDC6502, "65");
             }
         }
 
@@ -1432,7 +1436,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("66");
+                RunNamedBatch(CpuClass.WDC6502, "66");
             }
         }
 
@@ -1445,7 +1449,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("67");
+                RunNamedBatch(CpuClass.WDC6502, "67");
             }
         }
 
@@ -1458,7 +1462,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("68");
+                RunNamedBatch(CpuClass.WDC6502, "68");
             }
         }
 
@@ -1471,7 +1475,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("69");
+                RunNamedBatch(CpuClass.WDC6502, "69");
             }
         }
 
@@ -1484,7 +1488,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("6a");
+                RunNamedBatch(CpuClass.WDC6502, "6a");
             }
         }
 
@@ -1497,7 +1501,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("6b");
+                RunNamedBatch(CpuClass.WDC6502, "6b");
             }
         }
 
@@ -1510,7 +1514,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("6c");
+                RunNamedBatch(CpuClass.WDC6502, "6c");
             }
         }
 
@@ -1523,7 +1527,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("6d");
+                RunNamedBatch(CpuClass.WDC6502, "6d");
             }
         }
 
@@ -1536,7 +1540,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("6e");
+                RunNamedBatch(CpuClass.WDC6502, "6e");
             }
         }
 
@@ -1549,7 +1553,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("6f");
+                RunNamedBatch(CpuClass.WDC6502, "6f");
             }
         }
 
@@ -1562,7 +1566,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("70");
+                RunNamedBatch(CpuClass.WDC6502, "70");
             }
         }
 
@@ -1575,7 +1579,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("71");
+                RunNamedBatch(CpuClass.WDC6502, "71");
             }
         }
 
@@ -1588,7 +1592,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("72");
+                RunNamedBatch(CpuClass.WDC6502, "72");
             }
         }
 
@@ -1601,7 +1605,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("73");
+                RunNamedBatch(CpuClass.WDC6502, "73");
             }
         }
 
@@ -1614,7 +1618,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("74");
+                RunNamedBatch(CpuClass.WDC6502, "74");
             }
         }
 
@@ -1627,7 +1631,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("75");
+                RunNamedBatch(CpuClass.WDC6502, "75");
             }
         }
 
@@ -1640,7 +1644,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("76");
+                RunNamedBatch(CpuClass.WDC6502, "76");
             }
         }
 
@@ -1653,7 +1657,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("77");
+                RunNamedBatch(CpuClass.WDC6502, "77");
             }
         }
 
@@ -1666,7 +1670,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("78");
+                RunNamedBatch(CpuClass.WDC6502, "78");
             }
         }
 
@@ -1679,7 +1683,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("79");
+                RunNamedBatch(CpuClass.WDC6502, "79");
             }
         }
 
@@ -1692,7 +1696,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("7a");
+                RunNamedBatch(CpuClass.WDC6502, "7a");
             }
         }
 
@@ -1705,7 +1709,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("7b");
+                RunNamedBatch(CpuClass.WDC6502, "7b");
             }
         }
 
@@ -1718,7 +1722,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("7c");
+                RunNamedBatch(CpuClass.WDC6502, "7c");
             }
         }
 
@@ -1731,7 +1735,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("7d");
+                RunNamedBatch(CpuClass.WDC6502, "7d");
             }
         }
 
@@ -1744,7 +1748,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("7e");
+                RunNamedBatch(CpuClass.WDC6502, "7e");
             }
         }
 
@@ -1757,7 +1761,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("7f");
+                RunNamedBatch(CpuClass.WDC6502, "7f");
             }
         }
 
@@ -1770,7 +1774,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("80");
+                RunNamedBatch(CpuClass.WDC6502, "80");
             }
         }
 
@@ -1783,7 +1787,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("81");
+                RunNamedBatch(CpuClass.WDC6502, "81");
             }
         }
 
@@ -1796,7 +1800,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("82");
+                RunNamedBatch(CpuClass.WDC6502, "82");
             }
         }
 
@@ -1809,7 +1813,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("83");
+                RunNamedBatch(CpuClass.WDC6502, "83");
             }
         }
 
@@ -1822,7 +1826,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("84");
+                RunNamedBatch(CpuClass.WDC6502, "84");
             }
         }
 
@@ -1835,7 +1839,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("85");
+                RunNamedBatch(CpuClass.WDC6502, "85");
             }
         }
 
@@ -1848,7 +1852,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("86");
+                RunNamedBatch(CpuClass.WDC6502, "86");
             }
         }
 
@@ -1861,7 +1865,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("87");
+                RunNamedBatch(CpuClass.WDC6502, "87");
             }
         }
 
@@ -1874,7 +1878,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("88");
+                RunNamedBatch(CpuClass.WDC6502, "88");
             }
         }
 
@@ -1887,7 +1891,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("89");
+                RunNamedBatch(CpuClass.WDC6502, "89");
             }
         }
 
@@ -1900,7 +1904,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("8a");
+                RunNamedBatch(CpuClass.WDC6502, "8a");
             }
         }
 
@@ -1913,7 +1917,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("8b");
+                RunNamedBatch(CpuClass.WDC6502, "8b");
             }
         }
 
@@ -1926,7 +1930,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("8c");
+                RunNamedBatch(CpuClass.WDC6502, "8c");
             }
         }
 
@@ -1939,7 +1943,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("8d");
+                RunNamedBatch(CpuClass.WDC6502, "8d");
             }
         }
 
@@ -1952,7 +1956,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("8e");
+                RunNamedBatch(CpuClass.WDC6502, "8e");
             }
         }
 
@@ -1965,7 +1969,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("8f");
+                RunNamedBatch(CpuClass.WDC6502, "8f");
             }
         }
 
@@ -1978,7 +1982,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("90");
+                RunNamedBatch(CpuClass.WDC6502, "90");
             }
         }
 
@@ -1991,7 +1995,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("91");
+                RunNamedBatch(CpuClass.WDC6502, "91");
             }
         }
 
@@ -2004,7 +2008,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("92");
+                RunNamedBatch(CpuClass.WDC6502, "92");
             }
         }
 
@@ -2017,7 +2021,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("93");
+                RunNamedBatch(CpuClass.WDC6502, "93");
             }
         }
 
@@ -2030,7 +2034,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("94");
+                RunNamedBatch(CpuClass.WDC6502, "94");
             }
         }
 
@@ -2043,7 +2047,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("95");
+                RunNamedBatch(CpuClass.WDC6502, "95");
             }
         }
 
@@ -2056,7 +2060,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("96");
+                RunNamedBatch(CpuClass.WDC6502, "96");
             }
         }
 
@@ -2069,7 +2073,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("97");
+                RunNamedBatch(CpuClass.WDC6502, "97");
             }
         }
 
@@ -2082,7 +2086,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("98");
+                RunNamedBatch(CpuClass.WDC6502, "98");
             }
         }
 
@@ -2095,7 +2099,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("99");
+                RunNamedBatch(CpuClass.WDC6502, "99");
             }
         }
 
@@ -2108,7 +2112,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("9a");
+                RunNamedBatch(CpuClass.WDC6502, "9a");
             }
         }
 
@@ -2121,7 +2125,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("9b");
+                RunNamedBatch(CpuClass.WDC6502, "9b");
             }
         }
 
@@ -2134,7 +2138,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("9c");
+                RunNamedBatch(CpuClass.WDC6502, "9c");
             }
         }
 
@@ -2147,7 +2151,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("9d");
+                RunNamedBatch(CpuClass.WDC6502, "9d");
             }
         }
 
@@ -2160,7 +2164,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("9e");
+                RunNamedBatch(CpuClass.WDC6502, "9e");
             }
         }
 
@@ -2173,7 +2177,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("9f");
+                RunNamedBatch(CpuClass.WDC6502, "9f");
             }
         }
 
@@ -2186,7 +2190,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("a0");
+                RunNamedBatch(CpuClass.WDC6502, "a0");
             }
         }
 
@@ -2199,7 +2203,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("a1");
+                RunNamedBatch(CpuClass.WDC6502, "a1");
             }
         }
 
@@ -2212,7 +2216,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("a2");
+                RunNamedBatch(CpuClass.WDC6502, "a2");
             }
         }
 
@@ -2225,7 +2229,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("a3");
+                RunNamedBatch(CpuClass.WDC6502, "a3");
             }
         }
 
@@ -2238,7 +2242,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("a4");
+                RunNamedBatch(CpuClass.WDC6502, "a4");
             }
         }
 
@@ -2251,7 +2255,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("a5");
+                RunNamedBatch(CpuClass.WDC6502, "a5");
             }
         }
 
@@ -2264,7 +2268,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("a6");
+                RunNamedBatch(CpuClass.WDC6502, "a6");
             }
         }
 
@@ -2277,7 +2281,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("a7");
+                RunNamedBatch(CpuClass.WDC6502, "a7");
             }
         }
 
@@ -2290,7 +2294,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("a8");
+                RunNamedBatch(CpuClass.WDC6502, "a8");
             }
         }
 
@@ -2303,7 +2307,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("a9");
+                RunNamedBatch(CpuClass.WDC6502, "a9");
             }
         }
 
@@ -2316,7 +2320,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("aa");
+                RunNamedBatch(CpuClass.WDC6502, "aa");
             }
         }
 
@@ -2329,7 +2333,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("ab");
+                RunNamedBatch(CpuClass.WDC6502, "ab");
             }
         }
 
@@ -2342,7 +2346,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("ac");
+                RunNamedBatch(CpuClass.WDC6502, "ac");
             }
         }
 
@@ -2355,7 +2359,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("ad");
+                RunNamedBatch(CpuClass.WDC6502, "ad");
             }
         }
 
@@ -2368,7 +2372,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("ae");
+                RunNamedBatch(CpuClass.WDC6502, "ae");
             }
         }
 
@@ -2381,7 +2385,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("af");
+                RunNamedBatch(CpuClass.WDC6502, "af");
             }
         }
 
@@ -2394,7 +2398,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("b0");
+                RunNamedBatch(CpuClass.WDC6502, "b0");
             }
         }
 
@@ -2407,7 +2411,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("b1");
+                RunNamedBatch(CpuClass.WDC6502, "b1");
             }
         }
 
@@ -2420,7 +2424,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("b2");
+                RunNamedBatch(CpuClass.WDC6502, "b2");
             }
         }
 
@@ -2433,7 +2437,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("b3");
+                RunNamedBatch(CpuClass.WDC6502, "b3");
             }
         }
 
@@ -2446,7 +2450,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("b4");
+                RunNamedBatch(CpuClass.WDC6502, "b4");
             }
         }
 
@@ -2459,7 +2463,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("b5");
+                RunNamedBatch(CpuClass.WDC6502, "b5");
             }
         }
 
@@ -2472,7 +2476,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("b6");
+                RunNamedBatch(CpuClass.WDC6502, "b6");
             }
         }
 
@@ -2485,7 +2489,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("b7");
+                RunNamedBatch(CpuClass.WDC6502, "b7");
             }
         }
 
@@ -2498,7 +2502,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("b8");
+                RunNamedBatch(CpuClass.WDC6502, "b8");
             }
         }
 
@@ -2511,7 +2515,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("b9");
+                RunNamedBatch(CpuClass.WDC6502, "b9");
             }
         }
 
@@ -2524,7 +2528,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("ba");
+                RunNamedBatch(CpuClass.WDC6502, "ba");
             }
         }
 
@@ -2537,7 +2541,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("bb");
+                RunNamedBatch(CpuClass.WDC6502, "bb");
             }
         }
 
@@ -2550,7 +2554,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("bc");
+                RunNamedBatch(CpuClass.WDC6502, "bc");
             }
         }
 
@@ -2563,7 +2567,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("bd");
+                RunNamedBatch(CpuClass.WDC6502, "bd");
             }
         }
 
@@ -2576,7 +2580,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("be");
+                RunNamedBatch(CpuClass.WDC6502, "be");
             }
         }
 
@@ -2589,7 +2593,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("bf");
+                RunNamedBatch(CpuClass.WDC6502, "bf");
             }
         }
 
@@ -2602,7 +2606,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("c0");
+                RunNamedBatch(CpuClass.WDC6502, "c0");
             }
         }
 
@@ -2615,7 +2619,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("c1");
+                RunNamedBatch(CpuClass.WDC6502, "c1");
             }
         }
 
@@ -2628,7 +2632,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("c2");
+                RunNamedBatch(CpuClass.WDC6502, "c2");
             }
         }
 
@@ -2641,7 +2645,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("c3");
+                RunNamedBatch(CpuClass.WDC6502, "c3");
             }
         }
 
@@ -2654,7 +2658,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("c4");
+                RunNamedBatch(CpuClass.WDC6502, "c4");
             }
         }
 
@@ -2667,7 +2671,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("c5");
+                RunNamedBatch(CpuClass.WDC6502, "c5");
             }
         }
 
@@ -2680,7 +2684,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("c6");
+                RunNamedBatch(CpuClass.WDC6502, "c6");
             }
         }
 
@@ -2693,7 +2697,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("c7");
+                RunNamedBatch(CpuClass.WDC6502, "c7");
             }
         }
 
@@ -2706,7 +2710,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("c8");
+                RunNamedBatch(CpuClass.WDC6502, "c8");
             }
         }
 
@@ -2719,7 +2723,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("c9");
+                RunNamedBatch(CpuClass.WDC6502, "c9");
             }
         }
 
@@ -2732,7 +2736,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("ca");
+                RunNamedBatch(CpuClass.WDC6502, "ca");
             }
         }
 
@@ -2745,7 +2749,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("cb");
+                RunNamedBatch(CpuClass.WDC6502, "cb");
             }
         }
 
@@ -2758,7 +2762,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("cc");
+                RunNamedBatch(CpuClass.WDC6502, "cc");
             }
         }
 
@@ -2771,7 +2775,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("cd");
+                RunNamedBatch(CpuClass.WDC6502, "cd");
             }
         }
 
@@ -2784,7 +2788,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("ce");
+                RunNamedBatch(CpuClass.WDC6502, "ce");
             }
         }
 
@@ -2797,7 +2801,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("cf");
+                RunNamedBatch(CpuClass.WDC6502, "cf");
             }
         }
 
@@ -2810,7 +2814,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("d0");
+                RunNamedBatch(CpuClass.WDC6502, "d0");
             }
         }
 
@@ -2823,7 +2827,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("d1");
+                RunNamedBatch(CpuClass.WDC6502, "d1");
             }
         }
 
@@ -2836,7 +2840,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("d2");
+                RunNamedBatch(CpuClass.WDC6502, "d2");
             }
         }
 
@@ -2849,7 +2853,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("d3");
+                RunNamedBatch(CpuClass.WDC6502, "d3");
             }
         }
 
@@ -2862,7 +2866,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("d4");
+                RunNamedBatch(CpuClass.WDC6502, "d4");
             }
         }
 
@@ -2875,7 +2879,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("d5");
+                RunNamedBatch(CpuClass.WDC6502, "d5");
             }
         }
 
@@ -2888,7 +2892,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("d6");
+                RunNamedBatch(CpuClass.WDC6502, "d6");
             }
         }
 
@@ -2901,7 +2905,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("d7");
+                RunNamedBatch(CpuClass.WDC6502, "d7");
             }
         }
 
@@ -2914,7 +2918,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("d8");
+                RunNamedBatch(CpuClass.WDC6502, "d8");
             }
         }
 
@@ -2927,7 +2931,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("d9");
+                RunNamedBatch(CpuClass.WDC6502, "d9");
             }
         }
 
@@ -2940,7 +2944,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("da");
+                RunNamedBatch(CpuClass.WDC6502, "da");
             }
         }
 
@@ -2953,7 +2957,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("db");
+                RunNamedBatch(CpuClass.WDC6502, "db");
             }
         }
 
@@ -2966,7 +2970,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("dc");
+                RunNamedBatch(CpuClass.WDC6502, "dc");
             }
         }
 
@@ -2979,7 +2983,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("dd");
+                RunNamedBatch(CpuClass.WDC6502, "dd");
             }
         }
 
@@ -2992,7 +2996,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("de");
+                RunNamedBatch(CpuClass.WDC6502, "de");
             }
         }
 
@@ -3005,7 +3009,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("df");
+                RunNamedBatch(CpuClass.WDC6502, "df");
             }
         }
 
@@ -3018,7 +3022,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("e0");
+                RunNamedBatch(CpuClass.WDC6502, "e0");
             }
         }
 
@@ -3031,7 +3035,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("e1");
+                RunNamedBatch(CpuClass.WDC6502, "e1");
             }
         }
 
@@ -3044,7 +3048,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("e2");
+                RunNamedBatch(CpuClass.WDC6502, "e2");
             }
         }
 
@@ -3057,7 +3061,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("e3");
+                RunNamedBatch(CpuClass.WDC6502, "e3");
             }
         }
 
@@ -3070,7 +3074,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("e4");
+                RunNamedBatch(CpuClass.WDC6502, "e4");
             }
         }
 
@@ -3083,7 +3087,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("e5");
+                RunNamedBatch(CpuClass.WDC6502, "e5");
             }
         }
 
@@ -3096,7 +3100,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("e6");
+                RunNamedBatch(CpuClass.WDC6502, "e6");
             }
         }
 
@@ -3109,7 +3113,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("e7");
+                RunNamedBatch(CpuClass.WDC6502, "e7");
             }
         }
 
@@ -3122,7 +3126,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("e8");
+                RunNamedBatch(CpuClass.WDC6502, "e8");
             }
         }
 
@@ -3135,7 +3139,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("e9");
+                RunNamedBatch(CpuClass.WDC6502, "e9");
             }
         }
 
@@ -3148,7 +3152,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("ea");
+                RunNamedBatch(CpuClass.WDC6502, "ea");
             }
         }
 
@@ -3161,7 +3165,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("eb");
+                RunNamedBatch(CpuClass.WDC6502, "eb");
             }
         }
 
@@ -3174,7 +3178,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("ec");
+                RunNamedBatch(CpuClass.WDC6502, "ec");
             }
         }
 
@@ -3187,7 +3191,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("ed");
+                RunNamedBatch(CpuClass.WDC6502, "ed");
             }
         }
 
@@ -3200,7 +3204,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("ee");
+                RunNamedBatch(CpuClass.WDC6502, "ee");
             }
         }
 
@@ -3213,7 +3217,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("ef");
+                RunNamedBatch(CpuClass.WDC6502, "ef");
             }
         }
 
@@ -3226,7 +3230,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("f0");
+                RunNamedBatch(CpuClass.WDC6502, "f0");
             }
         }
 
@@ -3239,7 +3243,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("f1");
+                RunNamedBatch(CpuClass.WDC6502, "f1");
             }
         }
 
@@ -3252,7 +3256,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("f2");
+                RunNamedBatch(CpuClass.WDC6502, "f2");
             }
         }
 
@@ -3265,7 +3269,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("f3");
+                RunNamedBatch(CpuClass.WDC6502, "f3");
             }
         }
 
@@ -3278,7 +3282,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("f4");
+                RunNamedBatch(CpuClass.WDC6502, "f4");
             }
         }
 
@@ -3291,7 +3295,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("f5");
+                RunNamedBatch(CpuClass.WDC6502, "f5");
             }
         }
 
@@ -3304,7 +3308,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("f6");
+                RunNamedBatch(CpuClass.WDC6502, "f6");
             }
         }
 
@@ -3317,7 +3321,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("f7");
+                RunNamedBatch(CpuClass.WDC6502, "f7");
             }
         }
 
@@ -3330,7 +3334,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("f8");
+                RunNamedBatch(CpuClass.WDC6502, "f8");
             }
         }
 
@@ -3343,7 +3347,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("f9");
+                RunNamedBatch(CpuClass.WDC6502, "f9");
             }
         }
 
@@ -3356,7 +3360,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("fa");
+                RunNamedBatch(CpuClass.WDC6502, "fa");
             }
         }
 
@@ -3369,7 +3373,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("fb");
+                RunNamedBatch(CpuClass.WDC6502, "fb");
             }
         }
 
@@ -3382,7 +3386,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("fc");
+                RunNamedBatch(CpuClass.WDC6502, "fc");
             }
         }
 
@@ -3395,7 +3399,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("fd");
+                RunNamedBatch(CpuClass.WDC6502, "fd");
             }
         }
 
@@ -3408,7 +3412,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("fe");
+                RunNamedBatch(CpuClass.WDC6502, "fe");
             }
         }
 
@@ -3421,43 +3425,7 @@ namespace InnoWerks.Simulators.Tests
             }
             else
             {
-                RunNamedBatch("ff");
-            }
-        }
-
-        private void RunNamedBatch(string batch)
-        {
-            if (string.IsNullOrEmpty(batch))
-            {
-                Assert.Inconclusive("No batch name provided to RunNamed6502Batch");
-                return;
-            }
-
-            List<string> results = [];
-
-            var file = $"/Users/michaeljon/src/6502/working/65x02/6502/v1/{batch}.json";
-
-            using (var fs = File.OpenRead(file))
-            {
-                if (fs.Length == 0)
-                {
-                    return;
-                }
-
-                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions).ToList();
-                foreach (var test in tests)
-                {
-                    RunIndividualTest(CpuClass.WDC6502, test, results);
-                }
-
-#if VERBOSE_BATCH_OUTPUT
-                foreach (var result in results)
-                {
-                    TestContext.WriteLine(result);
-                }
-#endif
-
-                Assert.IsTrue(results.Count == 0, $"Failed with {results.Count} messages");
+                RunNamedBatch(CpuClass.WDC6502, "ff");
             }
         }
     }

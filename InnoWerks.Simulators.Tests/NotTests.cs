@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using InnoWerks.Processors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -8,6 +7,8 @@ namespace InnoWerks.Simulators.Tests
     [TestClass]
     public class NotTests
     {
+        public TestContext TestContext { get; set; }
+
         [TestMethod]
         public void Generate6502OpCodeTable()
         {
@@ -19,70 +20,71 @@ namespace InnoWerks.Simulators.Tests
         {
             GenerateOpTable(CpuInstructions.OpCode65C02);
         }
-        private static void GenerateOpTable(Dictionary<byte, OpCodeDefinition> opCodeTable)
+        private void GenerateOpTable(Dictionary<byte, OpCodeDefinition> opCodeTable)
         {
+            TestContext.WriteLine("\r");
             GenerateHeaderFooter();
 
             for (var row = 0; row <= 0x0f; row++)
             {
-                Console.Write($"|  {row:x1}  |");
+                TestContext.Write($"|  {row:x1}  |");
                 for (var col = 0; col <= 0x0f; col++)
                 {
                     var index = (byte)(row << 4 | col);
                     var ocd = opCodeTable[index];
                     var disp = ocd.OpCode != OpCode.Unknown ? ocd.OpCode.ToString() : "   ";
 
-                    Console.Write(disp.Length == 3 ? $"   {disp}   " : $"   {disp}  ");
+                    TestContext.Write(disp.Length == 3 ? $"   {disp}   " : $"   {disp}  ");
 
-                    Console.Write("|");
+                    TestContext.Write("|");
                 }
 
-                Console.WriteLine();
+                TestContext.WriteLine("\r");
 
-                Console.Write($"|     |");
+                TestContext.Write($"|     |");
                 for (var col = 0; col <= 0x0f; col++)
                 {
                     var opcode = (byte)(row << 4 | col);
                     var ocd = opCodeTable[opcode];
 
-                    Console.Write($"{AddressModeLookup.GetDisplay(ocd.AddressingMode)}");
-                    Console.Write("|");
+                    TestContext.Write($"{AddressModeLookup.GetDisplay(ocd.AddressingMode)}");
+                    TestContext.Write("|");
                 }
 
-                Console.WriteLine();
+                TestContext.WriteLine("\r");
                 GenerateSeparator();
             }
 
             GenerateHeaderFooter(true);
         }
 
-        private static void GenerateHeaderFooter(bool last = false)
+        private void GenerateHeaderFooter(bool last = false)
         {
             if (last == false)
             {
                 GenerateSeparator();
             }
 
-            Console.Write("|     |");
+            TestContext.Write("|     |");
             for (var col = 0; col <= 0x0f; col++)
             {
-                Console.Write($"    {col:x1}    ");
-                Console.Write("|");
+                TestContext.Write($"    {col:x1}    ");
+                TestContext.Write("|");
             }
-            Console.WriteLine();
+            TestContext.WriteLine("\r");
 
             GenerateSeparator();
         }
 
-        private static void GenerateSeparator()
+        private void GenerateSeparator()
         {
-            Console.Write($"|-----|");
+            TestContext.Write($"|-----|");
             for (var col = 0; col <= 0x0f; col++)
             {
-                Console.Write($"---------");
-                Console.Write("|");
+                TestContext.Write($"---------");
+                TestContext.Write("|");
             }
-            Console.WriteLine();
+            TestContext.WriteLine("\r");
         }
     }
 }

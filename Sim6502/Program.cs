@@ -46,8 +46,6 @@ namespace InnoWerks.Simulators.Driver
             Console.WriteLine();
             cpu.Run(stopOnBreak: true, writeInstructions: false);
             test?.Invoke(cpu);
-
-            Console.WriteLine($"Ticks: {cpu.Cycles}");
         }
 
         private byte Read(ushort addr)
