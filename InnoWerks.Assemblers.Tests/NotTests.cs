@@ -28,6 +28,7 @@ namespace InnoWerks.Assemblers.Tests
                     var index = (byte)(row << 4 | col);
                     var (opCode, _) = instructions[index];
                     var disp = opCode != OpCode.Unknown ? opCode.ToString() : "   ";
+                    disp = disp.Substring(0, 3);
 
                     TestContext.Write(disp.Length == 3 ? $"   {disp}   " : $"   {disp}  ");
                     TestContext.Write("|");
