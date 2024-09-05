@@ -33,6 +33,7 @@ namespace InnoWerks.Simulators.Tests
                     var index = (byte)(row << 4 | col);
                     var ocd = opCodeTable[index];
                     var disp = ocd.OpCode != OpCode.Unknown ? ocd.OpCode.ToString() : "   ";
+                    disp = disp.Substring(0, 3);
 
                     TestContext.Write(disp.Length == 3 ? $"   {disp}   " : $"   {disp}  ");
 

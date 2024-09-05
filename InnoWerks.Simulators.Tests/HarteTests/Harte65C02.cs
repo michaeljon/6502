@@ -18,7 +18,7 @@ namespace InnoWerks.Simulators.Tests
 
         protected override string BasePath => Environment.ExpandEnvironmentVariables("%HOME%/src/6502/working/65x02/wdc65c02/v1");
 
-        // [Ignore]
+        [Ignore]
         [TestMethod]
         public void RunAll65C02Tests()
         {
@@ -59,7 +59,7 @@ namespace InnoWerks.Simulators.Tests
             Assert.AreEqual(0, results.Count, $"Failed some tests");
         }
 
-        // [Ignore]
+        [Ignore]
         [TestMethod]
         public void RunNamed65C02Test()
         {

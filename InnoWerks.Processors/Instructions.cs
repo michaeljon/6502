@@ -115,7 +115,7 @@ namespace InnoWerks.Processors
                 {(OpCode.RMB0, AddressingMode.ZeroPage), (0x07, CpuClass.WDC65C02) },
                 {(OpCode.PHP, AddressingMode.Stack), (0x08, CpuClass.WDC6502) },
                 {(OpCode.ORA, AddressingMode.Immediate), (0x09, CpuClass.WDC6502) },
-                {(OpCode.ASL, AddressingMode.Accumulator), (0x0a, CpuClass.WDC6502) },
+                {(OpCode.ASL_A, AddressingMode.Accumulator), (0x0a, CpuClass.WDC6502) },
                 // unassigned
                 {(OpCode.TSB, AddressingMode.Absolute), (0x0c, CpuClass.WDC65C02) },
                 {(OpCode.ORA, AddressingMode.Absolute), (0x0d, CpuClass.WDC6502) },
@@ -149,7 +149,7 @@ namespace InnoWerks.Processors
                 {(OpCode.RMB2, AddressingMode.ZeroPage), (0x27, CpuClass.WDC65C02) },
                 {(OpCode.PLP, AddressingMode.Stack), (0x28, CpuClass.WDC6502) },
                 {(OpCode.AND, AddressingMode.Immediate), (0x29, CpuClass.WDC6502) },
-                {(OpCode.ROL, AddressingMode.Accumulator), (0x2a, CpuClass.WDC6502) },
+                {(OpCode.ROL_A, AddressingMode.Accumulator), (0x2a, CpuClass.WDC6502) },
                 // unassigned
                 {(OpCode.BIT, AddressingMode.Absolute), (0x2c, CpuClass.WDC6502) },
                 {(OpCode.AND, AddressingMode.Absolute), (0x2d, CpuClass.WDC6502) },
@@ -183,7 +183,7 @@ namespace InnoWerks.Processors
                 {(OpCode.RMB4, AddressingMode.ZeroPage), (0x47, CpuClass.WDC65C02) },
                 {(OpCode.PHA, AddressingMode.Stack), (0x48, CpuClass.WDC6502) },
                 {(OpCode.EOR, AddressingMode.Immediate), (0x49, CpuClass.WDC6502) },
-                {(OpCode.LSR, AddressingMode.Accumulator), (0x4a, CpuClass.WDC6502) },
+                {(OpCode.LSR_A, AddressingMode.Accumulator), (0x4a, CpuClass.WDC6502) },
                 // unassigned
                 {(OpCode.JMP, AddressingMode.Absolute), (0x4c, CpuClass.WDC6502) },
                 {(OpCode.EOR, AddressingMode.Absolute), (0x4d, CpuClass.WDC6502) },
@@ -217,7 +217,7 @@ namespace InnoWerks.Processors
                 {(OpCode.RMB6, AddressingMode.ZeroPage), (0x67, CpuClass.WDC65C02) },
                 {(OpCode.PLA, AddressingMode.Stack), (0x68, CpuClass.WDC6502) },
                 {(OpCode.ADC, AddressingMode.Immediate), (0x69, CpuClass.WDC6502) },
-                {(OpCode.ROR, AddressingMode.Accumulator), (0x6a, CpuClass.WDC6502) },
+                {(OpCode.ROR_A, AddressingMode.Accumulator), (0x6a, CpuClass.WDC6502) },
                 // unassigned
                 {(OpCode.JMP, AddressingMode.AbsoluteIndirect), (0x6c, CpuClass.WDC6502) },
                 {(OpCode.ADC, AddressingMode.Absolute), (0x6d, CpuClass.WDC6502) },

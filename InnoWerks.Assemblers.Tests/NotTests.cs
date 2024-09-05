@@ -1,4 +1,3 @@
-using System;
 using InnoWerks.Processors;
 
 namespace InnoWerks.Assemblers.Tests
@@ -6,6 +5,8 @@ namespace InnoWerks.Assemblers.Tests
     [TestClass]
     public class NotTests
     {
+        public TestContext TestContext { get; set; }
+
         [TestMethod]
         public void GenerateOpTable()
         {
@@ -15,67 +16,69 @@ namespace InnoWerks.Assemblers.Tests
                 instructions[v.code] = k;
             }
 
+            TestContext.WriteLine("\r");
+
             GenerateHeaderFooter();
 
             for (var row = 0; row <= 0x0f; row++)
             {
-                Console.Write($"|  {row:x1}  |");
+                TestContext.Write($"|  {row:x1}  |");
                 for (var col = 0; col <= 0x0f; col++)
                 {
                     var index = (byte)(row << 4 | col);
                     var (opCode, _) = instructions[index];
                     var disp = opCode != OpCode.Unknown ? opCode.ToString() : "   ";
 
-                    Console.Write(disp.Length == 3 ? $"   {disp}   " : $"   {disp}  ");
-                    Console.Write("|");
+                    TestContext.Write(disp.Length == 3 ? $"   {disp}   " : $"   {disp}  ");
+                    TestContext.Write("|");
                 }
 
-                Console.WriteLine();
+                TestContext.WriteLine("\r");
 
-                Console.Write($"|     |");
+                TestContext.Write($"|     |");
                 for (var col = 0; col <= 0x0f; col++)
                 {
                     var index = (byte)(row << 4 | col);
                     var (_, addressingMode) = instructions[index];
 
-                    Console.Write($"{AddressModeLookup.GetDisplay(addressingMode)}");
-                    Console.Write("|");
+                    TestContext.Write($"{AddressModeLookup.GetDisplay(addressingMode)}");
+                    TestContext.Write("|");
                 }
 
-                Console.WriteLine();
+                TestContext.WriteLine("\r");
                 GenerateSeparator();
             }
 
             GenerateHeaderFooter(true);
         }
 
-        private static void GenerateHeaderFooter(bool last = false)
+        private void GenerateHeaderFooter(bool last = false)
         {
             if (last == false)
             {
                 GenerateSeparator();
             }
 
-            Console.Write("|     |");
+            TestContext.Write("|     |");
             for (var col = 0; col <= 0x0f; col++)
             {
-                Console.Write($"    {col:x1}    ");
-                Console.Write("|");
+                TestContext.Write($"    {col:x1}    ");
+                TestContext.Write("|");
             }
-            Console.WriteLine();
+            TestContext.WriteLine("\r");
 
             GenerateSeparator();
         }
 
-        private static void GenerateSeparator()
+        private void GenerateSeparator()
         {
-            Console.Write($"|-----|");
+            TestContext.Write($"|-----|");
             for (var col = 0; col <= 0x0f; col++)
             {
-                Console.Write($"---------");
-                Console.Write("|");
+                TestContext.Write($"---------");
+                TestContext.Write("|");
             }
-            Console.WriteLine();
+            TestContext.WriteLine("\r");
         }
     }
 }

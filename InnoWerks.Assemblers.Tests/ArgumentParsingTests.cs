@@ -43,13 +43,26 @@ namespace InnoWerks.Assemblers.Tests
                 assembler.Assemble();
 
                 var lineInformation = assembler.Program[0];
+                var program = assembler.ObjectCode;
 
-                Assert.AreEqual(opCode, lineInformation.OpCode);
+                var expectedOpCode = opCode switch
+                {
+                    OpCode.ASL => OpCode.ASL_A,
+                    OpCode.DEA => OpCode.DEA,
+                    OpCode.INA => OpCode.INA,
+                    OpCode.LSR => OpCode.LSR_A,
+                    OpCode.ROL => OpCode.ROL_A,
+                    OpCode.ROR => OpCode.ROR_A,
+
+                    _ => throw new InvalidInstructionFormatException("Accumulator mode without ASL/DEC/INC/LSR/ROL/ROR ")
+                };
+
+                Assert.AreEqual(expectedOpCode, lineInformation.OpCode);
                 Assert.AreEqual(AddressingMode.Accumulator, lineInformation.AddressingMode);
                 Assert.IsNull(lineInformation.Value);
 
-                var expectedInstructionCode = InstructionInformation.Instructions[(opCode, lineInformation.AddressingMode)].code;
-                CollectionAssert.AreEqual(new byte[] { expectedInstructionCode }, assembler.ObjectCode);
+                var expectedOperation = InstructionInformation.Instructions[(expectedOpCode, AddressingMode.Accumulator)].code;
+                CollectionAssert.AreEqual(new byte[] { expectedOperation }, assembler.ObjectCode);
             }
         }
 
@@ -68,12 +81,24 @@ namespace InnoWerks.Assemblers.Tests
 
                 var lineInformation = assembler.Program[0];
 
-                Assert.AreEqual(opCode, lineInformation.OpCode);
+                var expectedOpCode = opCode switch
+                {
+                    OpCode.ASL => OpCode.ASL_A,
+                    OpCode.DEA => OpCode.DEA,
+                    OpCode.INA => OpCode.INA,
+                    OpCode.LSR => OpCode.LSR_A,
+                    OpCode.ROL => OpCode.ROL_A,
+                    OpCode.ROR => OpCode.ROR_A,
+
+                    _ => throw new InvalidInstructionFormatException("Accumulator mode without ASL/DEC/INC/LSR/ROL/ROR ")
+                };
+
+                Assert.AreEqual(expectedOpCode, lineInformation.OpCode);
                 Assert.AreEqual(AddressingMode.Accumulator, lineInformation.AddressingMode);
                 Assert.IsNull(lineInformation.Value);
 
-                var expectedInstructionCode = InstructionInformation.Instructions[(opCode, lineInformation.AddressingMode)].code;
-                CollectionAssert.AreEqual(new byte[] { expectedInstructionCode }, assembler.ObjectCode);
+                var expectedOperation = InstructionInformation.Instructions[(expectedOpCode, AddressingMode.Accumulator)].code;
+                CollectionAssert.AreEqual(new byte[] { expectedOperation }, assembler.ObjectCode);
             }
         }
 

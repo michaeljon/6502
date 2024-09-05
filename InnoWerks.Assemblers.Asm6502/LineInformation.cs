@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -137,12 +138,18 @@ namespace InnoWerks.Assemblers
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(value {0})\n", Value);
                     sb.AppendFormat(CultureInfo.InvariantCulture, "\t(code {0})\n", MachineCodeAsString);
 
+                    var tmpOpCode = OpCode;
+                    if (opCodeMap.TryGetValue(OpCode, out OpCode value))
+                    {
+                        tmpOpCode = value;
+                    }
+
                     if (ApplicableOffset != 0)
                     {
                         sb.AppendFormat(CultureInfo.InvariantCulture,
                             "\t(asm {0}{1}{2}{3}{4})\n",
                             (Label ?? "").PadRight(10),
-                            OpCode.ToString().PadRight(6),
+                            tmpOpCode.ToString().PadRight(6),
                             RawArgumentWithReplacement,
                             ApplicableOffset < 0 ? "-" : "+",
                             Math.Abs(ApplicableOffset));
@@ -152,7 +159,7 @@ namespace InnoWerks.Assemblers
                         sb.AppendFormat(CultureInfo.InvariantCulture,
                             "\t(asm {0}{1}{2})\n",
                             (Label ?? "").PadRight(10),
-                            OpCode.ToString().PadRight(6),
+                            tmpOpCode.ToString().PadRight(6),
                             RawArgumentWithReplacement);
                     }
 
@@ -230,13 +237,19 @@ namespace InnoWerks.Assemblers
                 switch (LineType)
                 {
                     case LineType.Code:
+                        var tmpOpCode = OpCode;
+                        if (opCodeMap.TryGetValue(OpCode, out OpCode value))
+                        {
+                            tmpOpCode = value;
+                        }
+
                         if (ApplicableOffset != 0)
                         {
                             return string.Format(
                                 CultureInfo.InvariantCulture,
                                 FORMAT,
                                 Label ?? "",
-                                OpCode != OpCode.Unknown ? OpCode.ToString() : "",
+                                OpCode != OpCode.Unknown ? tmpOpCode.ToString() : "",
                                 RawArgumentWithReplacement + (ApplicableOffset < 0 ? "-" : "+") + Math.Abs(ApplicableOffset).ToString(CultureInfo.InvariantCulture),
                                 string.IsNullOrEmpty(Comment) ? "" : "; " + Comment);
                         }
@@ -246,7 +259,7 @@ namespace InnoWerks.Assemblers
                                 CultureInfo.InvariantCulture,
                                 FORMAT,
                                 Label ?? "",
-                                OpCode != OpCode.Unknown ? OpCode.ToString() : "",
+                                OpCode != OpCode.Unknown ? tmpOpCode.ToString() : "",
                                 InstructionInformation.BranchingOperations.Contains(OpCode) ?
                                     ExtractedArgument :
                                     RawArgumentWithReplacement,
@@ -304,11 +317,17 @@ namespace InnoWerks.Assemblers
                 switch (LineType)
                 {
                     case LineType.Code:
+                        var tmpOpCode = OpCode;
+                        if (opCodeMap.TryGetValue(OpCode, out OpCode value))
+                        {
+                            tmpOpCode = value;
+                        }
+
                         return string.Format(
                             CultureInfo.InvariantCulture,
                             FORMAT,
                             Label ?? "",
-                            OpCode != OpCode.Unknown ? OpCode.ToString() : "",
+                            OpCode != OpCode.Unknown ? tmpOpCode.ToString() : "",
                             RawArgument,
                             string.IsNullOrEmpty(Comment) ? "" : "; " + Comment);
 
@@ -416,5 +435,15 @@ namespace InnoWerks.Assemblers
                 return ushort.Parse(number, NumberStyles.Integer, CultureInfo.InvariantCulture);
             }
         }
+
+        private static readonly Dictionary<OpCode, OpCode> opCodeMap = new()
+        {
+            { OpCode.ASL_A, OpCode.ASL },
+            { OpCode.DEA, OpCode.DEC },
+            { OpCode.INA, OpCode.INC },
+            { OpCode.LSR_A, OpCode.LSR },
+            { OpCode.ROL_A, OpCode.ROL },
+            { OpCode.ROR_A, OpCode.ROR },
+        };
     }
 }

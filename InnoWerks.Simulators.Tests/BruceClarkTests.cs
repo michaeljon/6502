@@ -113,8 +113,8 @@ namespace InnoWerks.Simulators.Tests
             var cpu = new Cpu(
                 CpuClass.WDC65C02,
                 memory,
-                (cpu, pc) => TraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
-                (cpu) => FlagsLoggerCallback(cpu, memory, 0));
+                (cpu, pc) => DummyTraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
+                (cpu) => DummyLoggerCallback(cpu, memory, 0));
 
             cpu.Reset();
 

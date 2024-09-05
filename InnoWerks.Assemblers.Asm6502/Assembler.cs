@@ -443,6 +443,20 @@ namespace InnoWerks.Assemblers
                 }
             }
 
+            // fix the accumulator modes
+            if (argument.addressingMode == AddressingMode.Accumulator)
+            {
+                opCode = opCode switch
+                {
+                    OpCode.ASL => OpCode.ASL_A,
+                    OpCode.LSR => OpCode.LSR_A,
+                    OpCode.ROL => OpCode.ROL_A,
+                    OpCode.ROR => OpCode.ROR_A,
+
+                    _ => opCode
+                };
+            }
+
             return new LineInformation
             {
                 LineType = LineType.Code,
