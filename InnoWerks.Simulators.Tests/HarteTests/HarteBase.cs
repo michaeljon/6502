@@ -15,7 +15,7 @@ using System.IO;
 using System.Linq;
 #endif
 
-#pragma warning disable CA1002, CA1822
+#pragma warning disable CA1002, CA1822, CA1508
 
 namespace InnoWerks.Simulators.Tests
 {
@@ -165,25 +165,28 @@ namespace InnoWerks.Simulators.Tests
 #endif
 
 #if DUMP_TEST_DATA
-            TestContext.WriteLine("");
-            TestContext.WriteLine($"{((testFailed == true) ? "Failed" : "Passed")} TestName:     {test.Name}");
-            TestContext.WriteLine($"OpCode:              ${batch} {ocd.OpCode} {ocd.AddressingMode}");
-            TestContext.WriteLine($"Initial registers    {initialRegisters}");
-            TestContext.WriteLine($"Expected registers   {finalRegisters}");
-            TestContext.WriteLine($"Computed registers   {cpu.Registers}");
-
-            TestContext.WriteLine("Expected bus accesses");
-            var time = 0;
-            foreach (var busAccess in test.BusAccesses)
+            if (testFailed == true)
             {
-                TestContext.WriteLine($"T{time++}: {busAccess}");
-            }
+                TestContext.WriteLine("");
+                TestContext.WriteLine($"{((testFailed == true) ? "Failed" : "Passed")} TestName:     {test.Name}");
+                TestContext.WriteLine($"OpCode:              ${batch} {ocd.OpCode} {ocd.AddressingMode}");
+                TestContext.WriteLine($"Initial registers    {initialRegisters}");
+                TestContext.WriteLine($"Expected registers   {finalRegisters}");
+                TestContext.WriteLine($"Computed registers   {cpu.Registers}");
 
-            TestContext.WriteLine("Actual bus accesses");
-            time = 0;
-            foreach (var busAccess in memory.BusAccesses)
-            {
-                TestContext.WriteLine($"T{time++}: {busAccess}");
+                TestContext.WriteLine("Expected bus accesses");
+                var time = 0;
+                foreach (var busAccess in test.BusAccesses)
+                {
+                    TestContext.WriteLine($"T{time++}: {busAccess}");
+                }
+
+                TestContext.WriteLine("Actual bus accesses");
+                time = 0;
+                foreach (var busAccess in memory.BusAccesses)
+                {
+                    TestContext.WriteLine($"T{time++}: {busAccess}");
+                }
             }
 #endif
 

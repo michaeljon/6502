@@ -280,6 +280,10 @@ namespace InnoWerks.Simulators
                                         /* discarded */
                                         memory.Read(ad);
                                     }
+                                    else if (bal + index >= 0x100)
+                                    {
+                                        memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                    }
                                 }
 
                                 var data = memory.Read(ad);
@@ -345,6 +349,7 @@ namespace InnoWerks.Simulators
                                     if (Registers.Decimal == true && (opCodeDefinition.OpCode == OpCode.ADC || opCodeDefinition.OpCode == OpCode.SBC))
                                     {
                                         /* discarded */
+                                        memory.Read((ushort)(Registers.ProgramCounter + 1));
                                         memory.Read(ad);
                                     }
                                     else if (bal + Registers.Y >= 0x100)

@@ -63,7 +63,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void RunNamed65C02Test()
         {
-            var testName = "65 60 7b";
+            var testName = "71 ec 0d";
 
             List<string> results = [];
 
