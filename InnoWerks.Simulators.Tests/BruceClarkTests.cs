@@ -35,8 +35,8 @@ namespace InnoWerks.Simulators.Tests
             var cpu = new Cpu(
                 CpuClass.WDC6502,
                 memory,
-                (cpu, pc) => TraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
-                (cpu) => FlagsLoggerCallback(cpu, memory, 2));
+                (cpu, pc) => DummyTraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
+                (cpu) => DummyLoggerCallback(cpu, memory, 2));
 
             cpu.Reset();
 
@@ -74,8 +74,8 @@ namespace InnoWerks.Simulators.Tests
             var cpu = new Cpu(
                 CpuClass.WDC65C02,
                 memory,
-                (cpu, pc) => TraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
-                (cpu) => FlagsLoggerCallback(cpu, memory, 2));
+                (cpu, pc) => DummyTraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
+                (cpu) => DummyLoggerCallback(cpu, memory, 2));
 
             cpu.Reset();
 

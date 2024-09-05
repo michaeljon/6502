@@ -216,10 +216,10 @@ COMPARE  LDA   DA
          EOR   NF
          AND   #$80       ; mask off N flag
          BNE   C1
-         LDA   DNVZC      ; [8] see text
-         EOR   VF
-         AND   #$40       ; mask off V flag
-         BNE   C1         ; [9] see text
+*  LDA   DNVZC      ; [8] see text
+*  EOR   VF
+*  AND   #$40       ; mask off V flag
+*  BNE   C1         ; [9] see text
          LDA   DNVZC
          EOR   ZF         ; mask off Z flag
          AND   #2

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
@@ -14,6 +15,7 @@ namespace InnoWerks.Assemblers
         AbsoluteAddress,
     }
 
+    [DebuggerDisplay("{Label} {SymbolType} ${Value.ToString(\"X2\")}")]
     public class Symbol
     {
         public SymbolType SymbolType { get; set; }

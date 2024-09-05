@@ -16,37 +16,37 @@ namespace InnoWerks.Assemblers
         [GeneratedRegex(@"^A$")]
         private static partial Regex AccumulatorRegex();
 
-        [GeneratedRegex(@"^#(?<prefix>[\$@%])?(?<arg>([0-9A-F]+|\w+))$")]
+        [GeneratedRegex(@"^#(?<prefix>[\$@%])?(?<arg>([0-9A-Fa-f]+|\w+))$")]
         private static partial Regex ImmediateRegex();
 
         [GeneratedRegex(@"^(?<arg>(\w+))$")]
         private static partial Regex RelativeRegex();
 
-        [GeneratedRegex(@"^(?<arg>(\$[0-9A-F]{4}|\w+))$")]
+        [GeneratedRegex(@"^(?<arg>(\$[0-9A-Fa-f]{4}|\w+))$")]
         private static partial Regex AbsoluteAddressRegex();
 
-        [GeneratedRegex(@"^(?<arg>(\$[0-9A-F]{4}|\w+)),(?<reg>[XY])$")]
+        [GeneratedRegex(@"^(?<arg>(\$[0-9A-Fa-f]{4}|\w+)),(?<reg>[XY])$")]
         private static partial Regex AbsoluteIndexedRegex();
 
-        [GeneratedRegex(@"^\((?<arg>(\$[0-9A-F]{4}|\w+))\)$")]
+        [GeneratedRegex(@"^\((?<arg>(\$[0-9A-Fa-f]{4}|\w+))\)$")]
         private static partial Regex IndirectRegex();
 
-        [GeneratedRegex(@"^\((?<arg>(\$[0-9A-F]{4}|\w+)),X\)$")]
+        [GeneratedRegex(@"^\((?<arg>(\$[0-9A-Fa-f]{4}|\w+)),X\)$")]
         private static partial Regex IndexedIndirectRegex();
 
-        [GeneratedRegex(@"^(?<arg>(\$00[0-9A-F]{2}|\$[0-9A-F]{2}|\w+))$")]
+        [GeneratedRegex(@"^(?<arg>(\$00[0-9A-Fv]{2}|\$[0-9A-Fa-f]{2}|\w+))$")]
         private static partial Regex ZeroPageDirectRegex();
 
-        [GeneratedRegex(@"^(?<arg>(\$00[0-9A-F]{2}|\$[0-9A-F]{2}|\w+)),(?<reg>[XY])$")]
+        [GeneratedRegex(@"^(?<arg>(\$00[0-9A-Fa-f]{2}|\$[0-9A-Fa-f]{2}|\w+)),(?<reg>[XY])$")]
         private static partial Regex ZeroPageIndexedRegex();
 
-        [GeneratedRegex(@"^\((?<arg>(\$[0-9A-F]{2}|\w+))\)$")]
+        [GeneratedRegex(@"^\((?<arg>(\$[0-9A-Fa-f]{2}|\w+))\)$")]
         private static partial Regex ZeroPageIndirectRegex();
 
-        [GeneratedRegex(@"^\((?<arg>(\$00[0-9A-F]{2}|\$[0-9A-F]{2}|\w+)),X\)$")]
+        [GeneratedRegex(@"^\((?<arg>(\$00[0-9A-Fa-f]{2}|\$[0-9A-Fa-f]{2}|\w+)),X\)$")]
         private static partial Regex ZeroPageIndexedDirectRegex();
 
-        [GeneratedRegex(@"^\((?<arg>(\$00[0-9A-F]{2}|\$[0-9A-F]{2}|\w+))\),Y$")]
+        [GeneratedRegex(@"^\((?<arg>(\$00[0-9A-Fa-f]{2}|\$[0-9A-Fa-f]{2}|\w+))\),Y$")]
         private static partial Regex ZeroPagePostIndexedDirectRegex();
 
         [GeneratedRegex(@"(?<arg>(\w+))(?<operator>[-+])(?<offset>[0-9]+)")]
@@ -82,13 +82,13 @@ namespace InnoWerks.Assemblers
         [GeneratedRegex(@"^(?<label>[-A-Z][_A-Z0-9]*)?\s+(?<dir>(DB|DW))\s+(?<arg>[^\s;]+)\s*(?<comment>;.*)?")]
         private static partial Regex DataLineRegex();
 
-        [GeneratedRegex(@"^\s+(?<dir>ORG)\s+(?<arg>[#$][0-9A-F]+)\s*(?<comment>;.*)?")]
+        [GeneratedRegex(@"^\s+(?<dir>ORG)\s+(?<arg>[#$][0-9A-Fa-f]+)\s*(?<comment>;.*)?")]
         private static partial Regex DirectiveLineRegex();
 
         [GeneratedRegex(@"^(?<label>[-A-Z][_A-Z0-9]*):?\s*(?<comment>;.*)?")]
         private static partial Regex LabelledLineRegex();
 
-        [GeneratedRegex(@"^(?<label>[-A-Z][_A-Z0-9]*)\s+(?<equiv>(=|EQU))\s+(?<arg>[#$][0-9A-F]+)\s*(?<comment>;.*)?")]
+        [GeneratedRegex(@"^(?<label>[-A-Z][_A-Z0-9]*)\s+(?<equiv>(=|EQU))\s+(?<arg>[#$][0-9A-Fa-f]+)\s*(?<comment>;.*)?")]
         private static partial Regex EquivalenceLineRegex();
         #endregion
 

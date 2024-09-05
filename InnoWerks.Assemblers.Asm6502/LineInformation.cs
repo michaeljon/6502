@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -25,6 +26,7 @@ namespace InnoWerks.Assemblers
         Empty
     }
 
+    [DebuggerDisplay("{Line}")]
     public class LineInformation
     {
         public LineType LineType { get; set; }

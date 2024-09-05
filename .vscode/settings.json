@@ -4,5 +4,6 @@
   "files.watcherExclude": {
     "65x02/**": true
   },
-  "csharp.debug.requireExactSource": false
+  "csharp.debug.requireExactSource": false,
+  "csharp.preview.improvedLaunchExperience": true
 }

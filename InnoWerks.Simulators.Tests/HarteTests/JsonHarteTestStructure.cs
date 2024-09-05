@@ -52,7 +52,7 @@ namespace InnoWerks.Simulators.Tests
         }
     }
 
-    [DebuggerDisplay("{Address} {Value} {Type}")]
+    [DebuggerDisplay("{Address} {Value} {Type} [{Address.ToString(\"X4\")} {Value.ToString(\"X2\")}]")]
     public class JsonHarteTestBusAccess
     {
         public ushort Address { get; set; }

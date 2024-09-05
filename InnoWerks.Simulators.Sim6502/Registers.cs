@@ -28,7 +28,7 @@ namespace InnoWerks.Simulators
         /// many operations are only available for the accumulator, not the
         /// index registers.
         /// </summary>
-        [DebuggerDisplay("{A:X2}")]
+        [DebuggerDisplay("{A.ToString(\"X2\")}")]
         public byte A { get; set; }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace InnoWerks.Simulators
         /// a special addressing mode, indexed indirect, which lets you to
         /// have a vector table on the zero page.
         /// </summary>
-        [DebuggerDisplay("{Y:X2}")]
+        [DebuggerDisplay("{X.ToString(\"X2\")}")]
         public byte X { get; set; }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace InnoWerks.Simulators
         /// enables access to any memory place without having to use
         /// self-modifying code.
         /// </summary>
-        [DebuggerDisplay("{Y:X2}")]
+        [DebuggerDisplay("{Y.ToString(\"X2\")}")]
         public byte Y { get; set; }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace InnoWerks.Simulators
         ///  to or from the index register X (see below) with the TSX and TXS
         ///  instructions.</para>
         /// </summary>
-        [DebuggerDisplay("{StackPointer:X2}")]
+        [DebuggerDisplay("{StackPointer.ToString(\"X2\")}")]
         public byte StackPointer { get; set; }
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace InnoWerks.Simulators
         /// This can be done either by jumping to a subroutine or by causing
         /// an interrupt.
         /// </summary>
-        [DebuggerDisplay("{ProgramCounter:X4}")]
+        [DebuggerDisplay("{ProgramCounter.ToString(\"X4\")}")]
         public ushort ProgramCounter { get; set; }
 
         /// <summary>
@@ -84,21 +84,21 @@ namespace InnoWerks.Simulators
         /// pulling the P register from stack or by using the flag set or
         /// clear instructions.</para>
         /// </summary>
-        [DebuggerDisplay("{ProcessorStatus:X2}")]
+        [DebuggerDisplay("{ProcessorStatus.ToString(\"X2\")}")]
         public byte ProcessorStatus { get; set; }
 
         public string GetRegisterDisplay =>
              $"A:{A:X2} X:{X:X2} Y:{Y:X2} SP:{StackPointer:X2} PS:{ProcessorStatus:X2}";
 
         public string GetFlagsDisplay =>
-            $"PS:{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}{(Unused ? 'U' : 'u')}{(Decimal ? 'D' : 'd')}{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
+            $"PS:{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}{(Unused ? '-' : '-')}{(Decimal ? 'D' : 'd')}{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
 
         public string InternalGetFlagsDisplay =>
-            $"{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}{(Unused ? 'U' : 'u')}{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
+            $"{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}{(Unused ? '-' : '-')}{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
 
         public override string ToString()
         {
-            var flags = $"{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}{(Unused ? 'U' : 'u')}{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
+            var flags = $"{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}{(Unused ? '-' : '-')}{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
             var values = $"A:{A:X2} X:{X:X2} Y:{Y:X2} SP:{StackPointer:X2} PS:{ProcessorStatus:X2}";
 
             return $"{values} PC:{ProgramCounter:X4} {flags}";
