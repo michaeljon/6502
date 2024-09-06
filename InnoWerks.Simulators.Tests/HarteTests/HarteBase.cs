@@ -138,7 +138,9 @@ namespace InnoWerks.Simulators.Tests
             // verify results
             if (test.Final.ProgramCounter != cpu.Registers.ProgramCounter) { testFailed = true; results.Add($"{test.Name}: ProgramCounter expected {test.Final.ProgramCounter:X4} actual {cpu.Registers.ProgramCounter:X4}"); }
 
-            // we can run these tests to this extent
+            // we can run these tests to this extent, after this i haven't implemented
+            // the "undocumented" opcodes because, well, they're undocumented and
+            // probably don't always behave like they should
             if (ocd.AddressingMode != AddressingMode.Unknown)
             {
                 if (test.Final.S != cpu.Registers.StackPointer) { testFailed = true; results.Add($"{test.Name}: StackPointer expected {test.Final.S:X2} actual {cpu.Registers.StackPointer:X2}"); }
@@ -205,7 +207,7 @@ namespace InnoWerks.Simulators.Tests
             if (cpuClass == CpuClass.WDC6502)
             {
                 // from https://www.masswerk.at/nowgobang/2021/6502-illegal-opcodes
-                foreach (var kill in (byte[])([0x12, 0x22, 0x32, 0x42, 0x52, 0x62, 0x72, 0x92, 0xB2, 0xD2, 0xF2]))
+                foreach (var kill in (byte[])([0x02, 0x12, 0x22, 0x32, 0x42, 0x52, 0x62, 0x72, 0x92, 0xB2, 0xD2, 0xF2]))
                 {
                     ignored[kill] = true;
                 }

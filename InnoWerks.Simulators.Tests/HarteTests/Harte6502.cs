@@ -20,7 +20,7 @@ namespace InnoWerks.Simulators.Tests
 
         protected override string BasePath => Environment.ExpandEnvironmentVariables("%HOME%/src/6502/working/65x02/6502/v1");
 
-        [Ignore]
+        // [Ignore]
         [TestMethod]
         public void RunAll6502Tests()
         {
