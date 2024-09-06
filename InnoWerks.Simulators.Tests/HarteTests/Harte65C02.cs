@@ -1,11 +1,4 @@
-// #define VERBOSE_BATCH_OUTPUT
-
 using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
 using InnoWerks.Processors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -14,1627 +7,1558 @@ namespace InnoWerks.Simulators.Tests
     [TestClass]
     public class Harte65C02 : HarteBase
     {
-        private static readonly bool[] ignored = LoadIgnored(CpuClass.WDC65C02);
-
         protected override string BasePath => Environment.ExpandEnvironmentVariables("%HOME%/src/6502/working/65x02/wdc65c02/v1");
+
+        protected override CpuClass CpuClass => CpuClass.WDC65C02;
 
         // [Ignore]
         [TestMethod]
         public void RunAll65C02Tests()
         {
-            List<string> results = [];
-
-            var files = Directory
-                .GetFiles(BasePath, "*.json")
-                .OrderBy(f => f);
-
-            foreach (var file in files)
-            {
-                using (var fs = File.OpenRead(file))
-                {
-                    if (fs.Length == 0)
-                    {
-                        continue;
-                    }
-
-                    var index = byte.Parse(Path.GetFileNameWithoutExtension(file), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-
-                    if (ignored[index] == false)
-                    {
-                        foreach (var test in JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions).Take(100))
-                        {
-                            RunIndividualTest(CpuClass.WDC65C02, test, results);
-                        }
-                    }
-                }
-            }
-
-#if VERBOSE_BATCH_OUTPUT
-            foreach (var result in results)
-            {
-                TestContext.WriteLine(result);
-            }
-#endif
-
-            Assert.AreEqual(0, results.Count, $"Failed some tests");
+            RunAllBatchesWithRandomSampling();
         }
 
         [Ignore]
         [TestMethod]
         public void RunNamed65C02Test()
         {
-            var testName = "7c a5 b0";
-
-            List<string> results = [];
-
-            var batch = testName.Split(' ')[0];
-            var file = $"{BasePath}/{batch}.json";
-
-            var ocd = CpuInstructions.OpCode65C02[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)];
-
-            TestContext.WriteLine($"Running test {testName}");
-            TestContext.WriteLine($"OpCode: ${batch} {ocd.OpCode} {ocd.AddressingMode}");
-            TestContext.WriteLine("");
-
-            using (var fs = File.OpenRead(file))
-            {
-                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions);
-                var test = tests.Find(t => t.Name == testName);
-
-                if (test == null)
-                {
-                    Assert.Inconclusive($"Unable to locate test {testName}");
-                    return;
-                }
-
-                var json = JsonSerializer.Serialize(test.Clone(), SerializerOptions);
-                File.WriteAllText("foo.json", json);
-
-                RunIndividualTest(CpuClass.WDC65C02, test, results);
-            }
-
-            foreach (var result in results)
-            {
-                TestContext.WriteLine(result);
-            }
-
-            Assert.AreEqual(0, results.Count, $"Failed some tests");
+            RunNamedTest("7c a5 b0");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test00()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "00");
+            RunNamedBatch("00");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test01()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "01");
+            RunNamedBatch("01");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test02()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "02");
+            RunNamedBatch("02");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test03()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "03");
+            RunNamedBatch("03");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test04()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "04");
+            RunNamedBatch("04");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test05()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "05");
+            RunNamedBatch("05");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test06()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "06");
+            RunNamedBatch("06");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test07()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "07");
+            RunNamedBatch("07");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test08()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "08");
+            RunNamedBatch("08");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test09()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "09");
+            RunNamedBatch("09");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test0A()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "0a");
+            RunNamedBatch("0a");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test0B()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "0b");
+            RunNamedBatch("0b");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test0C()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "0c");
+            RunNamedBatch("0c");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test0D()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "0d");
+            RunNamedBatch("0d");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test0E()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "0e");
+            RunNamedBatch("0e");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test0F()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "0f");
+            RunNamedBatch("0f");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test10()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "10");
+            RunNamedBatch("10");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test11()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "11");
+            RunNamedBatch("11");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test12()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "12");
+            RunNamedBatch("12");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test13()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "13");
+            RunNamedBatch("13");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test14()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "14");
+            RunNamedBatch("14");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test15()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "15");
+            RunNamedBatch("15");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test16()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "16");
+            RunNamedBatch("16");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test17()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "17");
+            RunNamedBatch("17");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test18()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "18");
+            RunNamedBatch("18");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test19()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "19");
+            RunNamedBatch("19");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test1A()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "1a");
+            RunNamedBatch("1a");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test1B()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "1b");
+            RunNamedBatch("1b");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test1C()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "1c");
+            RunNamedBatch("1c");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test1D()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "1d");
+            RunNamedBatch("1d");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test1E()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "1e");
+            RunNamedBatch("1e");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test1F()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "1f");
+            RunNamedBatch("1f");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test20()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "20");
+            RunNamedBatch("20");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test21()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "21");
+            RunNamedBatch("21");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test22()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "22");
+            RunNamedBatch("22");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test23()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "23");
+            RunNamedBatch("23");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test24()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "24");
+            RunNamedBatch("24");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test25()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "25");
+            RunNamedBatch("25");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test26()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "26");
+            RunNamedBatch("26");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test27()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "27");
+            RunNamedBatch("27");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test28()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "28");
+            RunNamedBatch("28");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test29()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "29");
+            RunNamedBatch("29");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test2A()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "2a");
+            RunNamedBatch("2a");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test2B()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "2b");
+            RunNamedBatch("2b");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test2C()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "2c");
+            RunNamedBatch("2c");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test2D()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "2d");
+            RunNamedBatch("2d");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test2E()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "2e");
+            RunNamedBatch("2e");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test2F()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "2f");
+            RunNamedBatch("2f");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test30()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "30");
+            RunNamedBatch("30");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test31()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "31");
+            RunNamedBatch("31");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test32()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "32");
+            RunNamedBatch("32");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test33()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "33");
+            RunNamedBatch("33");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test34()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "34");
+            RunNamedBatch("34");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test35()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "35");
+            RunNamedBatch("35");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test36()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "36");
+            RunNamedBatch("36");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test37()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "37");
+            RunNamedBatch("37");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test38()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "38");
+            RunNamedBatch("38");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test39()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "39");
+            RunNamedBatch("39");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test3A()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "3a");
+            RunNamedBatch("3a");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test3B()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "3b");
+            RunNamedBatch("3b");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test3C()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "3c");
+            RunNamedBatch("3c");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test3D()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "3d");
+            RunNamedBatch("3d");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test3E()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "3e");
+            RunNamedBatch("3e");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test3F()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "3f");
+            RunNamedBatch("3f");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test40()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "40");
+            RunNamedBatch("40");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test41()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "41");
+            RunNamedBatch("41");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test42()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "42");
+            RunNamedBatch("42");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test43()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "43");
+            RunNamedBatch("43");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test44()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "44");
+            RunNamedBatch("44");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test45()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "45");
+            RunNamedBatch("45");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test46()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "46");
+            RunNamedBatch("46");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test47()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "47");
+            RunNamedBatch("47");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test48()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "48");
+            RunNamedBatch("48");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test49()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "49");
+            RunNamedBatch("49");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test4A()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "4a");
+            RunNamedBatch("4a");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test4B()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "4b");
+            RunNamedBatch("4b");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test4C()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "4c");
+            RunNamedBatch("4c");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test4D()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "4d");
+            RunNamedBatch("4d");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test4E()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "4e");
+            RunNamedBatch("4e");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test4F()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "4f");
+            RunNamedBatch("4f");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test50()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "50");
+            RunNamedBatch("50");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test51()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "51");
+            RunNamedBatch("51");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test52()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "52");
+            RunNamedBatch("52");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test53()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "53");
+            RunNamedBatch("53");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test54()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "54");
+            RunNamedBatch("54");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test55()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "55");
+            RunNamedBatch("55");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test56()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "56");
+            RunNamedBatch("56");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test57()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "57");
+            RunNamedBatch("57");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test58()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "58");
+            RunNamedBatch("58");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test59()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "59");
+            RunNamedBatch("59");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test5A()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "5a");
+            RunNamedBatch("5a");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test5B()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "5b");
+            RunNamedBatch("5b");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test5C()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "5c");
+            RunNamedBatch("5c");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test5D()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "5d");
+            RunNamedBatch("5d");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test5E()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "5e");
+            RunNamedBatch("5e");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test5F()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "5f");
+            RunNamedBatch("5f");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test60()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "60");
+            RunNamedBatch("60");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test61()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "61");
+            RunNamedBatch("61");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test62()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "62");
+            RunNamedBatch("62");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test63()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "63");
+            RunNamedBatch("63");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test64()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "64");
+            RunNamedBatch("64");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test65()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "65");
+            RunNamedBatch("65");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test66()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "66");
+            RunNamedBatch("66");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test67()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "67");
+            RunNamedBatch("67");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test68()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "68");
+            RunNamedBatch("68");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test69()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "69");
+            RunNamedBatch("69");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test6A()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "6a");
+            RunNamedBatch("6a");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test6B()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "6b");
+            RunNamedBatch("6b");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test6C()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "6c");
+            RunNamedBatch("6c");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test6D()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "6d");
+            RunNamedBatch("6d");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test6E()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "6e");
+            RunNamedBatch("6e");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test6F()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "6f");
+            RunNamedBatch("6f");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test70()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "70");
+            RunNamedBatch("70");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test71()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "71");
+            RunNamedBatch("71");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test72()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "72");
+            RunNamedBatch("72");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test73()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "73");
+            RunNamedBatch("73");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test74()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "74");
+            RunNamedBatch("74");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test75()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "75");
+            RunNamedBatch("75");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test76()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "76");
+            RunNamedBatch("76");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test77()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "77");
+            RunNamedBatch("77");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test78()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "78");
+            RunNamedBatch("78");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test79()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "79");
+            RunNamedBatch("79");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test7A()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "7a");
+            RunNamedBatch("7a");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test7B()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "7b");
+            RunNamedBatch("7b");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test7C()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "7c");
+            RunNamedBatch("7c");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test7D()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "7d");
+            RunNamedBatch("7d");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test7E()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "7e");
+            RunNamedBatch("7e");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test7F()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "7f");
+            RunNamedBatch("7f");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test80()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "80");
+            RunNamedBatch("80");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test81()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "81");
+            RunNamedBatch("81");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test82()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "82");
+            RunNamedBatch("82");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test83()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "83");
+            RunNamedBatch("83");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test84()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "84");
+            RunNamedBatch("84");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test85()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "85");
+            RunNamedBatch("85");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test86()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "86");
+            RunNamedBatch("86");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test87()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "87");
+            RunNamedBatch("87");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test88()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "88");
+            RunNamedBatch("88");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test89()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "89");
+            RunNamedBatch("89");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test8A()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "8a");
+            RunNamedBatch("8a");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test8B()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "8b");
+            RunNamedBatch("8b");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test8C()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "8c");
+            RunNamedBatch("8c");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test8D()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "8d");
+            RunNamedBatch("8d");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test8E()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "8e");
+            RunNamedBatch("8e");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test8F()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "8f");
+            RunNamedBatch("8f");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test90()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "90");
+            RunNamedBatch("90");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test91()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "91");
+            RunNamedBatch("91");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test92()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "92");
+            RunNamedBatch("92");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test93()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "93");
+            RunNamedBatch("93");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test94()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "94");
+            RunNamedBatch("94");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test95()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "95");
+            RunNamedBatch("95");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test96()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "96");
+            RunNamedBatch("96");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test97()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "97");
+            RunNamedBatch("97");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test98()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "98");
+            RunNamedBatch("98");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test99()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "99");
+            RunNamedBatch("99");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test9A()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "9a");
+            RunNamedBatch("9a");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test9B()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "9b");
+            RunNamedBatch("9b");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test9C()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "9c");
+            RunNamedBatch("9c");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test9D()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "9d");
+            RunNamedBatch("9d");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test9E()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "9e");
+            RunNamedBatch("9e");
         }
 
         [TestMethod]
         public void RunIndividual65C02Test9F()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "9f");
+            RunNamedBatch("9f");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestA0()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "a0");
+            RunNamedBatch("a0");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestA1()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "a1");
+            RunNamedBatch("a1");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestA2()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "a2");
+            RunNamedBatch("a2");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestA3()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "a3");
+            RunNamedBatch("a3");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestA4()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "a4");
+            RunNamedBatch("a4");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestA5()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "a5");
+            RunNamedBatch("a5");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestA6()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "a6");
+            RunNamedBatch("a6");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestA7()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "a7");
+            RunNamedBatch("a7");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestA8()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "a8");
+            RunNamedBatch("a8");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestA9()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "a9");
+            RunNamedBatch("a9");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestAA()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "aa");
+            RunNamedBatch("aa");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestAB()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "ab");
+            RunNamedBatch("ab");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestAC()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "ac");
+            RunNamedBatch("ac");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestAD()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "ad");
+            RunNamedBatch("ad");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestAE()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "ae");
+            RunNamedBatch("ae");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestAF()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "af");
+            RunNamedBatch("af");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestB0()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "b0");
+            RunNamedBatch("b0");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestB1()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "b1");
+            RunNamedBatch("b1");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestB2()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "b2");
+            RunNamedBatch("b2");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestB3()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "b3");
+            RunNamedBatch("b3");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestB4()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "b4");
+            RunNamedBatch("b4");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestB5()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "b5");
+            RunNamedBatch("b5");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestB6()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "b6");
+            RunNamedBatch("b6");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestB7()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "b7");
+            RunNamedBatch("b7");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestB8()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "b8");
+            RunNamedBatch("b8");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestB9()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "b9");
+            RunNamedBatch("b9");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestBA()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "ba");
+            RunNamedBatch("ba");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestBB()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "bb");
+            RunNamedBatch("bb");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestBC()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "bc");
+            RunNamedBatch("bc");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestBD()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "bd");
+            RunNamedBatch("bd");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestBE()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "be");
+            RunNamedBatch("be");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestBF()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "bf");
+            RunNamedBatch("bf");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestC0()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "c0");
+            RunNamedBatch("c0");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestC1()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "c1");
+            RunNamedBatch("c1");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestC2()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "c2");
+            RunNamedBatch("c2");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestC3()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "c3");
+            RunNamedBatch("c3");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestC4()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "c4");
+            RunNamedBatch("c4");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestC5()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "c5");
+            RunNamedBatch("c5");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestC6()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "c6");
+            RunNamedBatch("c6");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestC7()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "c7");
+            RunNamedBatch("c7");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestC8()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "c8");
+            RunNamedBatch("c8");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestC9()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "c9");
+            RunNamedBatch("c9");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestCA()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "ca");
+            RunNamedBatch("ca");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestCB()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "cb");
+            RunNamedBatch("cb");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestCC()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "cc");
+            RunNamedBatch("cc");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestCD()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "cd");
+            RunNamedBatch("cd");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestCE()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "ce");
+            RunNamedBatch("ce");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestCF()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "cf");
+            RunNamedBatch("cf");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestD0()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "d0");
+            RunNamedBatch("d0");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestD1()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "d1");
+            RunNamedBatch("d1");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestD2()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "d2");
+            RunNamedBatch("d2");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestD3()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "d3");
+            RunNamedBatch("d3");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestD4()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "d4");
+            RunNamedBatch("d4");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestD5()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "d5");
+            RunNamedBatch("d5");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestD6()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "d6");
+            RunNamedBatch("d6");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestD7()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "d7");
+            RunNamedBatch("d7");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestD8()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "d8");
+            RunNamedBatch("d8");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestD9()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "d9");
+            RunNamedBatch("d9");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestDA()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "da");
+            RunNamedBatch("da");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestDB()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "db");
+            RunNamedBatch("db");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestDC()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "dc");
+            RunNamedBatch("dc");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestDD()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "dd");
+            RunNamedBatch("dd");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestDE()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "de");
+            RunNamedBatch("de");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestDF()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "df");
+            RunNamedBatch("df");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestE0()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "e0");
+            RunNamedBatch("e0");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestE1()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "e1");
+            RunNamedBatch("e1");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestE2()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "e2");
+            RunNamedBatch("e2");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestE3()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "e3");
+            RunNamedBatch("e3");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestE4()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "e4");
+            RunNamedBatch("e4");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestE5()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "e5");
+            RunNamedBatch("e5");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestE6()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "e6");
+            RunNamedBatch("e6");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestE7()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "e7");
+            RunNamedBatch("e7");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestE8()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "e8");
+            RunNamedBatch("e8");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestE9()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "e9");
+            RunNamedBatch("e9");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestEA()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "ea");
+            RunNamedBatch("ea");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestEB()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "eb");
+            RunNamedBatch("eb");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestEC()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "ec");
+            RunNamedBatch("ec");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestED()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "ed");
+            RunNamedBatch("ed");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestEE()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "ee");
+            RunNamedBatch("ee");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestEF()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "ef");
+            RunNamedBatch("ef");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestF0()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "f0");
+            RunNamedBatch("f0");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestF1()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "f1");
+            RunNamedBatch("f1");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestF2()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "f2");
+            RunNamedBatch("f2");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestF3()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "f3");
+            RunNamedBatch("f3");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestF4()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "f4");
+            RunNamedBatch("f4");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestF5()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "f5");
+            RunNamedBatch("f5");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestF6()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "f6");
+            RunNamedBatch("f6");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestF7()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "f7");
+            RunNamedBatch("f7");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestF8()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "f8");
+            RunNamedBatch("f8");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestF9()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "f9");
+            RunNamedBatch("f9");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestFA()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "fa");
+            RunNamedBatch("fa");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestFB()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "fb");
+            RunNamedBatch("fb");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestFC()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "fc");
+            RunNamedBatch("fc");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestFD()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "fd");
+            RunNamedBatch("fd");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestFE()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "fe");
+            RunNamedBatch("fe");
         }
 
         [TestMethod]
         public void RunIndividual65C02TestFF()
         {
-            RunNamedBatch(CpuClass.WDC65C02, "ff");
+            RunNamedBatch("ff");
         }
     }
 }

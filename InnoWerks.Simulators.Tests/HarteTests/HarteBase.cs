@@ -24,6 +24,8 @@ namespace InnoWerks.Simulators.Tests
     {
         protected virtual string BasePath { get; }
 
+        protected virtual CpuClass CpuClass { get; }
+
         protected static readonly JsonSerializerOptions SerializerOptions = new()
         {
             ReadCommentHandling = JsonCommentHandling.Skip,
@@ -41,7 +43,7 @@ namespace InnoWerks.Simulators.Tests
             }
         };
 
-        protected void RunNamedBatch(CpuClass cpuClass, string batch)
+        protected void RunNamedBatch(string batch)
         {
             if (string.IsNullOrEmpty(batch))
             {
@@ -62,7 +64,7 @@ namespace InnoWerks.Simulators.Tests
 
                 foreach (var test in JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions).ToList())
                 {
-                    RunIndividualTest(cpuClass, test, results);
+                    RunIndividualTest(test, results);
                 }
 
 #if VERBOSE_BATCH_OUTPUT
@@ -76,13 +78,13 @@ namespace InnoWerks.Simulators.Tests
             }
         }
 
-        protected bool RunIndividualTest(CpuClass cpuClass, JsonHarteTestStructure test, List<string> results)
+        protected bool RunIndividualTest(JsonHarteTestStructure test, List<string> results)
         {
             ArgumentNullException.ThrowIfNull(test);
             ArgumentNullException.ThrowIfNull(results);
 
             var batch = test.Name.Split(' ')[0];
-            var ocd = cpuClass == CpuClass.WDC6502 ?
+            var ocd = CpuClass == CpuClass.WDC6502 ?
                 CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)] :
                 CpuInstructions.OpCode65C02[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)];
 
@@ -92,7 +94,7 @@ namespace InnoWerks.Simulators.Tests
             memory.Initialize(test.Initial.Ram);
 
             var cpu = new Cpu(
-                cpuClass,
+                CpuClass,
                 memory,
                 // (cpu, pc) => FlagsTraceCallback(cpu, pc, memory),
                 // (cpu) => FlagsLoggerCallback(cpu, memory, 0))
@@ -200,11 +202,106 @@ namespace InnoWerks.Simulators.Tests
             return testFailed;
         }
 
-        protected static bool[] LoadIgnored(CpuClass cpuClass)
+        protected void RunNamedTest(string testName)
+        {
+            ArgumentNullException.ThrowIfNullOrEmpty(testName);
+
+            List<string> results = [];
+
+            var batch = testName.Split(' ')[0];
+            var file = $"{BasePath}/{batch}.json";
+
+            var ocd = CpuClass == CpuClass.WDC6502 ?
+                CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)] :
+                CpuInstructions.OpCode65C02[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)];
+
+            TestContext.WriteLine($"Running test {testName}");
+            TestContext.WriteLine($"OpCode: ${batch} {ocd.OpCode} {ocd.AddressingMode}");
+            TestContext.WriteLine("");
+
+            using (var fs = File.OpenRead(file))
+            {
+                var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions);
+                var test = tests.Find(t => t.Name == testName);
+
+                if (test == null)
+                {
+                    Assert.Inconclusive($"Unable to locate test {testName}");
+                    return;
+                }
+
+                var json = JsonSerializer.Serialize(test.Clone(), SerializerOptions);
+                File.WriteAllText("foo.json", json);
+
+                RunIndividualTest(test, results);
+            }
+
+            foreach (var result in results)
+            {
+                TestContext.WriteLine(result);
+            }
+
+            Assert.AreEqual(0, results.Count, $"Failed some tests");
+        }
+
+        protected void RunAllBatchesWithRandomSampling()
+        {
+            bool[] ignored = LoadIgnored();
+            List<string> results = [];
+
+            var files = Directory
+                .GetFiles(BasePath, "*.json")
+                .OrderBy(f => f);
+
+            foreach (var file in files)
+            {
+                using (var fs = File.OpenRead(file))
+                {
+                    if (fs.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    var index = byte.Parse(Path.GetFileNameWithoutExtension(file), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+
+                    if (ignored[index] == false)
+                    {
+                        // note:
+                        // this test can take upwards of 30 minutes to run if we go through all
+                        // possible opcodes and all 10,000 tests per opcode. this trick selects
+                        // a random samples from the test. we still hit all the opcodes, but we
+                        // run just 1/10th of the tests. big time savings...
+                        //
+                        // and no, we aren't skipping tests. all of the individual "batch" tests
+                        // below, which can run in parallel, will test the entire 10,000
+                        // tests in the batch
+                        var tests = JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions)
+                            .OrderBy(_ => Guid.NewGuid())
+                            .Take(1000);
+
+                        foreach (var test in tests)
+                        {
+                            RunIndividualTest(test, results);
+                        }
+                    }
+                }
+            }
+
+#if VERBOSE_BATCH_OUTPUT
+            foreach (var result in results)
+            {
+                TestContext.WriteLine(result);
+            }
+#endif
+
+            Assert.AreEqual(0, results.Count, $"Failed some tests");
+        }
+
+        protected bool[] LoadIgnored()
         {
             var ignored = new bool[256];
 
-            if (cpuClass == CpuClass.WDC6502)
+            if (CpuClass == CpuClass.WDC6502)
             {
                 // from https://www.masswerk.at/nowgobang/2021/6502-illegal-opcodes
                 foreach (var kill in (byte[])([0x02, 0x12, 0x22, 0x32, 0x42, 0x52, 0x62, 0x72, 0x92, 0xB2, 0xD2, 0xF2]))
