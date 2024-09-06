@@ -36,6 +36,8 @@ namespace InnoWerks.Simulators
 
         public CpuClass CpuClass { get; private set; }
 
+        private bool illegalInstruction;
+
         public Cpu(
             CpuClass cpuClass,
             IMemory memory,
@@ -1668,9 +1670,18 @@ namespace InnoWerks.Simulators
         #endregion
 
         #region InstructionDecoders
-        public bool DecodeUndefined(int instructionSize)
+        public bool DecodeUndefined(int bytes, int cycles)
         {
             OperandDisplay = "<illegal>";
+
+            if (bytes == 0)
+            {
+                illegalInstruction = true;
+            }
+
+            // all we can do is move the PC
+            Registers.ProgramCounter = (ushort)(Registers.ProgramCounter + bytes);
+
             return false;
         }
 

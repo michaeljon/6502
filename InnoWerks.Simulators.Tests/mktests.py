@@ -2,17 +2,12 @@ for t in range(0, 256):
     test_id = "{:02x}".format(t)
 
     print("[TestMethod]")
-    print("public void RunIndividual6502Test" + test_id.upper() + "()")
+
+    # 6502 expected failures
+    if test_id.upper() in ["02", "12", "22", "32", "42", "52", "62", "72", "92", "B2", "D2", "F2"]:
+        print("[ExpectedException(typeof(IllegalOpCodeException))]")
+    print("public void RunIndividual65C02Test" + test_id.upper() + "()")
     print("{")
-    print(
-        '    if (ignored[byte.Parse("' + test_id + '", NumberStyles.HexNumber, CultureInfo.InvariantCulture)] == true)'
-    )
-    print("    {")
-    print('        Assert.Inconclusive($"Test ' + test_id + ' is marked as ignored");')
-    print("    }")
-    print("    else")
-    print("    {")
-    print('        RunNamedBatch("' + test_id + '");')
-    print("    }")
+    print('    RunNamedBatch(CpuClass.WDC65C02, "' + test_id + '");')
     print("}")
     print()

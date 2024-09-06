@@ -102,6 +102,11 @@ namespace InnoWerks.Processors
             OpCode.ROR,
         };
 
+        public static readonly ISet<byte> KillInstructions6502 = new HashSet<byte>
+        {
+            0x02, 0x12, 0x22, 0x32, 0x42, 0x52, 0x62, 0x72, 0x92, 0xB2, 0xD2, 0xF2
+        };
+
         public static readonly IDictionary<(OpCode opCode, AddressingMode addressingMode), (byte code, CpuClass minCpuClass)> Instructions =
             new Dictionary<(OpCode opCode, AddressingMode addressingMode), (byte code, CpuClass minCpuClass)>
             {

@@ -62,8 +62,21 @@ namespace InnoWerks.Simulators
             // decode the operand based on the opcode and addressing mode
             if (opCodeDefinition.DecodeOperand(this) == false)
             {
-                // this is an illegal operation that should jam
-                throw new IllegalOpCodeException(Registers.ProgramCounter, operation);
+                if (illegalInstruction == true)
+                {
+                    // This is a JAM / KIL
+                    throw new IllegalOpCodeException(Registers.ProgramCounter, operation);
+                }
+                // if (CpuClass == CpuClass.WDC6502)
+                // {
+                //     if (InstructionInformation.KillInstructions6502.Contains(operation))
+                //     {
+                //     }
+                // }
+
+                // if we got this far we're either a 6502 and we've decoded or
+                // we're a 65c02 and we're just going to pretend this is a NOP
+                return;
             }
 
             var stepToExecute = $"{Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}";
@@ -1011,6 +1024,5 @@ namespace InnoWerks.Simulators
                     throw new IllegalOpCodeException(Registers.ProgramCounter, operation);
             }
         }
-
     }
 }
