@@ -62,7 +62,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void RunNamed65C02Test()
         {
-            var testName = "fd 9995";
+            var testName = "f2 9997";
 
             List<string> results = [];
 

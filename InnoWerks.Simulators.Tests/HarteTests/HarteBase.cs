@@ -1,4 +1,4 @@
-#define DUMP_TEST_DATA
+// #define DUMP_TEST_DATA
 #define POST_STEP_MEMORY
 #define VALIDATE_BUS_ACCESSES
 

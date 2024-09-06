@@ -288,14 +288,15 @@ namespace InnoWerks.Simulators
 
                                 if (CpuClass == CpuClass.WDC65C02)
                                 {
+                                    if (bal + index >= 0x100)
+                                    {
+                                        memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                    }
+
                                     if (Registers.Decimal == true && (opCodeDefinition.OpCode == OpCode.ADC || opCodeDefinition.OpCode == OpCode.SBC))
                                     {
                                         /* discarded */
                                         memory.Read(ad);
-                                    }
-                                    else if (bal + index >= 0x100)
-                                    {
-                                        memory.Read((ushort)(Registers.ProgramCounter + 2));
                                     }
                                 }
 
@@ -365,7 +366,7 @@ namespace InnoWerks.Simulators
                                         memory.Read((ushort)(Registers.ProgramCounter + 1));
                                         memory.Read(ad);
                                     }
-                                    else if (bal + Registers.Y >= 0x100)
+                                    if (bal + Registers.Y >= 0x100)
                                     {
                                         /* discarded */
                                         memory.Read((ushort)(Registers.ProgramCounter + 1));
@@ -404,6 +405,15 @@ namespace InnoWerks.Simulators
 
                                 // T4
                                 var ad = (ushort)((bah << 8) | bal);
+
+                                if (CpuClass == CpuClass.WDC65C02)
+                                {
+                                    if (Registers.Decimal == true && (opCodeDefinition.OpCode == OpCode.ADC || opCodeDefinition.OpCode == OpCode.SBC))
+                                    {
+                                        memory.Read(ad);
+                                    }
+                                }
+
                                 var data = memory.Read(ad);
 
                                 opCodeDefinition.Execute(this, 0, data);
