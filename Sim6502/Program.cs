@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CommandLine;
@@ -120,12 +121,12 @@ namespace Sim6502
         private void DebugTheThing(Cpu cpu, Assembler assembler)
         {
             // commands
-            var quitRegex = new Regex("^q$");
+            var quitRegex = new Regex("^(q|quit)$");
 
             var stepRegex = new Regex("^s$");
             var traceRegex = new Regex("^t (?<steps>[0-9]+)$");
             var goRegex = new Regex("^g$");
-            var setProgramCounterRegex = new Regex("^jmp (?<addr>[a-f0-9]{4})$");
+            var setProgramCounterRegex = new Regex("^pc (?<addr>[a-f0-9]{4})$");
             var jsrRegex = new Regex("^jsr (?<addr>[a-f0-9]{4})$");
             var setBreakpointRegex = new Regex("^sb (?<addr>[a-f0-9a-f]{4})$");
             var clearBreakpointRegex = new Regex("^cb (?<addr>[a-f0-9]{4})$");
@@ -139,9 +140,9 @@ namespace Sim6502
             var setRegisterRegex = new Regex("^sr (?<register>[axys]) (?<value>[a-f0-9]{2})$");
             var zeroRegisterRegex = new Regex("^zr (?<register>[axys])$");
 
-            var writeRegex = new Regex("^w (?<addr>[a-f0-9]{4}) (?<value>[a-f0-9]{2})$");
-            var readRegex = new Regex("^r (?<addr>[a-f0-9]{4}) (?<len>[0-9]+)$");
-            var writePageRegex = new Regex("^d (?<page>[a-f0-9]{2})$");
+            var writeRegex = new Regex("^w (?<addr>[a-f0-9]{1,4}) (?<values>[a-f0-9]{1,2}( [a-f0-9]{1,2})*)$");
+            var readRegex = new Regex("^r (?<addr>[a-f0-9]{1,4}) (?<len>[0-9]+)$");
+            var writePageRegex = new Regex("^d (?<page>[a-f0-9]{1,2})$");
 
             // options
             var setTraceSpeedRegex = new Regex("^o ts (?<speed>[0-9]+)$");
@@ -273,13 +274,14 @@ namespace Sim6502
                 {
                     var captures = writeRegex.MatchNamedCaptures(command);
                     captures.TryGetValue("addr", out string addr);
-                    captures.TryGetValue("value", out string value);
+                    captures.TryGetValue("values", out string values);
 
-                    WriteMemory(
-                        cpu,
-                        ushort.Parse(addr, NumberStyles.HexNumber, CultureInfo.InvariantCulture),
-                        [byte.Parse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture)]
-                        );
+                    var valueList = values
+                        .Split(' ')
+                        .Select(v => byte.Parse(v, NumberStyles.HexNumber, CultureInfo.InvariantCulture))
+                        .ToList();
+
+                    WriteMemory(cpu, ushort.Parse(addr, NumberStyles.HexNumber, CultureInfo.InvariantCulture), valueList);
                 }
                 else if (readRegex.IsMatch(command) == true)
                 {
@@ -290,14 +292,14 @@ namespace Sim6502
                     ReadMemory(
                         cpu,
                         ushort.Parse(addr, NumberStyles.HexNumber, CultureInfo.InvariantCulture),
-                        ushort.Parse(len, CultureInfo.InvariantCulture)
-                    );
+                        ushort.Parse(len, CultureInfo.InvariantCulture));
                 }
                 else if (writePageRegex.IsMatch(command) == true)
                 {
                     var captures = writePageRegex.MatchNamedCaptures(command);
-
                     captures.TryGetValue("page", out string page);
+
+                    DumpPage(cpu, byte.Parse(page, NumberStyles.HexNumber, CultureInfo.InvariantCulture));
                 }
                 else if (setTraceSpeedRegex.IsMatch(command) == true)
                 {
@@ -305,6 +307,7 @@ namespace Sim6502
                     captures.TryGetValue("speed", out string speed);
 
                     stepSpeed = int.Parse(speed, CultureInfo.InvariantCulture);
+                    Console.WriteLine($"step speed set to {1} instruction(s) per second");
                 }
                 else if (setTraceVerbosityRegex.IsMatch(command) == true)
                 {
@@ -312,6 +315,7 @@ namespace Sim6502
                     captures.TryGetValue("flag", out string flag);
 
                     verboseSteps = bool.Parse(flag);
+                    Console.WriteLine($"CPU instruction printing set to {verboseSteps}");
                 }
                 else if (helpRegex.IsMatch(command) == true)
                 {
@@ -396,28 +400,47 @@ namespace Sim6502
         {
             breakpoints.Add(addr, memory[addr]);
             memory[addr] = 0x00;
+
+            Console.WriteLine($"Breakpoint at {addr:X4} set");
         }
 
         private void ClearBreakpoint(Cpu cpu, ushort addr)
         {
-
             memory[addr] = breakpoints[addr];
             breakpoints.Remove(addr);
+
+            Console.WriteLine($"Breakpoint at {addr:X4} cleared");
         }
 
         private void ClearAllBreakpoints(Cpu cpu)
         {
+            if (breakpoints.Count == 0)
+            {
+                Console.WriteLine("No breakpoints set");
+                return;
+            }
+
             foreach (var (addr, value) in breakpoints)
             {
                 memory[addr] = value;
             }
+
+            Console.WriteLine("Breakpoints cleared");
         }
 
         private void ListBreakpoints(Cpu cpu)
         {
+            if (breakpoints.Count == 0)
+            {
+                Console.WriteLine("No breakpoints set");
+                return;
+            }
+
+            var bp = 1;
+
             foreach (var (addr, _) in breakpoints)
             {
-                Console.WriteLine($"{addr}");
+                Console.WriteLine($"{bp++}:  {addr:X4}");
             }
         }
 
@@ -441,6 +464,8 @@ namespace Sim6502
                     cpu.Registers.Negative = true;
                     break;
             }
+
+            Console.WriteLine($"Flag {processorFlag} set");
         }
 
         private void ClearFlag(Cpu cpu, ProcessorFlag processorFlag)
@@ -463,18 +488,20 @@ namespace Sim6502
                     cpu.Registers.Negative = false;
                     break;
             }
+
+            Console.WriteLine($"Flag {processorFlag} cleared");
         }
 
         private void DumpFlags(Cpu cpu)
         {
-            Console.WriteLine($"N: {(cpu.Registers.Negative ? '1' : '0')}");
-            Console.WriteLine($"V: {(cpu.Registers.Overflow ? '1' : '0')}");
-            Console.WriteLine($"-: {(cpu.Registers.Unused ? '1' : '0')}");
-            Console.WriteLine($"D: {(cpu.Registers.Decimal ? '1' : '0')}");
-            Console.WriteLine($"B: {(cpu.Registers.Break ? '1' : '0')}");
-            Console.WriteLine($"I: {(cpu.Registers.Interrupt ? '1' : '0')}");
-            Console.WriteLine($"Z: {(cpu.Registers.Zero ? '1' : '0')}");
-            Console.WriteLine($"C: {(cpu.Registers.Carry ? '1' : '0')}");
+            Console.Write($"N: {(cpu.Registers.Negative ? '1' : '0')}  ");
+            Console.Write($"V: {(cpu.Registers.Overflow ? '1' : '0')}  ");
+            Console.Write($"u: {(cpu.Registers.Unused ? '1' : '0')}  ");
+            Console.Write($"D: {(cpu.Registers.Decimal ? '1' : '0')}  ");
+            Console.Write($"B: {(cpu.Registers.Break ? '1' : '0')}  ");
+            Console.Write($"I: {(cpu.Registers.Interrupt ? '1' : '0')}  ");
+            Console.Write($"Z: {(cpu.Registers.Zero ? '1' : '0')}  ");
+            Console.Write($"C: {(cpu.Registers.Carry ? '1' : '0')}");
         }
 
         private void DumpRegisters(Cpu cpu)
@@ -502,6 +529,8 @@ namespace Sim6502
                     cpu.Registers.ProcessorStatus = value;
                     break;
             }
+
+            Console.WriteLine($"Flag {processorRegister} set");
         }
 
         private void ZeroRegister(Cpu cpu, ProcessorRegister processorRegister)
@@ -520,6 +549,8 @@ namespace Sim6502
                     cpu.Registers.Y = 0;
                     break;
             }
+
+            Console.WriteLine($"Flag {processorRegister} cleared");
         }
 
         private void WriteMemory(Cpu cpu, ushort addr, List<byte> bytes)
@@ -528,6 +559,8 @@ namespace Sim6502
             {
                 memory[(ushort)(addr + i)] = bytes[i];
             }
+
+            Console.WriteLine($"{bytes.Count} bytes written to {addr:X4}");
         }
 
         private void ReadMemory(Cpu cpu, ushort addr, ushort len)
@@ -546,21 +579,30 @@ namespace Sim6502
 
         private void DumpPage(Cpu cpu, byte page)
         {
-            var lines = 16;
+            Console.Write("       ");
+            for (var b = 0; b < 32; b++)
+            {
+                if (b > 0x00 && b % 0x08 == 0)
+                {
+                    Console.Write("  ");
+                }
 
-            for (var l = page * 0x100; l < (page + 1) * 0x100 && lines-- > 0; l += 16)
+                Console.Write("{0:X2} ", b);
+            }
+
+            Console.WriteLine();
+
+            for (var l = page * 0x100; l < (page + 1) * 0x100; l += 32)
             {
                 Console.Write("{0:X4}:  ", l);
 
-                for (var b = 0; b < 8; b++)
+                for (var b = 0; b < 32; b++)
                 {
-                    Console.Write("{0:X2} ", memory[(ushort)(l + b)]);
-                }
+                    if (b > 0x00 && b % 0x08 == 0)
+                    {
+                        Console.Write("  ");
+                    }
 
-                Console.Write("  ");
-
-                for (var b = 8; b < 16; b++)
-                {
                     Console.Write("{0:X2} ", memory[(ushort)(l + b)]);
                 }
 
