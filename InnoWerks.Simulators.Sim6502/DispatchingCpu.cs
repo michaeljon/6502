@@ -37,20 +37,29 @@ namespace InnoWerks.Simulators
             return instructionCount;
         }
 
-        public void Step(bool writeInstructions = false)
+        public bool Step(bool writeInstructions = false, bool returnPriorToBreak = false)
         {
+            // for debugging we're just going to peek at the next
+            // instruction, and if it's both a BRK and we've been asked
+            // to NOT execute, then we'll return
+            var operation = memory.Peek(Registers.ProgramCounter);
+            if (operation == 0x00 && returnPriorToBreak == true)
+            {
+                return true;
+            }
+
             preExecutionCallback?.Invoke(this, Registers.ProgramCounter);
 
             // T0
-            var operation = memory.Read(Registers.ProgramCounter);
+            operation = memory.Read(Registers.ProgramCounter);
+
+            // rest of memory cycles
             Dispatch(operation, writeInstructions);
 
-            if (writeInstructions)
-            {
-                Console.WriteLine($"  {Registers.GetRegisterDisplay}   {Registers.InternalGetFlagsDisplay,-8}");
-            }
-
             postExecutionCallback?.Invoke(this);
+
+            // hard-coded BRK, if hit we'll tell the call that we saw and executed a break
+            return operation == 0x00;
         }
 
         private void Dispatch(byte operation, bool writeInstructions = false)

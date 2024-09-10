@@ -31,7 +31,7 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/Sim6502/bin/Debug/net8.0/Sim6502.dll",
-      "args": [],
+      "args": ["--input", "tests/simple.S", "--origin", "32768"],
       "cwd": "${workspaceFolder}/Sim6502",
       "console": "internalConsole",
       "stopAtEntry": false,

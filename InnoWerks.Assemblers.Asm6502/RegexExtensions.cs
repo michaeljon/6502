@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace InnoWerks.Assemblers
 {
-    internal static class RegexExtensions
+    public static class RegexExtensions
     {
         public static Dictionary<string, string> MatchNamedCaptures(this Regex regex, string input)
         {

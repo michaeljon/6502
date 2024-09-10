@@ -101,27 +101,27 @@ namespace InnoWerks.Simulators
             Console.WriteLine(Registers.GetFlagsDisplay);
         }
 
-        private void StackPush(byte b)
+        public void StackPush(byte b)
         {
             memory.Write((ushort)(StackBase + Registers.StackPointer), b);
 
             Registers.StackPointer = (byte)((Registers.StackPointer - 1) & 0xff);
         }
 
-        private byte StackPop()
+        public byte StackPop()
         {
             Registers.StackPointer = (byte)((Registers.StackPointer + 1) & 0xff);
 
             return memory.Read((ushort)(StackBase + Registers.StackPointer));
         }
 
-        private void StackPushWord(ushort s)
+        public void StackPushWord(ushort s)
         {
             StackPush((byte)(s >> 8));
             StackPush((byte)(s & 0xff));
         }
 
-        private ushort StackPopWord()
+        public ushort StackPopWord()
         {
             return (ushort)((0xff & StackPop()) | (0xff00 & (StackPop() << 8)));
         }
