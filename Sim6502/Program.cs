@@ -87,37 +87,6 @@ namespace Sim6502
             return 0;
         }
 
-        /*
-         * Commands:
-         *
-         *    q                     - quit
-         *
-         *    s                     - step
-         *    t <steps>             - run n <steps>
-         *    g                     - go
-         *    pc <addr>             - set PC to <addr> (PC <- addr)
-         *    jsr <addr>            - call subroutine ad <addr> (S <- PC + 2, PC <- addr)
-         *    sb <addr>             - set breakpoint at <addr>
-         *    cb <addr>             - clear breakpoint at <addr>
-         *    ca                    - clear all breakpoints
-         *    b                     - list breakpoints
-         *    sf <flag>             - set flag (CVNZ) to true
-         *    cf <flag>             - set flag (CVNZ) to false
-         *
-         *    f                     - dump flags
-         *    e                     - dump registers
-         *    sr <reg> <value>      - set register (A,X,Y,S) to value
-         *    zr <reg>              - set register (A,X,Y,S) to 0 (shortcut)
-         *
-         *    w <addr> <byte>...    - write <byte> starting at <addr>
-         *    r <addr> <len>        - read <len>
-         *    d <page>              - dump page <page>
-         *
-         *    o ts <steps/sec>      - set trace speed to steps / second
-         *    o tv <true|false>     - show cpu instructions during trace / run
-         *
-         *    ? | h                 - display this list
-         */
         private void DebugTheThing(Cpu cpu, Assembler assembler)
         {
             // commands
@@ -126,22 +95,25 @@ namespace Sim6502
             var stepRegex = new Regex("^s$");
             var traceRegex = new Regex("^t (?<steps>[0-9]+)$");
             var goRegex = new Regex("^g$");
+
             var setProgramCounterRegex = new Regex("^pc (?<addr>[a-f0-9]{4})$");
             var jsrRegex = new Regex("^jsr (?<addr>[a-f0-9]{4})$");
+
             var setBreakpointRegex = new Regex("^sb (?<addr>[a-f0-9a-f]{4})$");
             var clearBreakpointRegex = new Regex("^cb (?<addr>[a-f0-9]{4})$");
             var clearAllBreakpointsRegex = new Regex("^ca$");
-            var listBreakpointsRegex = new Regex("^b$");
+            var listBreakpointsRegex = new Regex("^lb$");
+
+            var dumpFlagsRegex = new Regex("^df$");
             var setFlagRegex = new Regex("^sf (?<flag>[cnvz])$");
             var clearFlagRegex = new Regex("^cf (?<flag>[cnvz])$");
 
-            var dumpFlagsRegex = new Regex("^f$");
-            var dumpRegistersRegex = new Regex("^e$");
-            var setRegisterRegex = new Regex("^sr (?<register>[axys]) (?<value>[a-f0-9]{2})$");
+            var dumpRegistersRegex = new Regex("^dr$");
+            var setRegisterRegex = new Regex("^sr (?<register>[axys]) (?<value>[a-f0-9]{1,2})$");
             var zeroRegisterRegex = new Regex("^zr (?<register>[axys])$");
 
             var writeRegex = new Regex("^w (?<addr>[a-f0-9]{1,4}) (?<values>[a-f0-9]{1,2}( [a-f0-9]{1,2})*)$");
-            var readRegex = new Regex("^r (?<addr>[a-f0-9]{1,4}) (?<len>[0-9]+)$");
+            var readRegex = new Regex("^r (?<addr>[a-f0-9]{1,4}) (?<len>[0-9]*)$");
             var writePageRegex = new Regex("^d (?<page>[a-f0-9]{1,2})$");
 
             // options
@@ -261,14 +233,14 @@ namespace Sim6502
                     captures.TryGetValue("register", out string register);
                     captures.TryGetValue("value", out string value);
 
-                    SetRegister(cpu, Enum.Parse<ProcessorRegister>(register), byte.Parse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture));
+                    SetRegister(cpu, Enum.Parse<ProcessorRegister>(register, true), byte.Parse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture));
                 }
                 else if (zeroRegisterRegex.IsMatch(command) == true)
                 {
                     var captures = zeroRegisterRegex.MatchNamedCaptures(command);
                     captures.TryGetValue("register", out string register);
 
-                    ZeroRegister(cpu, Enum.Parse<ProcessorRegister>(register));
+                    ZeroRegister(cpu, Enum.Parse<ProcessorRegister>(register, true));
                 }
                 else if (writeRegex.IsMatch(command) == true)
                 {
@@ -288,6 +260,11 @@ namespace Sim6502
                     var captures = readRegex.MatchNamedCaptures(command);
                     captures.TryGetValue("addr", out string addr);
                     captures.TryGetValue("len", out string len);
+
+                    if (string.IsNullOrEmpty(len) == true)
+                    {
+                        len = "1";
+                    }
 
                     ReadMemory(
                         cpu,
@@ -501,12 +478,14 @@ namespace Sim6502
             Console.Write($"B: {(cpu.Registers.Break ? '1' : '0')}  ");
             Console.Write($"I: {(cpu.Registers.Interrupt ? '1' : '0')}  ");
             Console.Write($"Z: {(cpu.Registers.Zero ? '1' : '0')}  ");
-            Console.Write($"C: {(cpu.Registers.Carry ? '1' : '0')}");
+            Console.WriteLine($"C: {(cpu.Registers.Carry ? '1' : '0')}");
+            Console.WriteLine();
         }
 
         private void DumpRegisters(Cpu cpu)
         {
             Console.WriteLine($"PC:{cpu.Registers.ProgramCounter:X4} {cpu.Registers.GetRegisterDisplay} {cpu.Registers.InternalGetFlagsDisplay}");
+            Console.WriteLine();
         }
 
         private void SetRegister(Cpu cpu, ProcessorRegister processorRegister, byte value)
@@ -614,30 +593,32 @@ namespace Sim6502
 
         private void PrintHelp()
         {
-            Console.WriteLine("    s                     - step");
-            Console.WriteLine("    t <steps>             - run n <steps>");
-            Console.WriteLine("    g                     - go");
-            Console.WriteLine("    pc <addr>             - set PC to <addr> (PC <- addr)");
-            Console.WriteLine("    jsr <addr>            - call subroutine ad <addr> (S <- PC + 2, PC <- addr)");
-            Console.WriteLine("    sb <addr>             - set breakpoint at <addr>");
-            Console.WriteLine("    cb <addr>             - clear breakpoint at <addr>");
-            Console.WriteLine("    ca                    - clear all breakpoints");
-            Console.WriteLine("    b                     - list breakpoints");
-            Console.WriteLine("    sf <flag>             - set flag (CVNZ) to true");
-            Console.WriteLine("    cf <flag>             - set flag (CVNZ) to false");
+            Console.WriteLine("q                     - quit");
             Console.WriteLine("");
-            Console.WriteLine("    f                     - dump flags");
-            Console.WriteLine("    e                     - dump registers");
-            Console.WriteLine("    sr <reg> <value>      - set register (A,X,Y,S) to value");
-            Console.WriteLine("    zr <reg>              - set register (A,X,Y,S) to 0 (shortcut)");
+            Console.WriteLine("s                     - step");
+            Console.WriteLine("t <steps>             - run n <steps>");
+            Console.WriteLine("g                     - go");
+            Console.WriteLine("pc <addr>             - set PC to <addr> (PC <- addr)");
+            Console.WriteLine("jsr <addr>            - call subroutine ad <addr> (S <- PC + 2, PC <- addr)");
+            Console.WriteLine("sb <addr>             - set breakpoint at <addr>");
+            Console.WriteLine("cb <addr>             - clear breakpoint at <addr>");
+            Console.WriteLine("ca                    - clear all breakpoints");
+            Console.WriteLine("lb                    - list breakpoints");
+            Console.WriteLine("sf <flag>             - set flag (CVNZ) to true");
+            Console.WriteLine("cf <flag>             - set flag (CVNZ) to false");
+            Console.WriteLine("df                    - dump flags");
             Console.WriteLine("");
-            Console.WriteLine("    w <addr> <byte>...    - write <byte> starting at <addr>");
-            Console.WriteLine("    r <addr> <len>        - read <len>");
-            Console.WriteLine("    d <page>              - dump page <page>");
+            Console.WriteLine("sr <reg> <value>      - set register (A,X,Y,S) to value");
+            Console.WriteLine("zr <reg>              - set register (A,X,Y,S) to 0 (shortcut)");
+            Console.WriteLine("dr                    - dump registers");
             Console.WriteLine("");
-            Console.WriteLine("    o ts <steps/sec>      - set trace speed to steps / second");
+            Console.WriteLine("w <addr> <byte>...    - write <byte> starting at <addr>");
+            Console.WriteLine("r <addr> <len>        - read <len>");
+            Console.WriteLine("d <page>              - dump page <page>");
             Console.WriteLine("");
-            Console.WriteLine("    ? | h                 - display this list");
+            Console.WriteLine("o ts <steps/sec>      - set trace speed to steps / second");
+            Console.WriteLine("");
+            Console.WriteLine("? | h                 - display this list");
         }
     }
 }
