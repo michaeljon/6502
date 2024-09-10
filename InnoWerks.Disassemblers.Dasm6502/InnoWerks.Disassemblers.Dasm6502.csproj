@@ -1,0 +1,5 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\InnoWerks.Processors\InnoWerks.Processors.csproj" />
+  </ItemGroup>
+</Project>

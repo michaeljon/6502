@@ -19,6 +19,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnoWerks.Processors.Tests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnoWerks.Processors", "InnoWerks.Processors\InnoWerks.Processors.csproj", "{5493E5EE-318F-45AD-B89B-7599859E425C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnoWerks.Disassemblers.Dasm6502", "InnoWerks.Disassemblers.Dasm6502\InnoWerks.Disassemblers.Dasm6502.csproj", "{107E911B-B675-4088-A33D-57A0A0532DA6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dasm6502", "Dasm6502\Dasm6502.csproj", "{3DD35F4E-CE14-4E94-B9D4-4A390653CA21}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,5 +64,13 @@ Global
 		{E2586706-4E3A-4465-B828-A020FF224DB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E2586706-4E3A-4465-B828-A020FF224DB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E2586706-4E3A-4465-B828-A020FF224DB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{107E911B-B675-4088-A33D-57A0A0532DA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{107E911B-B675-4088-A33D-57A0A0532DA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{107E911B-B675-4088-A33D-57A0A0532DA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{107E911B-B675-4088-A33D-57A0A0532DA6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DD35F4E-CE14-4E94-B9D4-4A390653CA21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DD35F4E-CE14-4E94-B9D4-4A390653CA21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DD35F4E-CE14-4E94-B9D4-4A390653CA21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DD35F4E-CE14-4E94-B9D4-4A390653CA21}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
