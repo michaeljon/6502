@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sim6502", "Sim6502\Sim6502.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dasm6502", "Dasm6502\Dasm6502.csproj", "{3DD35F4E-CE14-4E94-B9D4-4A390653CA21}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Emu6502", "Emu6502\Emu6502.csproj", "{27C99F65-5F2C-445A-9444-CFC2A392C17A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,5 +74,9 @@ Global
 		{3DD35F4E-CE14-4E94-B9D4-4A390653CA21}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3DD35F4E-CE14-4E94-B9D4-4A390653CA21}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3DD35F4E-CE14-4E94-B9D4-4A390653CA21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27C99F65-5F2C-445A-9444-CFC2A392C17A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27C99F65-5F2C-445A-9444-CFC2A392C17A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27C99F65-5F2C-445A-9444-CFC2A392C17A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27C99F65-5F2C-445A-9444-CFC2A392C17A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

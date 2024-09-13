@@ -1,11 +1,12 @@
 using System;
+using System.Threading.Tasks;
 using InnoWerks.Processors;
 
 namespace InnoWerks.Simulators
 {
     public partial class Cpu
     {
-        public int Run(bool stopOnBreak = false, bool writeInstructions = false)
+        public int Run(bool stopOnBreak = false, bool writeInstructions = false, int stepsPerSecond = 0)
         {
             var instructionCount = 0;
 
@@ -28,10 +29,20 @@ namespace InnoWerks.Simulators
 
                 if (writeInstructions)
                 {
-                    Console.WriteLine($"  {Registers.GetRegisterDisplay}   {Registers.InternalGetFlagsDisplay,-8}");
+                    Console.Error.WriteLine($"  {Registers.GetRegisterDisplay}   {Registers.InternalGetFlagsDisplay,-8}");
                 }
 
                 postExecutionCallback?.Invoke(this);
+
+                if (stepsPerSecond > 0)
+                {
+                    var t = Task.Run(async delegate
+                                  {
+                                      await Task.Delay(new TimeSpan((long)(1.0 / stepsPerSecond * 1000) * TimeSpan.TicksPerMillisecond));
+                                      return 0;
+                                  });
+                    t.Wait();
+                }
             }
 
             return instructionCount;
@@ -84,7 +95,7 @@ namespace InnoWerks.Simulators
             var stepToExecute = $"{Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}";
             if (writeInstructions)
             {
-                Console.Write(stepToExecute);
+                Console.Error.Write(stepToExecute);
             }
 
             switch (opCodeDefinition.OpCode)
