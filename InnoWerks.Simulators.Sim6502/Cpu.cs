@@ -1691,7 +1691,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeImplicit()
         {
-            OperandDisplay = "<implied>";
+            OperandDisplay = "";
             return true;
         }
 
@@ -1701,7 +1701,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeStack()
         {
-            OperandDisplay = "<stack>";
+            OperandDisplay = "";
             return true;
         }
 
@@ -1711,7 +1711,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeAccumulator()
         {
-            OperandDisplay = "A";
+            OperandDisplay = "";
             return true;
         }
 
