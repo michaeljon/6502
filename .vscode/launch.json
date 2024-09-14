@@ -52,7 +52,7 @@
         "0"
       ],
       "cwd": "${workspaceFolder}/Emu6502",
-      "console": "internalConsole",
+      "console": "externalTerminal",
       "stopAtEntry": false,
       "requireExactSource": false
     },
