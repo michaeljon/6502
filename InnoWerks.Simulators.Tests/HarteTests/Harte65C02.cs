@@ -22,7 +22,7 @@ namespace InnoWerks.Simulators.Tests
         [TestMethod]
         public void RunNamed65C02Test()
         {
-            RunNamedTest("7c a5 b0");
+            RunNamedTest("e9 331");
         }
 
         [TestMethod]

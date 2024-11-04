@@ -94,7 +94,7 @@ namespace InnoWerks.Simulators.Tests
             const ushort Origin = 0x8000;
             const ushort InitializationVector = 0x8000;
 
-            const ushort ERROR = 0x30;
+            const ushort ERROR = 0x0B;
 
             var programLines = File.ReadAllLines(Filename);
             var assembler = new Assembler(

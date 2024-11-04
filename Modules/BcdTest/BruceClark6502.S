@@ -45,7 +45,7 @@ N1L      EQU   $11
 N2       EQU   $12
 N2H      EQU   $13
 N2L      EQU   $15
-ERROR    EQU   $30
+ERROR    EQU   $2F
                           ;
          ORG   $8000
                           ;
@@ -212,18 +212,18 @@ S23      STA   AR         ; predicted accumulator result
 COMPARE  LDA   DA
          CMP   AR
          BNE   C1
-*  LDA   DNVZC      ; [7] see text
-*  EOR   NF
-*  AND   #$80       ; mask off N flag
-*  BNE   C1
-*  LDA   DNVZC      ; [8] see text
-*  EOR   VF
-*  AND   #$40       ; mask off V flag
-*  BNE   C1         ; [9] see text
-*  LDA   DNVZC
-*  EOR   ZF         ; mask off Z flag
-*  AND   #2
-*  BNE   C1         ; [10] see text
+         LDA   DNVZC      ; [7] see text
+         EOR   NF
+         AND   #$80       ; mask off N flag
+         BNE   C1
+         LDA   DNVZC      ; [8] see text
+         EOR   VF
+         AND   #$40       ; mask off V flag
+         BNE   C1         ; [9] see text
+         LDA   DNVZC
+         EOR   ZF         ; mask off Z flag
+         AND   #2
+         BNE   C1         ; [10] see text
          LDA   DNVZC
          EOR   CF
          AND   #1         ; mask off C flag
