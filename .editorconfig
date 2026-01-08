@@ -20,6 +20,14 @@ indent_size = 2
 trim_trailing_whitespace = false
 
 [*.cs]
+#
+# new ones
+#
+dotnet_diagnostic.CA1515.severity = none
+
+#
+# old ones
+#
 dotnet_diagnostic.IDE0002.severity = warning
 dotnet_diagnostic.IDE0005.severity = warning
 dotnet_diagnostic.IDE0006.severity = none
