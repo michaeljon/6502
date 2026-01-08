@@ -7,12 +7,8 @@ using InnoWerks.Simulators;
 
 namespace Emu6502
 {
-    public class IOInterceptor : IMemory
+    public class IOInterceptor : IBus
     {
-        private readonly Memory memory = new();
-
-        private readonly IOHandler handler = new();
-
         private static readonly Dictionary<int, ushort> lineToBaseAddress = new()
         {
             {0, 0x400}, {1, 0x480}, {2, 0x500}, {3, 0x580}, {4, 0x600}, {5, 0x680}, {6, 0x700}, {7, 0x780},
@@ -32,32 +28,43 @@ namespace Emu6502
             (0x650, 0x650 + 0x28, 20), (0x6d0, 0x6d0 + 0x28, 21), (0x750, 0x750 + 0x28, 22), (0x7d0, 0x7d0 + 0x28, 23),
         ];
 
+        private readonly Bus bus = new();
+
+        public void BeginTransaction()
+        {
+            bus.BeginTransaction();
+        }
+
+        public int EndTransaction()
+        {
+            return bus.EndTransaction();
+        }
+
+        public long CycleCount { get; private set; }
+
         public byte this[ushort address]
         {
-            get => Read(address);
-            set => Write(address, value);
+            get => bus[address];
+            set => bus[address] = value;
         }
 
         public void LoadProgram(byte[] objectCode, ushort origin)
         {
-            memory.LoadProgram(objectCode, origin);
+            bus.LoadProgram(objectCode, origin);
         }
 
         public byte Peek(ushort address)
         {
-            return memory.Peek(address);
+            return bus.Peek(address);
         }
 
         public ushort PeekWord(ushort address)
         {
-            return memory.PeekWord(address);
+            return bus.PeekWord(address);
         }
 
         public byte Read(ushort address)
         {
-            // allow for intercept
-            // handler.Read(memory, address);
-
             if (address >= 0x0400 && address <= 0x07ff)
             {
                 // Console.Error.WriteLine($"R screen {address:X4} ");
@@ -71,16 +78,16 @@ namespace Emu6502
                 Console.Error.WriteLine($"R kbd strobe {address:X4}");
 
                 // clear the keyboard and strobe
-                memory[0xc000] &= 0x7f;
-                memory[0xc010] &= 0x7f;
+                bus[0xc000] &= 0x7f;
+                bus[0xc010] &= 0x7f;
             }
 
-            return memory.Read(address);
+            return bus.Read(address);
         }
 
         public ushort ReadWord(ushort address)
         {
-            return memory.ReadWord(address);
+            return bus.ReadWord(address);
         }
 
         public void Write(ushort address, byte value)
@@ -110,12 +117,12 @@ namespace Emu6502
                 // memory[0xc010] &= 0x7f;
             }
 
-            memory.Write(address, value);
+            bus.Write(address, value);
         }
 
         public void WriteWord(ushort address, ushort value)
         {
-            memory.WriteWord(address, value);
+            bus.WriteWord(address, value);
         }
 
         private static ushort GenerateLineFromAddress2(int lineNumber)

@@ -7,7 +7,7 @@ namespace Emu6502
 {
     public class IOHandler
     {
-        public byte Read(IMemory memory, ushort addr)
+        public byte Read(IBus memory, ushort addr)
         {
             if (0xc000 <= addr && addr <= 0xc00f)
             {
@@ -31,7 +31,7 @@ namespace Emu6502
             return 0x00;
         }
 
-        public byte Write(IMemory memory, ushort addr, byte value)
+        public byte Write(IBus memory, ushort addr, byte value)
         {
             return 0x00;
         }

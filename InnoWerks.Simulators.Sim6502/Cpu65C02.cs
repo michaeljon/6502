@@ -14,12 +14,12 @@ namespace InnoWerks.Simulators
     {
         public override CpuClass CpuClass => CpuClass.WDC65C02;
 
-        public Cpu65C02(IMemory memory,
+        public Cpu65C02(IBus bus,
                         Action<ICpu, ushort> preExecutionCallback,
                         Action<ICpu> postExecutionCallback)
-            : base(memory, preExecutionCallback, postExecutionCallback) { }
+            : base(bus, preExecutionCallback, postExecutionCallback) { }
 
-        protected override void Dispatch(byte operation, bool writeInstructions = false)
+        protected override int Dispatch(byte operation, bool writeInstructions = false)
         {
             OpCodeDefinition opCodeDefinition =
                 CpuInstructions.OpCode65C02[operation];
@@ -32,9 +32,6 @@ namespace InnoWerks.Simulators
                     // This is a JAM / KIL
                     throw new IllegalOpCodeException(Registers.ProgramCounter, operation);
                 }
-                // if we got this far we're either a 6502 and we've decoded or
-                // we're a 65c02 and we're just going to pretend this is a NOP
-                return;
             }
 
             var stepToExecute = $"{Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}";
@@ -42,6 +39,8 @@ namespace InnoWerks.Simulators
             {
                 Console.Error.Write(stepToExecute);
             }
+
+            bus.BeginTransaction();
 
             switch (opCodeDefinition.OpCode)
             {
@@ -81,7 +80,7 @@ namespace InnoWerks.Simulators
                     {
                         // T1
                         /* var discarded = */
-                        memory.Read((ushort)(Registers.ProgramCounter + 1));
+                        bus.Read((ushort)(Registers.ProgramCounter + 1));
                         opCodeDefinition.Execute(this, 0, 0);
 
                         Registers.ProgramCounter++;
@@ -113,7 +112,7 @@ namespace InnoWerks.Simulators
                             {
                                 // T1
                                 /* var discarded = */
-                                memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 opCodeDefinition.Execute(this, 0, 0);
 
                                 Registers.ProgramCounter += 2;
@@ -124,19 +123,19 @@ namespace InnoWerks.Simulators
                         case AddressingMode.Immediate:
                             {
                                 // T1
-                                var data = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var data = bus.Read((ushort)(Registers.ProgramCounter + 1));
 
                                 if (Registers.Decimal == true)
                                 {
                                     if (opCodeDefinition.OpCode == OpCode.ADC)
                                     {
                                         /* discard */
-                                        memory.Read(127);
+                                        bus.Read(127);
                                     }
                                     else if (opCodeDefinition.OpCode == OpCode.SBC)
                                     {
                                         /* discard */
-                                        memory.Read(0);
+                                        bus.Read(0);
                                     }
                                 }
 
@@ -150,14 +149,14 @@ namespace InnoWerks.Simulators
                         case AddressingMode.ZeroPage:
                             {
                                 // T1
-                                var adl = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var adl = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var data = memory.Read(adl);
+                                var data = bus.Read(adl);
 
                                 if (Registers.Decimal == true && (opCodeDefinition.OpCode == OpCode.ADC || opCodeDefinition.OpCode == OpCode.SBC))
                                 {
                                     /* discard */
-                                    memory.Read(adl);
+                                    bus.Read(adl);
                                 }
 
                                 opCodeDefinition.Execute(this, 0, data);
@@ -170,9 +169,9 @@ namespace InnoWerks.Simulators
                         case AddressingMode.Absolute:
                             {
                                 // T1
-                                var adl = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var adl = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var adh = memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                var adh = bus.Read((ushort)(Registers.ProgramCounter + 2));
 
                                 // T3
                                 var ad = (ushort)((adh << 8) | adl);
@@ -180,10 +179,10 @@ namespace InnoWerks.Simulators
                                 if (Registers.Decimal == true && (opCodeDefinition.OpCode == OpCode.ADC || opCodeDefinition.OpCode == OpCode.SBC))
                                 {
                                     /* discarded */
-                                    memory.Read(ad);
+                                    bus.Read(ad);
                                 }
 
-                                var data = memory.Read(ad);
+                                var data = bus.Read(ad);
 
                                 opCodeDefinition.Execute(this, ad, data);
 
@@ -195,24 +194,24 @@ namespace InnoWerks.Simulators
                         case AddressingMode.XIndexedIndirect:
                             {
                                 // T1
-                                var bal = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var bal = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
                                 /* var discarded = */
-                                memory.Read(bal);
+                                bus.Read(bal);
                                 // T3
-                                var adl = memory.Read((ushort)((bal + Registers.X) & 0xff));
+                                var adl = bus.Read((ushort)((bal + Registers.X) & 0xff));
                                 // T4
-                                var adh = memory.Read((ushort)((bal + Registers.X + 1) & 0xff));
+                                var adh = bus.Read((ushort)((bal + Registers.X + 1) & 0xff));
                                 // T5
                                 var ad = (ushort)((adh << 8) | adl);
 
                                 if (Registers.Decimal == true && (opCodeDefinition.OpCode == OpCode.ADC || opCodeDefinition.OpCode == OpCode.SBC))
                                 {
                                     /* discarded */
-                                    memory.Read(ad);
+                                    bus.Read(ad);
                                 }
 
-                                var data = memory.Read(ad);
+                                var data = bus.Read(ad);
 
                                 opCodeDefinition.Execute(this, ad, data);
 
@@ -225,9 +224,9 @@ namespace InnoWerks.Simulators
                         case AddressingMode.AbsoluteYIndexed:
                             {
                                 // T1
-                                var bal = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var bal = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var bah = memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                var bah = bus.Read((ushort)(Registers.ProgramCounter + 2));
                                 // T3
                                 var index = opCodeDefinition.AddressingMode == AddressingMode.AbsoluteXIndexed ?
                                     Registers.X :
@@ -239,16 +238,16 @@ namespace InnoWerks.Simulators
 
                                 if (bal + index >= 0x100)
                                 {
-                                    memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                    bus.Read((ushort)(Registers.ProgramCounter + 2));
                                 }
 
                                 if (Registers.Decimal == true && (opCodeDefinition.OpCode == OpCode.ADC || opCodeDefinition.OpCode == OpCode.SBC))
                                 {
                                     /* discarded */
-                                    memory.Read(ad);
+                                    bus.Read(ad);
                                 }
 
-                                var data = memory.Read(ad);
+                                var data = bus.Read(ad);
 
                                 opCodeDefinition.Execute(this, 0, data);
 
@@ -261,19 +260,19 @@ namespace InnoWerks.Simulators
                         case AddressingMode.ZeroPageYIndexed:
                             {
                                 // T1
-                                var bal = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var bal = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
                                 /* var discarded = */
-                                memory.Read(bal);
+                                bus.Read(bal);
                                 // T3
                                 var index = opCodeDefinition.AddressingMode == AddressingMode.ZeroPageXIndexed ?
                                     Registers.X :
                                     Registers.Y;
-                                var data = memory.Read((ushort)((bal + index) & 0xff));
+                                var data = bus.Read((ushort)((bal + index) & 0xff));
 
                                 if (Registers.Decimal == true && (opCodeDefinition.OpCode == OpCode.ADC || opCodeDefinition.OpCode == OpCode.SBC))
                                 {
-                                    memory.Read((ushort)((bal + index) & 0xff));
+                                    bus.Read((ushort)((bal + index) & 0xff));
                                 }
 
                                 opCodeDefinition.Execute(this, 0, data);
@@ -286,11 +285,11 @@ namespace InnoWerks.Simulators
                         case AddressingMode.IndirectYIndexed:
                             {
                                 // T1
-                                var ial = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var ial = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var bal = memory.Read((ushort)(ial));
+                                var bal = bus.Read((ushort)(ial));
                                 // T3
-                                var bah = memory.Read((ushort)((ial + 1) & 0xff));
+                                var bah = bus.Read((ushort)((ial + 1) & 0xff));
 
                                 // T4
                                 var adl = bal + Registers.Y;            // Fetch Data (No Page Crossing)
@@ -302,19 +301,19 @@ namespace InnoWerks.Simulators
                                     if (bal + Registers.Y >= 0x100)
                                     {
                                         /* discarded */
-                                        memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                        bus.Read((ushort)(Registers.ProgramCounter + 1));
                                     }
 
                                     /* discarded */
-                                    memory.Read(ad);
+                                    bus.Read(ad);
                                 }
                                 else if (bal + Registers.Y >= 0x100)
                                 {
                                     /* discarded */
-                                    memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                    bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 }
 
-                                var data = memory.Read(ad);
+                                var data = bus.Read(ad);
 
                                 opCodeDefinition.Execute(this, 0, data);
 
@@ -326,21 +325,21 @@ namespace InnoWerks.Simulators
                         case AddressingMode.ZeroPageIndirect:
                             {
                                 // T1
-                                var ial = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var ial = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var bal = memory.Read((ushort)(ial));
+                                var bal = bus.Read((ushort)(ial));
                                 // T3
-                                var bah = memory.Read((ushort)((ial + 1) & 0xff));
+                                var bah = bus.Read((ushort)((ial + 1) & 0xff));
 
                                 // T4
                                 var ad = (ushort)((bah << 8) | bal);
 
                                 if (Registers.Decimal == true && (opCodeDefinition.OpCode == OpCode.ADC || opCodeDefinition.OpCode == OpCode.SBC))
                                 {
-                                    memory.Read(ad);
+                                    bus.Read(ad);
                                 }
 
-                                var data = memory.Read(ad);
+                                var data = bus.Read(ad);
 
                                 opCodeDefinition.Execute(this, 0, data);
 
@@ -378,7 +377,7 @@ namespace InnoWerks.Simulators
                         case AddressingMode.ZeroPage:
                             {
                                 // T1
-                                var adl = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var adl = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
                                 opCodeDefinition.Execute(this, adl, val);
 
@@ -390,9 +389,9 @@ namespace InnoWerks.Simulators
                         case AddressingMode.Absolute:
                             {
                                 // T1
-                                var adl = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var adl = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var adh = memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                var adh = bus.Read((ushort)(Registers.ProgramCounter + 2));
                                 // T3
                                 var ad = (ushort)((adh << 8) | adl);
                                 opCodeDefinition.Execute(this, ad, val);
@@ -405,14 +404,14 @@ namespace InnoWerks.Simulators
                         case AddressingMode.XIndexedIndirect:
                             {
                                 // T1
-                                var bal = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var bal = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
                                 /* var discarded = */
-                                memory.Read(bal);
+                                bus.Read(bal);
                                 // T3
-                                var adl = memory.Read((ushort)((bal + Registers.X) & 0xff));
+                                var adl = bus.Read((ushort)((bal + Registers.X) & 0xff));
                                 // T4
-                                var adh = memory.Read((ushort)((bal + Registers.X + 1) & 0xff));
+                                var adh = bus.Read((ushort)((bal + Registers.X + 1) & 0xff));
                                 // T5
                                 var ad = (ushort)((adh << 8) | adl);
                                 opCodeDefinition.Execute(this, ad, val);
@@ -426,9 +425,9 @@ namespace InnoWerks.Simulators
                         case AddressingMode.AbsoluteYIndexed:
                             {
                                 // T1
-                                var bal = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var bal = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var bah = memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                var bah = bus.Read((ushort)(Registers.ProgramCounter + 2));
                                 // T3
                                 var index = opCodeDefinition.AddressingMode == AddressingMode.AbsoluteXIndexed ?
                                     Registers.X :
@@ -436,7 +435,7 @@ namespace InnoWerks.Simulators
 
                                 var adl = bal + index;
 
-                                memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                bus.Read((ushort)(Registers.ProgramCounter + 2));
 
                                 // T4
                                 opCodeDefinition.Execute(this, (ushort)((bah << 8) + adl), val);
@@ -450,10 +449,10 @@ namespace InnoWerks.Simulators
                         case AddressingMode.ZeroPageYIndexed:
                             {
                                 // T1
-                                var bal = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var bal = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
                                 /* var discarded = */
-                                memory.Read(bal);
+                                bus.Read(bal);
                                 // T3
                                 var index = opCodeDefinition.AddressingMode == AddressingMode.ZeroPageXIndexed ?
                                     Registers.X :
@@ -471,16 +470,16 @@ namespace InnoWerks.Simulators
                         case AddressingMode.IndirectYIndexed:
                             {
                                 // T1
-                                var ial = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var ial = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var bal = memory.Read((ushort)(ial));
+                                var bal = bus.Read((ushort)(ial));
                                 // T3
-                                var bah = memory.Read((ushort)((ial + 1) & 0xff));
+                                var bah = bus.Read((ushort)((ial + 1) & 0xff));
                                 // T4
                                 var adl = bal + Registers.Y;
 
                                 /* discarded */
-                                memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                bus.Read((ushort)(Registers.ProgramCounter + 1));
 
                                 // T5
                                 opCodeDefinition.Execute(this, (ushort)((bah << 8) + adl), val);
@@ -492,11 +491,11 @@ namespace InnoWerks.Simulators
                         case AddressingMode.ZeroPageIndirect:
                             {
                                 // T1
-                                var ial = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var ial = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var bal = memory.Read((ushort)(ial));
+                                var bal = bus.Read((ushort)(ial));
                                 // T3
-                                var bah = memory.Read((ushort)((ial + 1) & 0xff));
+                                var bah = bus.Read((ushort)((ial + 1) & 0xff));
 
                                 // T4
                                 var ad = (ushort)((bah << 8) | bal);
@@ -528,11 +527,11 @@ namespace InnoWerks.Simulators
                         case AddressingMode.ZeroPage:
                             {
                                 // T1
-                                var adl = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var adl = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var data = memory.Read(adl);
+                                var data = bus.Read(adl);
                                 // T3
-                                memory.Read(adl);
+                                bus.Read(adl);
                                 // T4
                                 opCodeDefinition.Execute(this, adl, data);
 
@@ -544,14 +543,14 @@ namespace InnoWerks.Simulators
                         case AddressingMode.Absolute:
                             {
                                 // T1
-                                var adl = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var adl = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var adh = memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                var adh = bus.Read((ushort)(Registers.ProgramCounter + 2));
                                 // T3
                                 var ad = (ushort)((adh << 8) | adl);
-                                var data = memory.Read(ad);
+                                var data = bus.Read(ad);
                                 // T4
-                                memory.Read(ad);
+                                bus.Read(ad);
                                 // T3
                                 opCodeDefinition.Execute(this, ad, data);
 
@@ -563,15 +562,15 @@ namespace InnoWerks.Simulators
                         case AddressingMode.ZeroPageXIndexed:
                             {
                                 // T1
-                                var bal = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var bal = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
                                 /* var discarded = */
-                                memory.Read(bal);
+                                bus.Read(bal);
                                 // T3
                                 var ad = (ushort)((bal + Registers.X) & 0xff);
-                                var data = memory.Read(ad);
+                                var data = bus.Read(ad);
                                 // T4
-                                memory.Read(ad);
+                                bus.Read(ad);
                                 // T5
                                 opCodeDefinition.Execute(this, ad, data);
 
@@ -583,28 +582,28 @@ namespace InnoWerks.Simulators
                         case AddressingMode.AbsoluteXIndexed:
                             {
                                 // T1
-                                var bal = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var bal = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var bah = memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                var bah = bus.Read((ushort)(Registers.ProgramCounter + 2));
 
                                 // T3
                                 if (opCodeDefinition.OpCode == OpCode.INC || opCodeDefinition.OpCode == OpCode.DEC)
                                 {
-                                    memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                    bus.Read((ushort)(Registers.ProgramCounter + 2));
                                 }
 
                                 else if ((bal + Registers.X) >= 0x100)
                                 {
                                     /* var discarded = */
-                                    memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                    bus.Read((ushort)(Registers.ProgramCounter + 2));
                                 }
 
                                 // T4
                                 var ad = (ushort)((bah << 8) + bal + Registers.X);
-                                var data = memory.Read(ad);
+                                var data = bus.Read(ad);
 
                                 // T5
-                                memory.Read(ad);
+                                bus.Read(ad);
 
                                 // T6
                                 opCodeDefinition.Execute(this, ad, data);
@@ -623,7 +622,7 @@ namespace InnoWerks.Simulators
                     {
                         // T1
                         /* var discarded = */
-                        memory.Read((ushort)(Registers.ProgramCounter + 1));
+                        bus.Read((ushort)(Registers.ProgramCounter + 1));
                         // T2
                         StackPush((byte)(((Registers.ProgramCounter + 2) & 0xff00) >> 8));
                         // T3
@@ -631,9 +630,9 @@ namespace InnoWerks.Simulators
                         // T4
                         StackPush((byte)(Registers.ProcessorStatus | (byte)ProcessorStatusBit.BreakCommand));
                         // T5
-                        var adl = memory.Read(IrqVectorL);
+                        var adl = bus.Read(IrqVectorL);
                         // T6
-                        var adh = memory.Read(IrqVectorH);
+                        var adh = bus.Read(IrqVectorH);
 
                         opCodeDefinition.Execute(this, RegisterMath.MakeShort(adh, adl), 0);
                     }
@@ -647,9 +646,9 @@ namespace InnoWerks.Simulators
                         case AddressingMode.Absolute:
                             {
                                 // T1
-                                var adl = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var adl = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var adh = memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                var adh = bus.Read((ushort)(Registers.ProgramCounter + 2));
                                 var ad = (ushort)((adh << 8) | adl);
 
                                 opCodeDefinition.Execute(this, ad, 0);
@@ -660,26 +659,26 @@ namespace InnoWerks.Simulators
                         case AddressingMode.AbsoluteIndirect:
                             {
                                 // T1
-                                var ial = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var ial = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var iah = memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                var iah = bus.Read((ushort)(Registers.ProgramCounter + 2));
                                 // T3
                                 var ad = RegisterMath.MakeShort(iah, ial);
-                                var adl = memory.Read(ad);
+                                var adl = bus.Read(ad);
 
                                 // T4
                                 var aa = RegisterMath.MakeShort(iah, (byte)((ial + 1) & 0xff));
-                                var adh = memory.Read(aa);
+                                var adh = bus.Read(aa);
 
                                 // T5
                                 if (ial == 0xff)
                                 {
-                                    adh = memory.Read((ushort)(ad + 1));
+                                    adh = bus.Read((ushort)(ad + 1));
                                 }
                                 else
                                 {
                                     /* discarded */
-                                    memory.Read(aa);
+                                    bus.Read(aa);
                                 }
 
                                 opCodeDefinition.Execute(this, RegisterMath.MakeShort(adh, adl), 0);
@@ -690,19 +689,19 @@ namespace InnoWerks.Simulators
                             // 65C02 only
                             {
                                 // T1
-                                var aal = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var aal = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var aah = memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                var aah = bus.Read((ushort)(Registers.ProgramCounter + 2));
 
                                 // T3
-                                memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                bus.Read((ushort)(Registers.ProgramCounter + 1));
 
                                 // T4
                                 var ad = (ushort)((aah << 8) | aal);
-                                var pcl = memory.Read((ushort)(ad + Registers.X));
+                                var pcl = bus.Read((ushort)(ad + Registers.X));
 
                                 // T5
-                                var pch = memory.Read((ushort)(ad + Registers.X + 1));
+                                var pch = bus.Read((ushort)(ad + Registers.X + 1));
 
                                 ad = (ushort)((pch << 8) | pcl);
                                 opCodeDefinition.Execute(this, ad, 0);
@@ -718,16 +717,16 @@ namespace InnoWerks.Simulators
                 case OpCode.JSR:
                     {
                         // T1
-                        var adl = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                        var adl = bus.Read((ushort)(Registers.ProgramCounter + 1));
                         // T2
                         /* var discarded = */
-                        memory.Read((ushort)(StackBase + Registers.StackPointer));
+                        bus.Read((ushort)(StackBase + Registers.StackPointer));
                         // T3
                         StackPush((byte)(((Registers.ProgramCounter + 2) & 0xff00) >> 8));
                         // T4
                         StackPush((byte)((Registers.ProgramCounter + 2) & 0x00ff));
                         // T5
-                        var adh = memory.Read((ushort)(Registers.ProgramCounter + 2));
+                        var adh = bus.Read((ushort)(Registers.ProgramCounter + 2));
 
                         opCodeDefinition.Execute(this, RegisterMath.MakeShort(adh, adl), 0);
                     }
@@ -741,7 +740,7 @@ namespace InnoWerks.Simulators
                     {
                         // T1
                         /* var discarded = */
-                        memory.Read((ushort)(Registers.ProgramCounter + 1));
+                        bus.Read((ushort)(Registers.ProgramCounter + 1));
                         // T2
                         opCodeDefinition.Execute(this, 0, 0);
 
@@ -757,10 +756,10 @@ namespace InnoWerks.Simulators
                     {
                         // T1
                         /* var discarded = */
-                        memory.Read((ushort)(Registers.ProgramCounter + 1));
+                        bus.Read((ushort)(Registers.ProgramCounter + 1));
                         // T2
                         /* var discarded = */
-                        memory.Read((ushort)(StackBase + Registers.StackPointer));
+                        bus.Read((ushort)(StackBase + Registers.StackPointer));
                         // T3
                         opCodeDefinition.Execute(this, 0, 0);
 
@@ -773,9 +772,9 @@ namespace InnoWerks.Simulators
                     {
                         // T1
                         /* var discarded = */
-                        memory.Read((ushort)(Registers.ProgramCounter + 1));
+                        bus.Read((ushort)(Registers.ProgramCounter + 1));
                         // T2
-                        memory.Read((ushort)(StackBase + Registers.StackPointer));
+                        bus.Read((ushort)(StackBase + Registers.StackPointer));
                         // T3 - T5
                         opCodeDefinition.Execute(this, 0, 0);
                     }
@@ -785,9 +784,9 @@ namespace InnoWerks.Simulators
                 case OpCode.RTS:
                     {
                         // T1
-                        memory.Read((ushort)(Registers.ProgramCounter + 1));
+                        bus.Read((ushort)(Registers.ProgramCounter + 1));
                         // T2
-                        memory.Read((ushort)(StackBase + Registers.StackPointer));
+                        bus.Read((ushort)(StackBase + Registers.StackPointer));
                         // T3 - T5
                         opCodeDefinition.Execute(this, 0, 0);
                     }
@@ -805,7 +804,7 @@ namespace InnoWerks.Simulators
                 case OpCode.BVS:
                     {
                         // T1
-                        var offset = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                        var offset = bus.Read((ushort)(Registers.ProgramCounter + 1));
 
                         // T2 - T3
                         var addr = (ushort)(Registers.ProgramCounter + 2 + ((sbyte)offset < 0 ? (sbyte)offset : offset));
@@ -832,12 +831,12 @@ namespace InnoWerks.Simulators
                 case OpCode.BBS7:
                     {
                         // T1
-                        var zp = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                        var zp = bus.Read((ushort)(Registers.ProgramCounter + 1));
 
                         // T2
                         /* discarded */
-                        memory.Read(zp);
-                        var data = memory.Read(zp);
+                        bus.Read(zp);
+                        var data = bus.Read(zp);
 
                         // T3 - T5
                         opCodeDefinition.Execute(this, 0, data);
@@ -862,12 +861,12 @@ namespace InnoWerks.Simulators
                 case OpCode.RMB6:
                 case OpCode.RMB7:
                     {
-                        var addr = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                        var addr = bus.Read((ushort)(Registers.ProgramCounter + 1));
 
                         /* dicarded */
-                        memory.Read(addr);
+                        bus.Read(addr);
 
-                        var value = memory.Read(addr);
+                        var value = bus.Read(addr);
 
                         opCodeDefinition.Execute(this, addr, value);
 
@@ -882,15 +881,15 @@ namespace InnoWerks.Simulators
                         case AddressingMode.Absolute:
                             {
                                 // T1
-                                var adl = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var adl = bus.Read((ushort)(Registers.ProgramCounter + 1));
                                 // T2
-                                var adh = memory.Read((ushort)(Registers.ProgramCounter + 2));
+                                var adh = bus.Read((ushort)(Registers.ProgramCounter + 2));
                                 var ad = (ushort)((adh << 8) | adl);
                                 // T3
                                 /* discarded */
-                                memory.Read(ad);
+                                bus.Read(ad);
                                 // T4
-                                var value = memory.Read(ad);
+                                var value = bus.Read(ad);
 
                                 // T5
                                 opCodeDefinition.Execute(this, ad, value);
@@ -903,14 +902,14 @@ namespace InnoWerks.Simulators
                         case AddressingMode.ZeroPage:
                             {
                                 // T1
-                                var addr = memory.Read((ushort)(Registers.ProgramCounter + 1));
+                                var addr = bus.Read((ushort)(Registers.ProgramCounter + 1));
 
                                 // T2
                                 /* discarded */
-                                memory.Read(addr);
+                                bus.Read(addr);
 
                                 // T3
-                                var value = memory.Read(addr);
+                                var value = bus.Read(addr);
 
                                 // T4
                                 opCodeDefinition.Execute(this, addr, value);
@@ -928,6 +927,8 @@ namespace InnoWerks.Simulators
                     // this is unexpected...
                     throw new IllegalOpCodeException(Registers.ProgramCounter, operation);
             }
+
+            return bus.EndTransaction();
         }
     }
 }

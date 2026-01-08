@@ -17,7 +17,7 @@ namespace Sim6502
     {
         private static bool keepRunning = true;
 
-        private readonly Memory memory = new();
+        private readonly Bus memory = new();
 
         private readonly Dictionary<ushort, byte> breakpoints = new();
 
@@ -313,21 +313,22 @@ namespace Sim6502
             }
         }
 
-        private bool Step(ICpu cpu)
+        private int Step(ICpu cpu)
         {
-            var breakEncountered = cpu.Step(writeInstructions: verboseSteps, returnPriorToBreak: true);
+            var cycleCount = cpu.Step(writeInstructions: verboseSteps, returnPriorToBreak: true);
 
-            if (breakEncountered)
+            if (cycleCount == 0)
             {
                 Console.WriteLine($"BRK encountered at ${cpu.Registers.ProgramCounter:X4}");
             }
 
-            return breakEncountered;
+            return cycleCount;
         }
 
         private bool Trace(ICpu cpu, int steps)
         {
-            var breakEncountered = false;
+            var instructionCount = 0;
+            var cycleCount = 0;
 
             // well, we might as well run for a while
             if (steps == 0)
@@ -337,12 +338,15 @@ namespace Sim6502
 
             for (var step = 0; step < steps; step++)
             {
-                breakEncountered = cpu.Step(writeInstructions: verboseSteps, returnPriorToBreak: true);
+                var stepCycleCount = cpu.Step(writeInstructions: verboseSteps, returnPriorToBreak: true);
 
-                if (breakEncountered)
+                instructionCount++;
+                cycleCount += stepCycleCount;
+
+                if (stepCycleCount == 0)
                 {
                     Console.WriteLine($"BRK encountered at ${cpu.Registers.ProgramCounter:X4}");
-                    return breakEncountered;
+                    return true;
                 }
                 else
                 {
@@ -360,7 +364,7 @@ namespace Sim6502
                 }
             }
 
-            return breakEncountered;
+            return false;
         }
 
         private bool Go(ICpu cpu)
@@ -369,7 +373,12 @@ namespace Sim6502
 
             while (breakEncountered == false)
             {
-                breakEncountered = cpu.Step(writeInstructions: verboseSteps, returnPriorToBreak: true);
+                var stepCycleCount = cpu.Step(writeInstructions: verboseSteps, returnPriorToBreak: true);
+
+                if (stepCycleCount == 0)
+                {
+                    breakEncountered = true;
+                }
 
                 if (keepRunning == false)
                 {

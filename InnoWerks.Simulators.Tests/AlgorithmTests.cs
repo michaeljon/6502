@@ -22,17 +22,17 @@ namespace InnoWerks.Simulators.Tests
             );
             assembler.Assemble();
 
-            var memory = new AccessCountingMemory();
-            memory.LoadProgram(assembler.ObjectCode, Origin);
+            var bus = new AccessCountingBus();
+            bus.LoadProgram(assembler.ObjectCode, Origin);
 
             // power up initialization
-            memory[MosTechnologiesCpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
-            memory[MosTechnologiesCpu.RstVectorL] = InitializationVector & 0xff;
+            bus[MosTechnologiesCpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
+            bus[MosTechnologiesCpu.RstVectorL] = InitializationVector & 0xff;
 
             var cpu = new Cpu65C02(
-                memory,
-                (cpu, pc) => DummyTraceCallback(cpu, pc, memory, null),
-                (cpu) => DummyLoggerCallback(cpu, memory, 0));
+                bus,
+                (cpu, pc) => TraceCallback(cpu, pc, bus, null),
+                (cpu) => LoggerCallback(cpu, bus, 0));
 
             cpu.Reset();
 
@@ -57,17 +57,17 @@ namespace InnoWerks.Simulators.Tests
             );
             assembler.Assemble();
 
-            var memory = new AccessCountingMemory();
-            memory.LoadProgram(assembler.ObjectCode, Origin);
+            var bus = new AccessCountingBus();
+            bus.LoadProgram(assembler.ObjectCode, Origin);
 
             // power up initialization
-            memory[MosTechnologiesCpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
-            memory[MosTechnologiesCpu.RstVectorL] = InitializationVector & 0xff;
+            bus[MosTechnologiesCpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
+            bus[MosTechnologiesCpu.RstVectorL] = InitializationVector & 0xff;
 
             var cpu = new Cpu6502(
-                memory,
-                (cpu, pc) => DummyTraceCallback(cpu, pc, memory, null),
-                (cpu) => DummyLoggerCallback(cpu, memory, 0));
+                bus,
+                (cpu, pc) => TraceCallback(cpu, pc, bus, null),
+                (cpu) => LoggerCallback(cpu, bus, 0));
 
             cpu.Reset();
 

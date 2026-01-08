@@ -87,24 +87,24 @@ namespace InnoWerks.Simulators.Tests
             var instructionSet = CpuInstructions.GetInstructionSet(CpuClass);
             var ocd = instructionSet[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)];
 
-            var memory = new AccessCountingMemory();
+            var bus = new AccessCountingBus();
 
             // set up initial memory state
-            memory.Initialize(test.Initial.Ram);
+            bus.Initialize(test.Initial.Ram);
 
             ICpu cpu = CpuClass == CpuClass.WDC6502 ?
                 new Cpu6502(
-                    memory,
+                    bus,
                     // (cpu, pc) => FlagsTraceCallback(cpu, pc, memory),
                     // (cpu) => FlagsLoggerCallback(cpu, memory, 0))
-                    (cpu, pc) => DummyTraceCallback(cpu, pc, memory),
-                    (cpu) => DummyLoggerCallback(cpu, memory, 0)) :
+                    (cpu, pc) => DummyTraceCallback(cpu, pc, bus),
+                    (cpu) => DummyLoggerCallback(cpu, bus, 0)) :
                 new Cpu65C02(
-                    memory,
+                    bus,
                     // (cpu, pc) => FlagsTraceCallback(cpu, pc, memory),
                     // (cpu) => FlagsLoggerCallback(cpu, memory, 0))
-                    (cpu, pc) => DummyTraceCallback(cpu, pc, memory),
-                    (cpu) => DummyLoggerCallback(cpu, memory, 0));
+                    (cpu, pc) => DummyTraceCallback(cpu, pc, bus),
+                    (cpu) => DummyLoggerCallback(cpu, bus, 0));
 
             cpu.Reset();
 
@@ -159,20 +159,20 @@ namespace InnoWerks.Simulators.Tests
 #if POST_STEP_MEMORY
                 // verify memory
                 (var ramMatches, var ramDiffersAtAddr, byte ramExpectedValue, byte ramActualValue) =
-                    memory.ValidateMemory(test.Final.Ram);
+                    bus.ValidateMemory(test.Final.Ram);
                 if (ramMatches == false) { testFailed = true; results.Add($"{test.Name}: Expected memory at {ramDiffersAtAddr} to be {ramExpectedValue} but is {ramActualValue}"); }
 #endif
 
 #if VALIDATE_BUS_ACCESSES
                 // verify bus accesses
-                if (test.BusAccesses.Count() != memory.BusAccesses.Count)
+                if (test.BusAccesses.Count() != bus.BusAccesses.Count)
                 {
-                    { testFailed = true; results.Add($"{test.Name}: Expected {test.BusAccesses.Count()} memory accesses but got {memory.BusAccesses.Count} instead "); }
+                    { testFailed = true; results.Add($"{test.Name}: Expected {test.BusAccesses.Count()} memory accesses but got {bus.BusAccesses.Count} instead "); }
                 }
                 else
                 {
                     (var cyclesMatches, var cyclesDiffersAtAddr, var cyclesExpectedValue, var cyclesActualValue) =
-                        memory.ValidateCycles(test.BusAccesses);
+                        bus.ValidateCycles(test.BusAccesses);
                     if (cyclesMatches == false) { testFailed = true; results.Add($"{test.Name}: Expected access at {cyclesDiffersAtAddr} to be {cyclesExpectedValue} but is {cyclesActualValue}"); }
                 }
 #endif
@@ -197,7 +197,7 @@ namespace InnoWerks.Simulators.Tests
 
                 TestContext.WriteLine("Actual bus accesses");
                 time = 0;
-                foreach (var busAccess in memory.BusAccesses)
+                foreach (var busAccess in bus.BusAccesses)
                 {
                     TestContext.WriteLine($"T{time++}: {busAccess}");
                 }

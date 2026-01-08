@@ -31,7 +31,7 @@ namespace InnoWerks.Simulators
 
         public abstract CpuClass CpuClass { get; }
 
-        protected IMemory memory { get; init; }
+        protected IBus bus { get; init; }
 
         protected Action<ICpu, ushort> preExecutionCallback { get; init; }
 
@@ -39,11 +39,11 @@ namespace InnoWerks.Simulators
 
         protected bool illegalInstructionEncountered { get; set; }
 
-        protected MosTechnologiesCpu(IMemory memory,
+        protected MosTechnologiesCpu(IBus bus,
                                      Action<ICpu, ushort> preExecutionCallback,
                                      Action<ICpu> postExecutionCallback)
         {
-            this.memory = memory;
+            this.bus = bus;
 
             Registers = new();
 
@@ -53,15 +53,15 @@ namespace InnoWerks.Simulators
             Registers.Reset();
         }
 
-        protected abstract void Dispatch(byte operation, bool writeInstructions = false);
+        protected abstract int Dispatch(byte operation, bool writeInstructions = false);
 
         public void Reset()
         {
             Registers.Reset();
 
             // load PC from reset vector
-            byte pcl = memory.Peek(RstVectorL);
-            byte pch = memory.Peek(RstVectorH);
+            byte pcl = bus.Peek(RstVectorL);
+            byte pch = bus.Peek(RstVectorH);
 
             Registers.ProgramCounter = RegisterMath.MakeShort(pch, pcl);
         }
@@ -80,8 +80,8 @@ namespace InnoWerks.Simulators
             Registers.Interrupt = true;
 
             // load PC from reset vector
-            byte pcl = memory.Read(NmiVectorL);
-            byte pch = memory.Read(NmiVectorH);
+            byte pcl = bus.Read(NmiVectorL);
+            byte pch = bus.Read(NmiVectorH);
 
             Registers.ProgramCounter = RegisterMath.MakeShort(pch, pcl);
         }
@@ -102,7 +102,7 @@ namespace InnoWerks.Simulators
 
         public void StackPush(byte b)
         {
-            memory.Write((ushort)(StackBase + Registers.StackPointer), b);
+            bus.Write((ushort)(StackBase + Registers.StackPointer), b);
 
             Registers.StackPointer = (byte)((Registers.StackPointer - 1) & 0xff);
         }
@@ -111,7 +111,7 @@ namespace InnoWerks.Simulators
         {
             Registers.StackPointer = (byte)((Registers.StackPointer + 1) & 0xff);
 
-            return memory.Read((ushort)(StackBase + Registers.StackPointer));
+            return bus.Read((ushort)(StackBase + Registers.StackPointer));
         }
 
         public void StackPushWord(ushort s)
@@ -125,9 +125,10 @@ namespace InnoWerks.Simulators
             return (ushort)((0xff & StackPop()) | (0xff00 & (StackPop() << 8)));
         }
 
-        public int Run(bool stopOnBreak = false, bool writeInstructions = false, int stepsPerSecond = 0)
+        public (int intructionCount, int cycleCount) Run(bool stopOnBreak = false, bool writeInstructions = false, int stepsPerSecond = 0)
         {
             var instructionCount = 0;
+            var cycleCount = 0;
 
             while (true)
             {
@@ -136,7 +137,7 @@ namespace InnoWerks.Simulators
                 preExecutionCallback?.Invoke(this, Registers.ProgramCounter);
 
                 // T0
-                var operation = memory.Read(Registers.ProgramCounter);
+                var operation = bus.Read(Registers.ProgramCounter);
                 // this is a bad hard-coding right now...
                 if (operation == 0x00)
                 {
@@ -144,7 +145,7 @@ namespace InnoWerks.Simulators
                     break;
                 }
 
-                Dispatch(operation, writeInstructions);
+                cycleCount += Dispatch(operation, writeInstructions);
 
                 if (writeInstructions)
                 {
@@ -164,32 +165,32 @@ namespace InnoWerks.Simulators
                 }
             }
 
-            return instructionCount;
+            return (instructionCount, cycleCount);
         }
 
-        public bool Step(bool writeInstructions = false, bool returnPriorToBreak = false)
+        public int Step(bool writeInstructions = false, bool returnPriorToBreak = false)
         {
             // for debugging we're just going to peek at the next
             // instruction, and if it's both a BRK and we've been asked
             // to NOT execute, then we'll return
-            var operation = memory.Peek(Registers.ProgramCounter);
+            var operation = bus.Peek(Registers.ProgramCounter);
             if (operation == 0x00 && returnPriorToBreak == true)
             {
-                return true;
+                return 0;
             }
 
             preExecutionCallback?.Invoke(this, Registers.ProgramCounter);
 
             // T0
-            operation = memory.Read(Registers.ProgramCounter);
+            operation = bus.Read(Registers.ProgramCounter);
 
             // rest of memory cycles
-            Dispatch(operation, writeInstructions);
+            int cycleCount = Dispatch(operation, writeInstructions);
 
             postExecutionCallback?.Invoke(this);
 
-            // hard-coded BRK, if hit we'll tell the call that we saw and executed a break
-            return operation == 0x00;
+            // hard-coded BRK, if hit we'll tell the caller that we saw and executed a break
+            return cycleCount;
         }
 
         #region InstructionDefinitions
@@ -338,7 +339,7 @@ namespace InnoWerks.Simulators
             Registers.SetNZ(value);
 
             // todo: deal with http://forum.6502.org/viewtopic.php?f=4&t=1617&view=previous
-            memory.Write(addr, value);
+            bus.Write(addr, value);
         }
 
         public void ASL_A(ushort addr, byte value)
@@ -377,7 +378,7 @@ namespace InnoWerks.Simulators
         public void BBR(ushort _, byte value, byte bit)
         {
             // T3
-            var offset = memory.Read((ushort)(Registers.ProgramCounter + 2));
+            var offset = bus.Read((ushort)(Registers.ProgramCounter + 2));
 
             // T2 - T3
             var addr = (ushort)(Registers.ProgramCounter + 3 + ((sbyte)offset < 0 ? (sbyte)offset : offset));
@@ -415,7 +416,7 @@ namespace InnoWerks.Simulators
         public void BBS(ushort _, byte value, byte bit)
         {
             // T3
-            var offset = memory.Read((ushort)(Registers.ProgramCounter + 2));
+            var offset = bus.Read((ushort)(Registers.ProgramCounter + 2));
 
             // T2 - T3
             var addr = (ushort)(Registers.ProgramCounter + 3 + ((sbyte)offset < 0 ? (sbyte)offset : offset));
@@ -742,7 +743,7 @@ namespace InnoWerks.Simulators
         public void DEC(ushort addr, byte value)
         {
             value = RegisterMath.Dec(value);
-            memory.Write(addr, value);
+            bus.Write(addr, value);
 
             Registers.SetNZ(value);
         }
@@ -833,7 +834,7 @@ namespace InnoWerks.Simulators
             byte val = RegisterMath.Inc(value);
             Registers.SetNZ(val);
 
-            memory.Write(addr, val);
+            bus.Write(addr, val);
         }
 
         /// <summary>
@@ -992,7 +993,7 @@ namespace InnoWerks.Simulators
             value >>= 1;
             Registers.Zero = RegisterMath.IsZero(value);
 
-            memory.Write(addr, value);
+            bus.Write(addr, value);
         }
 
         public void LSR_A(ushort addr, byte value)
@@ -1178,7 +1179,7 @@ namespace InnoWerks.Simulators
             int flag = 0x01 << bit;
             value &= (byte)~flag;
 
-            memory.Write(addr, value);
+            bus.Write(addr, value);
         }
 
         /// <summary>
@@ -1200,7 +1201,7 @@ namespace InnoWerks.Simulators
             value = RegisterMath.TruncateToByte((value << 1) | adjustment);
             Registers.SetNZ(value);
 
-            memory.Write(addr, value);
+            bus.Write(addr, value);
         }
 
         public void ROL_A(ushort addr, byte value)
@@ -1230,7 +1231,7 @@ namespace InnoWerks.Simulators
             value = RegisterMath.TruncateToByte((value >> 1) | adjustment);
             Registers.SetNZ(value);
 
-            memory.Write(addr, value);
+            bus.Write(addr, value);
         }
 
         public void ROR_A(ushort addr, byte value)
@@ -1283,7 +1284,7 @@ namespace InnoWerks.Simulators
             var pch = StackPop();
 
             // T5
-            memory.Read((ushort)((pch << 8) | pcl));
+            bus.Read((ushort)((pch << 8) | pcl));
 
             Registers.ProgramCounter = (ushort)(((pch << 8) | pcl) + 1);
         }
@@ -1456,7 +1457,7 @@ namespace InnoWerks.Simulators
             int flag = 0x01 << bit;
             value |= (byte)flag;
 
-            memory.Write(addr, value);
+            bus.Write(addr, value);
         }
 
         /// <summary>
@@ -1469,7 +1470,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void STA(ushort addr, byte value)
         {
-            memory.Write(addr, Registers.A);
+            bus.Write(addr, Registers.A);
         }
 
         /// <summary>
@@ -1482,7 +1483,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void STX(ushort addr, byte value)
         {
-            memory.Write(addr, Registers.X);
+            bus.Write(addr, Registers.X);
         }
 
         /// <summary>
@@ -1495,7 +1496,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void STY(ushort addr, byte value)
         {
-            memory.Write(addr, Registers.Y);
+            bus.Write(addr, Registers.Y);
         }
 
         /// <summary>
@@ -1508,7 +1509,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public void STZ(ushort addr, byte value)
         {
-            memory.Write(addr, 0);
+            bus.Write(addr, 0);
         }
 
         /// <summary>
@@ -1568,7 +1569,7 @@ namespace InnoWerks.Simulators
             Registers.Zero = RegisterMath.IsZero(Registers.A & value);
             value &= (byte)~Registers.A;
 
-            memory.Write(addr, RegisterMath.TruncateToByte(value));
+            bus.Write(addr, RegisterMath.TruncateToByte(value));
         }
 
         /// <summary>
@@ -1597,7 +1598,7 @@ namespace InnoWerks.Simulators
             Registers.Zero = RegisterMath.IsZero(Registers.A & value);
             value |= Registers.A;
 
-            memory.Write(addr, RegisterMath.TruncateToByte(value));
+            bus.Write(addr, RegisterMath.TruncateToByte(value));
         }
 
         /// <summary>
@@ -1692,7 +1693,7 @@ namespace InnoWerks.Simulators
             else
             {
                 /* discarded */
-                memory.Read(pc);
+                bus.Read(pc);
 
                 if ((addr & 0xff00) != (pc & 0xff00))
                 {
@@ -1700,7 +1701,7 @@ namespace InnoWerks.Simulators
                     var hi = ((sbyte)offset < 0) ? ((addr & 0xff00) >> 8) + 1 : ((addr & 0xff00) >> 8) - 1;
 
                     /* discarded */
-                    memory.Read((ushort)((hi << 8) | lo));
+                    bus.Read((ushort)((hi << 8) | lo));
                 }
 
                 Registers.ProgramCounter = addr;
@@ -1719,11 +1720,11 @@ namespace InnoWerks.Simulators
             else
             {
                 /* discarded */
-                memory.Read(pc);
+                bus.Read(pc);
 
                 if ((addr & 0xff00) != (pc & 0xff00))
                 {
-                    memory.Read(pc);
+                    bus.Read(pc);
                 }
 
                 Registers.ProgramCounter = addr;
@@ -1783,7 +1784,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeImmediate()
         {
-            OperandDisplay = $"#${memory.Peek((ushort)(Registers.ProgramCounter + 1)):X2}";
+            OperandDisplay = $"#${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2}";
             return true;
         }
 
@@ -1796,7 +1797,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeAbsolute()
         {
-            OperandDisplay = $"${memory.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4}";
+            OperandDisplay = $"${bus.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4}";
             return true;
         }
 
@@ -1808,7 +1809,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeZeroPage()
         {
-            OperandDisplay = $"${memory.Peek((ushort)(Registers.ProgramCounter + 1)):X2}";
+            OperandDisplay = $"${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2}";
             return true;
         }
 
@@ -1824,7 +1825,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeAbsoluteXIndexed()
         {
-            OperandDisplay = $"${memory.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},X";
+            OperandDisplay = $"${bus.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},X";
             return true;
         }
 
@@ -1840,7 +1841,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeAbsoluteYIndexed()
         {
-            OperandDisplay = $"${memory.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},Y";
+            OperandDisplay = $"${bus.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},Y";
             return true;
         }
 
@@ -1856,7 +1857,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeZeroPageXIndexed()
         {
-            OperandDisplay = $"(${memory.Peek((ushort)(Registers.ProgramCounter + 1)):X2},X)";
+            OperandDisplay = $"(${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2},X)";
             return true;
         }
 
@@ -1872,7 +1873,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeZeroPageYIndexed()
         {
-            OperandDisplay = $"(${memory.Peek((ushort)(Registers.ProgramCounter + 1)):X2},Y";
+            OperandDisplay = $"(${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2},Y";
             return true;
         }
 
@@ -1887,7 +1888,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeRelative()
         {
-            OperandDisplay = $"${memory.Peek((ushort)(Registers.ProgramCounter + 1)):X2}";
+            OperandDisplay = $"${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2}";
             return true;
         }
 
@@ -1897,7 +1898,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeZeroPageIndirect()
         {
-            OperandDisplay = $"(${memory.Peek((ushort)(Registers.ProgramCounter + 1)):X2})";
+            OperandDisplay = $"(${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2})";
             return true;
         }
 
@@ -1908,7 +1909,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeAbsoluteIndexedIndirect()
         {
-            OperandDisplay = $"(${memory.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},X)";
+            OperandDisplay = $"(${bus.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},X)";
             return true;
         }
 
@@ -1924,7 +1925,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeXIndexedIndirect()
         {
-            OperandDisplay = $"(${memory.Peek((ushort)(Registers.ProgramCounter + 1)):X2},X)";
+            OperandDisplay = $"(${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2},X)";
             return true;
         }
 
@@ -1939,7 +1940,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeIndirectYIndexed()
         {
-            OperandDisplay = $"(${memory.Peek((ushort)(Registers.ProgramCounter + 1)):X2}),Y";
+            OperandDisplay = $"(${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2}),Y";
             return true;
         }
 
@@ -1954,7 +1955,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeAbsoluteIndirect()
         {
-            OperandDisplay = $"(${memory.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4})";
+            OperandDisplay = $"(${bus.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4})";
             return true;
         }
         #endregion

@@ -10,7 +10,7 @@ namespace Emu6502
 {
     internal sealed class Program
     {
-        private readonly IMemory memory = new IOInterceptor();
+        private readonly IBus memory = new IOInterceptor();
 
         public static void Main(string[] args)
         {

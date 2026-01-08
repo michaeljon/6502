@@ -6,7 +6,7 @@ namespace InnoWerks.Simulators.Tests
 {
 #pragma warning disable CA1002, CA1819, RCS1085, CA1851
 
-    public class AccessCountingMemory : IMemory
+    public class AccessCountingBus : IBus
     {
         private readonly byte[] memory = new byte[64 * 1024];
 
@@ -14,13 +14,34 @@ namespace InnoWerks.Simulators.Tests
 
         private readonly int[] writeCounts = new int[64 * 1024];
 
-        public AccessCountingMemory()
+        public AccessCountingBus()
         {
             BusAccesses = [];
         }
 
+        private int transactionCycles;
+
+        public void BeginTransaction()
+        {
+            transactionCycles = 0;
+        }
+
+        public int EndTransaction()
+        {
+            return transactionCycles;
+        }
+
+        public long CycleCount { get; private set; }
+
+        public byte Peek(ushort address)
+        {
+            return memory[address];
+        }
+
         public byte Read(ushort address)
         {
+            IncCycles(1);
+
             BusAccesses.Add(
                 new JsonHarteTestBusAccess()
                 {
@@ -35,13 +56,18 @@ namespace InnoWerks.Simulators.Tests
             return memory[address];
         }
 
-        public byte Peek(ushort address)
+        public ushort PeekWord(ushort address)
         {
-            return memory[address];
+            var lo = memory[address];
+            var hi = memory[(ushort)(address + 1)];
+
+            return (ushort)((hi << 8) | lo);
         }
 
         public ushort ReadWord(ushort address)
         {
+            IncCycles(1);
+
             BusAccesses.Add(
                 new JsonHarteTestBusAccess()
                 {
@@ -50,6 +76,8 @@ namespace InnoWerks.Simulators.Tests
                     Type = CycleType.Read
                 }
             );
+
+            IncCycles(1);
 
             BusAccesses.Add(
                 new JsonHarteTestBusAccess()
@@ -69,16 +97,10 @@ namespace InnoWerks.Simulators.Tests
             return (ushort)((hi << 8) | lo);
         }
 
-        public ushort PeekWord(ushort address)
-        {
-            var lo = memory[address];
-            var hi = memory[(ushort)(address + 1)];
-
-            return (ushort)((hi << 8) | lo);
-        }
-
         public void Write(ushort address, byte value)
         {
+            IncCycles(1);
+
             BusAccesses.Add(
                 new JsonHarteTestBusAccess()
                 {
@@ -95,6 +117,8 @@ namespace InnoWerks.Simulators.Tests
 
         public void WriteWord(ushort address, ushort value)
         {
+            IncCycles(1);
+
             BusAccesses.Add(
                 new JsonHarteTestBusAccess()
                 {
@@ -103,6 +127,8 @@ namespace InnoWerks.Simulators.Tests
                     Type = CycleType.Write
                 }
             );
+
+            IncCycles(1);
 
             BusAccesses.Add(
                 new JsonHarteTestBusAccess()
@@ -120,22 +146,12 @@ namespace InnoWerks.Simulators.Tests
             memory[(ushort)(address + 1)] = (byte)((value >> 8) & 0xff);
         }
 
-        public byte this[ushort address]
-        {
-            get
-            {
-                return memory[address];
-            }
-
-            set
-            {
-                memory[address] = value;
-            }
-        }
-
         public void Initialize(IEnumerable<JsonHarteRamEntry> mem)
         {
             ArgumentNullException.ThrowIfNull(mem);
+
+            CycleCount = 0;
+            transactionCycles = 0;
 
             foreach (var m in mem)
             {
@@ -148,6 +164,19 @@ namespace InnoWerks.Simulators.Tests
             ArgumentNullException.ThrowIfNull(objectCode);
 
             Array.Copy(objectCode, 0, memory, origin, objectCode.Length);
+        }
+
+        public byte this[ushort address]
+        {
+            get
+            {
+                return memory[address];
+            }
+
+            set
+            {
+                memory[address] = value;
+            }
         }
 
         public (bool matches, ushort differsAtAddr, byte expectedValue, byte actualValue) ValidateMemory(IEnumerable<JsonHarteRamEntry> mem)
@@ -191,5 +220,11 @@ namespace InnoWerks.Simulators.Tests
         }
 
         public List<JsonHarteTestBusAccess> BusAccesses { get; init; }
+
+        private void IncCycles(int howMany)
+        {
+            CycleCount += howMany;
+            transactionCycles += howMany;
+        }
     }
 }

@@ -2,26 +2,41 @@ using System;
 
 namespace InnoWerks.Simulators
 {
-    public class Memory : IMemory
+    public class Bus : IBus
     {
         private readonly byte[] memory = new byte[64 * 1024];
 
-        public byte Read(ushort address)
+        private int transactionCycles;
+
+        public void BeginTransaction()
         {
-            return memory[address];
+            transactionCycles = 0;
         }
+
+        public int EndTransaction()
+        {
+            return transactionCycles;
+        }
+
+        public long CycleCount { get; private set; }
 
         public byte Peek(ushort address)
         {
             return memory[address];
         }
 
-        public ushort ReadWord(ushort address)
+        public byte Read(ushort address)
         {
-            var lo = memory[address];
-            var hi = memory[(ushort)(address + 1)];
+            IncCycles(1);
 
-            return (ushort)((hi << 8) | lo);
+            return memory[address];
+        }
+
+        public void Write(ushort address, byte value)
+        {
+            IncCycles(1);
+
+            memory[address] = value;
         }
 
         public ushort PeekWord(ushort address)
@@ -32,13 +47,20 @@ namespace InnoWerks.Simulators
             return (ushort)((hi << 8) | lo);
         }
 
-        public void Write(ushort address, byte value)
+        public ushort ReadWord(ushort address)
         {
-            memory[address] = value;
+            IncCycles(2);
+
+            var lo = memory[address];
+            var hi = memory[(ushort)(address + 1)];
+
+            return (ushort)((hi << 8) | lo);
         }
 
         public void WriteWord(ushort address, ushort value)
         {
+            IncCycles(2);
+
             memory[address] = (byte)(value & 0x00ff);
             memory[(ushort)(address + 1)] = (byte)((value >> 8) & 0xff);
         }
@@ -61,6 +83,12 @@ namespace InnoWerks.Simulators
             {
                 memory[address] = value;
             }
+        }
+
+        private void IncCycles(int howMany)
+        {
+            CycleCount += howMany;
+            transactionCycles += howMany;
         }
     }
 }
