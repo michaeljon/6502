@@ -13,9 +13,9 @@ namespace InnoWerks.Simulators.Tests
     {
         public TestContext TestContext { get; set; }
 
-        protected static void DummyLoggerCallback(Cpu _1, IMemory _2, int _3 = 0) { }
+        protected static void DummyLoggerCallback(ICpu _1, IMemory _2, int _3 = 0) { }
 
-        protected static void FlagsLoggerCallback(Cpu cpu, IMemory memory, int lines = 0)
+        protected static void FlagsLoggerCallback(ICpu cpu, IMemory memory, int lines = 0)
         {
             ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(memory);
@@ -26,7 +26,7 @@ namespace InnoWerks.Simulators.Tests
             PrintMemoryLines(memory, lines);
         }
 
-        protected static void LoggerCallback(Cpu cpu, IMemory memory, int lines = 1)
+        protected static void LoggerCallback(ICpu cpu, IMemory memory, int lines = 1)
         {
             ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(memory);
@@ -34,9 +34,9 @@ namespace InnoWerks.Simulators.Tests
             PrintMemoryLines(memory, lines);
         }
 
-        protected static void DummyTraceCallback(Cpu _1, ushort _2, IMemory _3, Dictionary<ushort, LineInformation> _4 = null) { }
+        protected static void DummyTraceCallback(ICpu _1, ushort _2, IMemory _3, Dictionary<ushort, LineInformation> _4 = null) { }
 
-        protected static void FlagsTraceCallback(Cpu cpu, ushort _1, IMemory memory, Dictionary<ushort, LineInformation> _2 = null)
+        protected static void FlagsTraceCallback(ICpu cpu, ushort _1, IMemory memory, Dictionary<ushort, LineInformation> _2 = null)
         {
             ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(memory);
@@ -44,7 +44,7 @@ namespace InnoWerks.Simulators.Tests
             Console.WriteLine($"\tPC:{cpu.Registers.ProgramCounter:X4} {cpu.Registers.GetRegisterDisplay} {cpu.Registers.InternalGetFlagsDisplay}");
         }
 
-        protected static void TraceCallback(Cpu cpu, ushort programCounter, IMemory memory, Dictionary<ushort, LineInformation> code)
+        protected static void TraceCallback(ICpu cpu, ushort programCounter, IMemory memory, Dictionary<ushort, LineInformation> code)
         {
             ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(memory);
@@ -63,19 +63,23 @@ namespace InnoWerks.Simulators.Tests
         }
 
 
-        protected Cpu RunTinyTest(IMemory memory, Dictionary<ushort, LineInformation> code = null, CpuClass cpuClass = CpuClass.WDC65C02, int lines = 1)
+        protected ICpu RunTinyTest(IMemory memory, Dictionary<ushort, LineInformation> code = null, CpuClass cpuClass = CpuClass.WDC65C02, int lines = 1)
         {
             ArgumentNullException.ThrowIfNull(memory);
 
             // power up initialization
-            memory[Cpu.RstVectorH] = 0x00;
-            memory[Cpu.RstVectorL] = 0x00;
+            memory[MosTechnologiesCpu.RstVectorH] = 0x00;
+            memory[MosTechnologiesCpu.RstVectorL] = 0x00;
 
-            var cpu = new Cpu(
-                cpuClass,
-                memory,
-                (cpu, pc) => DummyTraceCallback(cpu, pc, memory, code),
-                (cpu) => DummyLoggerCallback(cpu, memory, lines));
+            ICpu cpu = cpuClass == CpuClass.WDC6502 ?
+                new Cpu6502(
+                    memory,
+                    (cpu, pc) => DummyTraceCallback(cpu, pc, memory, code),
+                    (cpu) => DummyLoggerCallback(cpu, memory, lines)) :
+                new Cpu65C02(
+                    memory,
+                    (cpu, pc) => DummyTraceCallback(cpu, pc, memory, code),
+                    (cpu) => DummyLoggerCallback(cpu, memory, lines));
 
             cpu.Reset();
             if (code != null)

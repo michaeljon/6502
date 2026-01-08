@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using InnoWerks.Assemblers;
-using InnoWerks.Processors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace InnoWerks.Simulators.Tests
@@ -29,11 +28,10 @@ namespace InnoWerks.Simulators.Tests
             memory.LoadProgram(assembler.ObjectCode, Origin);
 
             // power up initialization
-            memory[Cpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
-            memory[Cpu.RstVectorL] = InitializationVector & 0xff;
+            memory[MosTechnologiesCpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
+            memory[MosTechnologiesCpu.RstVectorL] = InitializationVector & 0xff;
 
-            var cpu = new Cpu(
-                CpuClass.WDC6502,
+            var cpu = new Cpu6502(
                 memory,
                 (cpu, pc) => DummyTraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
                 (cpu) => DummyLoggerCallback(cpu, memory, 2));
@@ -68,11 +66,10 @@ namespace InnoWerks.Simulators.Tests
             memory.LoadProgram(assembler.ObjectCode, Origin);
 
             // power up initialization
-            memory[Cpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
-            memory[Cpu.RstVectorL] = InitializationVector & 0xff;
+            memory[MosTechnologiesCpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
+            memory[MosTechnologiesCpu.RstVectorL] = InitializationVector & 0xff;
 
-            var cpu = new Cpu(
-                CpuClass.WDC65C02,
+            var cpu = new Cpu65C02(
                 memory,
                 (cpu, pc) => DummyTraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
                 (cpu) => DummyLoggerCallback(cpu, memory, 2));
@@ -107,11 +104,10 @@ namespace InnoWerks.Simulators.Tests
             memory.LoadProgram(assembler.ObjectCode, Origin);
 
             // power up initialization
-            memory[Cpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
-            memory[Cpu.RstVectorL] = InitializationVector & 0xff;
+            memory[MosTechnologiesCpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
+            memory[MosTechnologiesCpu.RstVectorL] = InitializationVector & 0xff;
 
-            var cpu = new Cpu(
-                CpuClass.WDC65C02,
+            var cpu = new Cpu65C02(
                 memory,
                 (cpu, pc) => DummyTraceCallback(cpu, pc, memory, assembler.ProgramByAddress),
                 (cpu) => DummyLoggerCallback(cpu, memory, 0));

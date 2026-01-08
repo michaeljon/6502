@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using CommandLine;
-using InnoWerks.Processors;
 using InnoWerks.Simulators;
 
 #pragma warning disable CA1859
@@ -78,8 +77,7 @@ namespace Emu6502
                 }
             );
 
-            var cpu = new Cpu(
-                CpuClass.WDC65C02,
+            var cpu = new Cpu65C02(
                 memory,
                 (cpu, programCounter) => { },
                 (cpu) =>

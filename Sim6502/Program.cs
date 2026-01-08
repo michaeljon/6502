@@ -66,19 +66,27 @@ namespace Sim6502
             Console.WriteLine($"Debugging {options.Input}");
             Console.WriteLine("? for help");
 
-            var cpu = new Cpu(
-                options.CpuClass,
-                memory,
-                (cpu, programCounter) => { },
-                (cpu) =>
-                {
-                    Console.WriteLine();
-                    Console.WriteLine($"PC:{cpu.Registers.ProgramCounter:X4} {cpu.Registers.GetRegisterDisplay} {cpu.Registers.InternalGetFlagsDisplay}");
-                });
+            ICpu cpu = options.CpuClass == InnoWerks.Processors.CpuClass.WDC6502 ?
+                new Cpu6502(
+                    memory,
+                    (cpu, programCounter) => { },
+                    (cpu) =>
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine($"PC:{cpu.Registers.ProgramCounter:X4} {cpu.Registers.GetRegisterDisplay} {cpu.Registers.InternalGetFlagsDisplay}");
+                    }) :
+                new Cpu65C02(
+                    memory,
+                    (cpu, programCounter) => { },
+                    (cpu) =>
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine($"PC:{cpu.Registers.ProgramCounter:X4} {cpu.Registers.GetRegisterDisplay} {cpu.Registers.InternalGetFlagsDisplay}");
+                    });
 
             // power up initialization
-            memory[Cpu.RstVectorH] = (byte)((options.Origin & 0xff00) >> 8);
-            memory[Cpu.RstVectorL] = (byte)(options.Origin & 0xff);
+            memory[MosTechnologiesCpu.RstVectorH] = (byte)((options.Origin & 0xff00) >> 8);
+            memory[MosTechnologiesCpu.RstVectorL] = (byte)(options.Origin & 0xff);
 
             cpu.Reset();
 
@@ -87,7 +95,7 @@ namespace Sim6502
             return 0;
         }
 
-        private void DebugTheThing(Cpu cpu, Assembler assembler)
+        private void DebugTheThing(ICpu cpu, Assembler assembler)
         {
             // commands
             var quitRegex = new Regex("^(q|quit)$");
@@ -305,7 +313,7 @@ namespace Sim6502
             }
         }
 
-        private bool Step(Cpu cpu)
+        private bool Step(ICpu cpu)
         {
             var breakEncountered = cpu.Step(writeInstructions: verboseSteps, returnPriorToBreak: true);
 
@@ -317,7 +325,7 @@ namespace Sim6502
             return breakEncountered;
         }
 
-        private bool Trace(Cpu cpu, int steps)
+        private bool Trace(ICpu cpu, int steps)
         {
             var breakEncountered = false;
 
@@ -355,7 +363,7 @@ namespace Sim6502
             return breakEncountered;
         }
 
-        private bool Go(Cpu cpu)
+        private bool Go(ICpu cpu)
         {
             var breakEncountered = false;
 
@@ -373,7 +381,7 @@ namespace Sim6502
             return breakEncountered;
         }
 
-        private void SetBreakpoint(Cpu cpu, ushort addr)
+        private void SetBreakpoint(ICpu cpu, ushort addr)
         {
             breakpoints.Add(addr, memory[addr]);
             memory[addr] = 0x00;
@@ -381,7 +389,7 @@ namespace Sim6502
             Console.WriteLine($"Breakpoint at {addr:X4} set");
         }
 
-        private void ClearBreakpoint(Cpu cpu, ushort addr)
+        private void ClearBreakpoint(ICpu cpu, ushort addr)
         {
             memory[addr] = breakpoints[addr];
             breakpoints.Remove(addr);
@@ -389,7 +397,7 @@ namespace Sim6502
             Console.WriteLine($"Breakpoint at {addr:X4} cleared");
         }
 
-        private void ClearAllBreakpoints(Cpu cpu)
+        private void ClearAllBreakpoints(ICpu cpu)
         {
             if (breakpoints.Count == 0)
             {
@@ -405,7 +413,7 @@ namespace Sim6502
             Console.WriteLine("Breakpoints cleared");
         }
 
-        private void ListBreakpoints(Cpu cpu)
+        private void ListBreakpoints(ICpu cpu)
         {
             if (breakpoints.Count == 0)
             {
@@ -421,7 +429,7 @@ namespace Sim6502
             }
         }
 
-        private void SetFlag(Cpu cpu, ProcessorFlag processorFlag)
+        private void SetFlag(ICpu cpu, ProcessorFlag processorFlag)
         {
             switch (processorFlag)
             {
@@ -445,7 +453,7 @@ namespace Sim6502
             Console.WriteLine($"Flag {processorFlag} set");
         }
 
-        private void ClearFlag(Cpu cpu, ProcessorFlag processorFlag)
+        private void ClearFlag(ICpu cpu, ProcessorFlag processorFlag)
         {
             switch (processorFlag)
             {
@@ -469,7 +477,7 @@ namespace Sim6502
             Console.WriteLine($"Flag {processorFlag} cleared");
         }
 
-        private void DumpFlags(Cpu cpu)
+        private void DumpFlags(ICpu cpu)
         {
             Console.Write($"N: {(cpu.Registers.Negative ? '1' : '0')}  ");
             Console.Write($"V: {(cpu.Registers.Overflow ? '1' : '0')}  ");
@@ -482,13 +490,13 @@ namespace Sim6502
             Console.WriteLine();
         }
 
-        private void DumpRegisters(Cpu cpu)
+        private void DumpRegisters(ICpu cpu)
         {
             Console.WriteLine($"PC:{cpu.Registers.ProgramCounter:X4} {cpu.Registers.GetRegisterDisplay} {cpu.Registers.InternalGetFlagsDisplay}");
             Console.WriteLine();
         }
 
-        private void SetRegister(Cpu cpu, ProcessorRegister processorRegister, byte value)
+        private void SetRegister(ICpu cpu, ProcessorRegister processorRegister, byte value)
         {
             switch (processorRegister)
             {
@@ -512,7 +520,7 @@ namespace Sim6502
             Console.WriteLine($"Flag {processorRegister} set");
         }
 
-        private void ZeroRegister(Cpu cpu, ProcessorRegister processorRegister)
+        private void ZeroRegister(ICpu cpu, ProcessorRegister processorRegister)
         {
             switch (processorRegister)
             {
@@ -532,7 +540,7 @@ namespace Sim6502
             Console.WriteLine($"Flag {processorRegister} cleared");
         }
 
-        private void WriteMemory(Cpu cpu, ushort addr, List<byte> bytes)
+        private void WriteMemory(ICpu cpu, ushort addr, List<byte> bytes)
         {
             for (var i = 0; i < bytes.Count; i++)
             {
@@ -542,7 +550,7 @@ namespace Sim6502
             Console.WriteLine($"{bytes.Count} bytes written to {addr:X4}");
         }
 
-        private void ReadMemory(Cpu cpu, ushort addr, ushort len)
+        private void ReadMemory(ICpu cpu, ushort addr, ushort len)
         {
             // get page number
             // round down to 16 byte boundary
@@ -556,7 +564,7 @@ namespace Sim6502
             }
         }
 
-        private void DumpPage(Cpu cpu, byte page)
+        private void DumpPage(ICpu cpu, byte page)
         {
             Console.Write("       ");
             for (var b = 0; b < 32; b++)

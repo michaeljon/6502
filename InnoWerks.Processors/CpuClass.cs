@@ -5,10 +5,14 @@ namespace InnoWerks.Processors
 {
     public enum CpuClass
     {
-        None = 0,
+        Undefined = 0,
 
         WDC6502 = 1,
 
         WDC65C02 = 2,
+
+        Synertek65C02 = 3,
+
+        Rockwell65C02 = 4,
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using InnoWerks.Processors;
 
@@ -8,6 +9,24 @@ namespace InnoWerks.Simulators
     //
     public static class CpuInstructions
     {
+        public static Dictionary<byte, OpCodeDefinition> GetInstructionSet(CpuClass cpuClass)
+        {
+            switch (cpuClass)
+            {
+                case CpuClass.Undefined:
+                    throw new ArgumentOutOfRangeException(nameof(cpuClass), cpuClass, "CpuClass.Undefined is obviously not supported.");
+
+                case CpuClass.WDC6502:
+                    return OpCode6502;
+
+                case CpuClass.WDC65C02:
+                    return OpCode65C02;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(cpuClass), cpuClass, "CpuClass is not currently supported");
+            }
+        }
+
         public static readonly Dictionary<byte, OpCodeDefinition> OpCode65C02 = new()
         {
             { 0x00, new OpCodeDefinition(OpCode.BRK, (cpu, addr, value) => cpu.BRK(addr, value), (cpu) => cpu.DecodeStack(), AddressingMode.Stack) },

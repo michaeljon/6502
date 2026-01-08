@@ -84,22 +84,27 @@ namespace InnoWerks.Simulators.Tests
             ArgumentNullException.ThrowIfNull(results);
 
             var batch = test.Name.Split(' ')[0];
-            var ocd = CpuClass == CpuClass.WDC6502 ?
-                CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)] :
-                CpuInstructions.OpCode65C02[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)];
+            var instructionSet = CpuInstructions.GetInstructionSet(CpuClass);
+            var ocd = instructionSet[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)];
 
             var memory = new AccessCountingMemory();
 
             // set up initial memory state
             memory.Initialize(test.Initial.Ram);
 
-            var cpu = new Cpu(
-                CpuClass,
-                memory,
-                // (cpu, pc) => FlagsTraceCallback(cpu, pc, memory),
-                // (cpu) => FlagsLoggerCallback(cpu, memory, 0))
-                (cpu, pc) => DummyTraceCallback(cpu, pc, memory),
-                (cpu) => DummyLoggerCallback(cpu, memory, 0));
+            ICpu cpu = CpuClass == CpuClass.WDC6502 ?
+                new Cpu6502(
+                    memory,
+                    // (cpu, pc) => FlagsTraceCallback(cpu, pc, memory),
+                    // (cpu) => FlagsLoggerCallback(cpu, memory, 0))
+                    (cpu, pc) => DummyTraceCallback(cpu, pc, memory),
+                    (cpu) => DummyLoggerCallback(cpu, memory, 0)) :
+                new Cpu65C02(
+                    memory,
+                    // (cpu, pc) => FlagsTraceCallback(cpu, pc, memory),
+                    // (cpu) => FlagsLoggerCallback(cpu, memory, 0))
+                    (cpu, pc) => DummyTraceCallback(cpu, pc, memory),
+                    (cpu) => DummyLoggerCallback(cpu, memory, 0));
 
             cpu.Reset();
 
@@ -204,16 +209,17 @@ namespace InnoWerks.Simulators.Tests
 
         protected void RunNamedTest(string testName)
         {
+#pragma warning disable IDE0002
             ArgumentNullException.ThrowIfNullOrEmpty(testName);
+#pragma warning restore IDE0002
 
             List<string> results = [];
 
             var batch = testName.Split(' ')[0];
             var file = $"{BasePath}/{batch}.json";
 
-            var ocd = CpuClass == CpuClass.WDC6502 ?
-                CpuInstructions.OpCode6502[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)] :
-                CpuInstructions.OpCode65C02[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)];
+            var instructionSet = CpuInstructions.GetInstructionSet(CpuClass);
+            var ocd = instructionSet[byte.Parse(batch, NumberStyles.HexNumber, CultureInfo.InvariantCulture)];
 
             TestContext.WriteLine($"Running test {testName}");
             TestContext.WriteLine($"OpCode: ${batch} {ocd.OpCode} {ocd.AddressingMode}");
@@ -240,6 +246,46 @@ namespace InnoWerks.Simulators.Tests
             {
                 TestContext.WriteLine(result);
             }
+
+            Assert.AreEqual(0, results.Count, $"Failed some tests");
+        }
+
+        protected void RunAllBatches()
+        {
+            bool[] ignored = LoadIgnored();
+            List<string> results = [];
+
+            var files = Directory
+                .GetFiles(BasePath, "*.json")
+                .OrderBy(f => f);
+
+            foreach (var file in files)
+            {
+                using (var fs = File.OpenRead(file))
+                {
+                    if (fs.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    var index = byte.Parse(Path.GetFileNameWithoutExtension(file), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+
+                    if (ignored[index] == false)
+                    {
+                        foreach (var test in JsonSerializer.Deserialize<List<JsonHarteTestStructure>>(fs, SerializerOptions))
+                        {
+                            RunIndividualTest(test, results);
+                        }
+                    }
+                }
+            }
+
+#if VERBOSE_BATCH_OUTPUT
+            foreach (var result in results)
+            {
+                TestContext.WriteLine(result);
+            }
+#endif
 
             Assert.AreEqual(0, results.Count, $"Failed some tests");
         }

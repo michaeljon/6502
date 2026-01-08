@@ -5,1576 +5,1564 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace InnoWerks.Simulators.Tests
 {
     [TestClass]
-    public class Harte6502 : HarteBase
+    public class HarteWDC65C02 : HarteBase
     {
-        protected override string BasePath => Environment.ExpandEnvironmentVariables("%HOME%/src/6502/working/65x02/6502/v1");
+        protected override string BasePath => Environment.ExpandEnvironmentVariables("%HOME%/src/6502/working/65x02/wdc65c02/v1");
 
-        protected override CpuClass CpuClass => CpuClass.WDC6502;
+        protected override CpuClass CpuClass => CpuClass.WDC65C02;
 
         // [Ignore]
         [TestMethod]
-        public void RunAll6502Tests()
+        public void RunAllWDC65C02Tests()
         {
             RunAllBatches();
         }
 
         // [Ignore]
         [TestMethod]
-        public void RunSampled6502Tests()
+        public void RunSampledWDC65C02Tests()
         {
             RunAllBatchesWithRandomSampling();
         }
 
         [TestMethod]
-        public void RunNamed6502Test()
+        public void RunNamedWDC65C02Test()
         {
-            RunNamedTest("fe d0 c6");
+            RunNamedTest("f1 3419");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test00()
+        public void RunIndividualWDC65C02Test00()
         {
             RunNamedBatch("00");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test01()
+        public void RunIndividualWDC65C02Test01()
         {
             RunNamedBatch("01");
         }
 
         [TestMethod]
-        [ExpectedException(typeof(IllegalOpCodeException))]
-        public void RunIndividual6502Test02()
+        public void RunIndividualWDC65C02Test02()
         {
             RunNamedBatch("02");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test03()
+        public void RunIndividualWDC65C02Test03()
         {
             RunNamedBatch("03");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test04()
+        public void RunIndividualWDC65C02Test04()
         {
             RunNamedBatch("04");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test05()
+        public void RunIndividualWDC65C02Test05()
         {
             RunNamedBatch("05");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test06()
+        public void RunIndividualWDC65C02Test06()
         {
             RunNamedBatch("06");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test07()
+        public void RunIndividualWDC65C02Test07()
         {
             RunNamedBatch("07");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test08()
+        public void RunIndividualWDC65C02Test08()
         {
             RunNamedBatch("08");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test09()
+        public void RunIndividualWDC65C02Test09()
         {
             RunNamedBatch("09");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test0A()
+        public void RunIndividualWDC65C02Test0A()
         {
             RunNamedBatch("0a");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test0B()
+        public void RunIndividualWDC65C02Test0B()
         {
             RunNamedBatch("0b");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test0C()
+        public void RunIndividualWDC65C02Test0C()
         {
             RunNamedBatch("0c");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test0D()
+        public void RunIndividualWDC65C02Test0D()
         {
             RunNamedBatch("0d");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test0E()
+        public void RunIndividualWDC65C02Test0E()
         {
             RunNamedBatch("0e");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test0F()
+        public void RunIndividualWDC65C02Test0F()
         {
             RunNamedBatch("0f");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test10()
+        public void RunIndividualWDC65C02Test10()
         {
             RunNamedBatch("10");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test11()
+        public void RunIndividualWDC65C02Test11()
         {
             RunNamedBatch("11");
         }
 
         [TestMethod]
-        [ExpectedException(typeof(IllegalOpCodeException))]
-        public void RunIndividual6502Test12()
+        public void RunIndividualWDC65C02Test12()
         {
             RunNamedBatch("12");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test13()
+        public void RunIndividualWDC65C02Test13()
         {
             RunNamedBatch("13");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test14()
+        public void RunIndividualWDC65C02Test14()
         {
             RunNamedBatch("14");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test15()
+        public void RunIndividualWDC65C02Test15()
         {
             RunNamedBatch("15");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test16()
+        public void RunIndividualWDC65C02Test16()
         {
             RunNamedBatch("16");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test17()
+        public void RunIndividualWDC65C02Test17()
         {
             RunNamedBatch("17");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test18()
+        public void RunIndividualWDC65C02Test18()
         {
             RunNamedBatch("18");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test19()
+        public void RunIndividualWDC65C02Test19()
         {
             RunNamedBatch("19");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test1A()
+        public void RunIndividualWDC65C02Test1A()
         {
             RunNamedBatch("1a");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test1B()
+        public void RunIndividualWDC65C02Test1B()
         {
             RunNamedBatch("1b");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test1C()
+        public void RunIndividualWDC65C02Test1C()
         {
             RunNamedBatch("1c");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test1D()
+        public void RunIndividualWDC65C02Test1D()
         {
             RunNamedBatch("1d");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test1E()
+        public void RunIndividualWDC65C02Test1E()
         {
             RunNamedBatch("1e");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test1F()
+        public void RunIndividualWDC65C02Test1F()
         {
             RunNamedBatch("1f");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test20()
+        public void RunIndividualWDC65C02Test20()
         {
             RunNamedBatch("20");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test21()
+        public void RunIndividualWDC65C02Test21()
         {
             RunNamedBatch("21");
         }
 
         [TestMethod]
-        [ExpectedException(typeof(IllegalOpCodeException))]
-        public void RunIndividual6502Test22()
+        public void RunIndividualWDC65C02Test22()
         {
             RunNamedBatch("22");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test23()
+        public void RunIndividualWDC65C02Test23()
         {
             RunNamedBatch("23");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test24()
+        public void RunIndividualWDC65C02Test24()
         {
             RunNamedBatch("24");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test25()
+        public void RunIndividualWDC65C02Test25()
         {
             RunNamedBatch("25");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test26()
+        public void RunIndividualWDC65C02Test26()
         {
             RunNamedBatch("26");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test27()
+        public void RunIndividualWDC65C02Test27()
         {
             RunNamedBatch("27");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test28()
+        public void RunIndividualWDC65C02Test28()
         {
             RunNamedBatch("28");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test29()
+        public void RunIndividualWDC65C02Test29()
         {
             RunNamedBatch("29");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test2A()
+        public void RunIndividualWDC65C02Test2A()
         {
             RunNamedBatch("2a");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test2B()
+        public void RunIndividualWDC65C02Test2B()
         {
             RunNamedBatch("2b");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test2C()
+        public void RunIndividualWDC65C02Test2C()
         {
             RunNamedBatch("2c");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test2D()
+        public void RunIndividualWDC65C02Test2D()
         {
             RunNamedBatch("2d");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test2E()
+        public void RunIndividualWDC65C02Test2E()
         {
             RunNamedBatch("2e");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test2F()
+        public void RunIndividualWDC65C02Test2F()
         {
             RunNamedBatch("2f");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test30()
+        public void RunIndividualWDC65C02Test30()
         {
             RunNamedBatch("30");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test31()
+        public void RunIndividualWDC65C02Test31()
         {
             RunNamedBatch("31");
         }
 
         [TestMethod]
-        [ExpectedException(typeof(IllegalOpCodeException))]
-        public void RunIndividual6502Test32()
+        public void RunIndividualWDC65C02Test32()
         {
             RunNamedBatch("32");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test33()
+        public void RunIndividualWDC65C02Test33()
         {
             RunNamedBatch("33");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test34()
+        public void RunIndividualWDC65C02Test34()
         {
             RunNamedBatch("34");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test35()
+        public void RunIndividualWDC65C02Test35()
         {
             RunNamedBatch("35");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test36()
+        public void RunIndividualWDC65C02Test36()
         {
             RunNamedBatch("36");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test37()
+        public void RunIndividualWDC65C02Test37()
         {
             RunNamedBatch("37");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test38()
+        public void RunIndividualWDC65C02Test38()
         {
             RunNamedBatch("38");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test39()
+        public void RunIndividualWDC65C02Test39()
         {
             RunNamedBatch("39");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test3A()
+        public void RunIndividualWDC65C02Test3A()
         {
             RunNamedBatch("3a");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test3B()
+        public void RunIndividualWDC65C02Test3B()
         {
             RunNamedBatch("3b");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test3C()
+        public void RunIndividualWDC65C02Test3C()
         {
             RunNamedBatch("3c");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test3D()
+        public void RunIndividualWDC65C02Test3D()
         {
             RunNamedBatch("3d");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test3E()
+        public void RunIndividualWDC65C02Test3E()
         {
             RunNamedBatch("3e");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test3F()
+        public void RunIndividualWDC65C02Test3F()
         {
             RunNamedBatch("3f");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test40()
+        public void RunIndividualWDC65C02Test40()
         {
             RunNamedBatch("40");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test41()
+        public void RunIndividualWDC65C02Test41()
         {
             RunNamedBatch("41");
         }
 
         [TestMethod]
-        [ExpectedException(typeof(IllegalOpCodeException))]
-        public void RunIndividual6502Test42()
+        public void RunIndividualWDC65C02Test42()
         {
             RunNamedBatch("42");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test43()
+        public void RunIndividualWDC65C02Test43()
         {
             RunNamedBatch("43");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test44()
+        public void RunIndividualWDC65C02Test44()
         {
             RunNamedBatch("44");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test45()
+        public void RunIndividualWDC65C02Test45()
         {
             RunNamedBatch("45");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test46()
+        public void RunIndividualWDC65C02Test46()
         {
             RunNamedBatch("46");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test47()
+        public void RunIndividualWDC65C02Test47()
         {
             RunNamedBatch("47");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test48()
+        public void RunIndividualWDC65C02Test48()
         {
             RunNamedBatch("48");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test49()
+        public void RunIndividualWDC65C02Test49()
         {
             RunNamedBatch("49");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test4A()
+        public void RunIndividualWDC65C02Test4A()
         {
             RunNamedBatch("4a");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test4B()
+        public void RunIndividualWDC65C02Test4B()
         {
             RunNamedBatch("4b");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test4C()
+        public void RunIndividualWDC65C02Test4C()
         {
             RunNamedBatch("4c");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test4D()
+        public void RunIndividualWDC65C02Test4D()
         {
             RunNamedBatch("4d");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test4E()
+        public void RunIndividualWDC65C02Test4E()
         {
             RunNamedBatch("4e");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test4F()
+        public void RunIndividualWDC65C02Test4F()
         {
             RunNamedBatch("4f");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test50()
+        public void RunIndividualWDC65C02Test50()
         {
             RunNamedBatch("50");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test51()
+        public void RunIndividualWDC65C02Test51()
         {
             RunNamedBatch("51");
         }
 
         [TestMethod]
-        [ExpectedException(typeof(IllegalOpCodeException))]
-        public void RunIndividual6502Test52()
+        public void RunIndividualWDC65C02Test52()
         {
             RunNamedBatch("52");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test53()
+        public void RunIndividualWDC65C02Test53()
         {
             RunNamedBatch("53");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test54()
+        public void RunIndividualWDC65C02Test54()
         {
             RunNamedBatch("54");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test55()
+        public void RunIndividualWDC65C02Test55()
         {
             RunNamedBatch("55");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test56()
+        public void RunIndividualWDC65C02Test56()
         {
             RunNamedBatch("56");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test57()
+        public void RunIndividualWDC65C02Test57()
         {
             RunNamedBatch("57");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test58()
+        public void RunIndividualWDC65C02Test58()
         {
             RunNamedBatch("58");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test59()
+        public void RunIndividualWDC65C02Test59()
         {
             RunNamedBatch("59");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test5A()
+        public void RunIndividualWDC65C02Test5A()
         {
             RunNamedBatch("5a");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test5B()
+        public void RunIndividualWDC65C02Test5B()
         {
             RunNamedBatch("5b");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test5C()
+        public void RunIndividualWDC65C02Test5C()
         {
             RunNamedBatch("5c");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test5D()
+        public void RunIndividualWDC65C02Test5D()
         {
             RunNamedBatch("5d");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test5E()
+        public void RunIndividualWDC65C02Test5E()
         {
             RunNamedBatch("5e");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test5F()
+        public void RunIndividualWDC65C02Test5F()
         {
             RunNamedBatch("5f");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test60()
+        public void RunIndividualWDC65C02Test60()
         {
             RunNamedBatch("60");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test61()
+        public void RunIndividualWDC65C02Test61()
         {
             RunNamedBatch("61");
         }
 
         [TestMethod]
-        [ExpectedException(typeof(IllegalOpCodeException))]
-        public void RunIndividual6502Test62()
+        public void RunIndividualWDC65C02Test62()
         {
             RunNamedBatch("62");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test63()
+        public void RunIndividualWDC65C02Test63()
         {
             RunNamedBatch("63");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test64()
+        public void RunIndividualWDC65C02Test64()
         {
             RunNamedBatch("64");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test65()
+        public void RunIndividualWDC65C02Test65()
         {
             RunNamedBatch("65");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test66()
+        public void RunIndividualWDC65C02Test66()
         {
             RunNamedBatch("66");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test67()
+        public void RunIndividualWDC65C02Test67()
         {
             RunNamedBatch("67");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test68()
+        public void RunIndividualWDC65C02Test68()
         {
             RunNamedBatch("68");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test69()
+        public void RunIndividualWDC65C02Test69()
         {
             RunNamedBatch("69");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test6A()
+        public void RunIndividualWDC65C02Test6A()
         {
             RunNamedBatch("6a");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test6B()
+        public void RunIndividualWDC65C02Test6B()
         {
             RunNamedBatch("6b");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test6C()
+        public void RunIndividualWDC65C02Test6C()
         {
             RunNamedBatch("6c");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test6D()
+        public void RunIndividualWDC65C02Test6D()
         {
             RunNamedBatch("6d");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test6E()
+        public void RunIndividualWDC65C02Test6E()
         {
             RunNamedBatch("6e");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test6F()
+        public void RunIndividualWDC65C02Test6F()
         {
             RunNamedBatch("6f");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test70()
+        public void RunIndividualWDC65C02Test70()
         {
             RunNamedBatch("70");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test71()
+        public void RunIndividualWDC65C02Test71()
         {
             RunNamedBatch("71");
         }
 
         [TestMethod]
-        [ExpectedException(typeof(IllegalOpCodeException))]
-        public void RunIndividual6502Test72()
+        public void RunIndividualWDC65C02Test72()
         {
             RunNamedBatch("72");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test73()
+        public void RunIndividualWDC65C02Test73()
         {
             RunNamedBatch("73");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test74()
+        public void RunIndividualWDC65C02Test74()
         {
             RunNamedBatch("74");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test75()
+        public void RunIndividualWDC65C02Test75()
         {
             RunNamedBatch("75");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test76()
+        public void RunIndividualWDC65C02Test76()
         {
             RunNamedBatch("76");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test77()
+        public void RunIndividualWDC65C02Test77()
         {
             RunNamedBatch("77");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test78()
+        public void RunIndividualWDC65C02Test78()
         {
             RunNamedBatch("78");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test79()
+        public void RunIndividualWDC65C02Test79()
         {
             RunNamedBatch("79");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test7A()
+        public void RunIndividualWDC65C02Test7A()
         {
             RunNamedBatch("7a");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test7B()
+        public void RunIndividualWDC65C02Test7B()
         {
             RunNamedBatch("7b");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test7C()
+        public void RunIndividualWDC65C02Test7C()
         {
             RunNamedBatch("7c");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test7D()
+        public void RunIndividualWDC65C02Test7D()
         {
             RunNamedBatch("7d");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test7E()
+        public void RunIndividualWDC65C02Test7E()
         {
             RunNamedBatch("7e");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test7F()
+        public void RunIndividualWDC65C02Test7F()
         {
             RunNamedBatch("7f");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test80()
+        public void RunIndividualWDC65C02Test80()
         {
             RunNamedBatch("80");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test81()
+        public void RunIndividualWDC65C02Test81()
         {
             RunNamedBatch("81");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test82()
+        public void RunIndividualWDC65C02Test82()
         {
             RunNamedBatch("82");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test83()
+        public void RunIndividualWDC65C02Test83()
         {
             RunNamedBatch("83");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test84()
+        public void RunIndividualWDC65C02Test84()
         {
             RunNamedBatch("84");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test85()
+        public void RunIndividualWDC65C02Test85()
         {
             RunNamedBatch("85");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test86()
+        public void RunIndividualWDC65C02Test86()
         {
             RunNamedBatch("86");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test87()
+        public void RunIndividualWDC65C02Test87()
         {
             RunNamedBatch("87");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test88()
+        public void RunIndividualWDC65C02Test88()
         {
             RunNamedBatch("88");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test89()
+        public void RunIndividualWDC65C02Test89()
         {
             RunNamedBatch("89");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test8A()
+        public void RunIndividualWDC65C02Test8A()
         {
             RunNamedBatch("8a");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test8B()
+        public void RunIndividualWDC65C02Test8B()
         {
             RunNamedBatch("8b");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test8C()
+        public void RunIndividualWDC65C02Test8C()
         {
             RunNamedBatch("8c");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test8D()
+        public void RunIndividualWDC65C02Test8D()
         {
             RunNamedBatch("8d");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test8E()
+        public void RunIndividualWDC65C02Test8E()
         {
             RunNamedBatch("8e");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test8F()
+        public void RunIndividualWDC65C02Test8F()
         {
             RunNamedBatch("8f");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test90()
+        public void RunIndividualWDC65C02Test90()
         {
             RunNamedBatch("90");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test91()
+        public void RunIndividualWDC65C02Test91()
         {
             RunNamedBatch("91");
         }
 
         [TestMethod]
-        [ExpectedException(typeof(IllegalOpCodeException))]
-        public void RunIndividual6502Test92()
+        public void RunIndividualWDC65C02Test92()
         {
             RunNamedBatch("92");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test93()
+        public void RunIndividualWDC65C02Test93()
         {
             RunNamedBatch("93");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test94()
+        public void RunIndividualWDC65C02Test94()
         {
             RunNamedBatch("94");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test95()
+        public void RunIndividualWDC65C02Test95()
         {
             RunNamedBatch("95");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test96()
+        public void RunIndividualWDC65C02Test96()
         {
             RunNamedBatch("96");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test97()
+        public void RunIndividualWDC65C02Test97()
         {
             RunNamedBatch("97");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test98()
+        public void RunIndividualWDC65C02Test98()
         {
             RunNamedBatch("98");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test99()
+        public void RunIndividualWDC65C02Test99()
         {
             RunNamedBatch("99");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test9A()
+        public void RunIndividualWDC65C02Test9A()
         {
             RunNamedBatch("9a");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test9B()
+        public void RunIndividualWDC65C02Test9B()
         {
             RunNamedBatch("9b");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test9C()
+        public void RunIndividualWDC65C02Test9C()
         {
             RunNamedBatch("9c");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test9D()
+        public void RunIndividualWDC65C02Test9D()
         {
             RunNamedBatch("9d");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test9E()
+        public void RunIndividualWDC65C02Test9E()
         {
             RunNamedBatch("9e");
         }
 
         [TestMethod]
-        public void RunIndividual6502Test9F()
+        public void RunIndividualWDC65C02Test9F()
         {
             RunNamedBatch("9f");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestA0()
+        public void RunIndividualWDC65C02TestA0()
         {
             RunNamedBatch("a0");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestA1()
+        public void RunIndividualWDC65C02TestA1()
         {
             RunNamedBatch("a1");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestA2()
+        public void RunIndividualWDC65C02TestA2()
         {
             RunNamedBatch("a2");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestA3()
+        public void RunIndividualWDC65C02TestA3()
         {
             RunNamedBatch("a3");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestA4()
+        public void RunIndividualWDC65C02TestA4()
         {
             RunNamedBatch("a4");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestA5()
+        public void RunIndividualWDC65C02TestA5()
         {
             RunNamedBatch("a5");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestA6()
+        public void RunIndividualWDC65C02TestA6()
         {
             RunNamedBatch("a6");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestA7()
+        public void RunIndividualWDC65C02TestA7()
         {
             RunNamedBatch("a7");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestA8()
+        public void RunIndividualWDC65C02TestA8()
         {
             RunNamedBatch("a8");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestA9()
+        public void RunIndividualWDC65C02TestA9()
         {
             RunNamedBatch("a9");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestAA()
+        public void RunIndividualWDC65C02TestAA()
         {
             RunNamedBatch("aa");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestAB()
+        public void RunIndividualWDC65C02TestAB()
         {
             RunNamedBatch("ab");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestAC()
+        public void RunIndividualWDC65C02TestAC()
         {
             RunNamedBatch("ac");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestAD()
+        public void RunIndividualWDC65C02TestAD()
         {
             RunNamedBatch("ad");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestAE()
+        public void RunIndividualWDC65C02TestAE()
         {
             RunNamedBatch("ae");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestAF()
+        public void RunIndividualWDC65C02TestAF()
         {
             RunNamedBatch("af");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestB0()
+        public void RunIndividualWDC65C02TestB0()
         {
             RunNamedBatch("b0");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestB1()
+        public void RunIndividualWDC65C02TestB1()
         {
             RunNamedBatch("b1");
         }
 
         [TestMethod]
-        [ExpectedException(typeof(IllegalOpCodeException))]
-        public void RunIndividual6502TestB2()
+        public void RunIndividualWDC65C02TestB2()
         {
             RunNamedBatch("b2");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestB3()
+        public void RunIndividualWDC65C02TestB3()
         {
             RunNamedBatch("b3");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestB4()
+        public void RunIndividualWDC65C02TestB4()
         {
             RunNamedBatch("b4");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestB5()
+        public void RunIndividualWDC65C02TestB5()
         {
             RunNamedBatch("b5");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestB6()
+        public void RunIndividualWDC65C02TestB6()
         {
             RunNamedBatch("b6");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestB7()
+        public void RunIndividualWDC65C02TestB7()
         {
             RunNamedBatch("b7");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestB8()
+        public void RunIndividualWDC65C02TestB8()
         {
             RunNamedBatch("b8");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestB9()
+        public void RunIndividualWDC65C02TestB9()
         {
             RunNamedBatch("b9");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestBA()
+        public void RunIndividualWDC65C02TestBA()
         {
             RunNamedBatch("ba");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestBB()
+        public void RunIndividualWDC65C02TestBB()
         {
             RunNamedBatch("bb");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestBC()
+        public void RunIndividualWDC65C02TestBC()
         {
             RunNamedBatch("bc");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestBD()
+        public void RunIndividualWDC65C02TestBD()
         {
             RunNamedBatch("bd");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestBE()
+        public void RunIndividualWDC65C02TestBE()
         {
             RunNamedBatch("be");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestBF()
+        public void RunIndividualWDC65C02TestBF()
         {
             RunNamedBatch("bf");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestC0()
+        public void RunIndividualWDC65C02TestC0()
         {
             RunNamedBatch("c0");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestC1()
+        public void RunIndividualWDC65C02TestC1()
         {
             RunNamedBatch("c1");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestC2()
+        public void RunIndividualWDC65C02TestC2()
         {
             RunNamedBatch("c2");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestC3()
+        public void RunIndividualWDC65C02TestC3()
         {
             RunNamedBatch("c3");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestC4()
+        public void RunIndividualWDC65C02TestC4()
         {
             RunNamedBatch("c4");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestC5()
+        public void RunIndividualWDC65C02TestC5()
         {
             RunNamedBatch("c5");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestC6()
+        public void RunIndividualWDC65C02TestC6()
         {
             RunNamedBatch("c6");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestC7()
+        public void RunIndividualWDC65C02TestC7()
         {
             RunNamedBatch("c7");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestC8()
+        public void RunIndividualWDC65C02TestC8()
         {
             RunNamedBatch("c8");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestC9()
+        public void RunIndividualWDC65C02TestC9()
         {
             RunNamedBatch("c9");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestCA()
+        public void RunIndividualWDC65C02TestCA()
         {
             RunNamedBatch("ca");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestCB()
+        public void RunIndividualWDC65C02TestCB()
         {
             RunNamedBatch("cb");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestCC()
+        public void RunIndividualWDC65C02TestCC()
         {
             RunNamedBatch("cc");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestCD()
+        public void RunIndividualWDC65C02TestCD()
         {
             RunNamedBatch("cd");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestCE()
+        public void RunIndividualWDC65C02TestCE()
         {
             RunNamedBatch("ce");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestCF()
+        public void RunIndividualWDC65C02TestCF()
         {
             RunNamedBatch("cf");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestD0()
+        public void RunIndividualWDC65C02TestD0()
         {
             RunNamedBatch("d0");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestD1()
+        public void RunIndividualWDC65C02TestD1()
         {
             RunNamedBatch("d1");
         }
 
         [TestMethod]
-        [ExpectedException(typeof(IllegalOpCodeException))]
-        public void RunIndividual6502TestD2()
+        public void RunIndividualWDC65C02TestD2()
         {
             RunNamedBatch("d2");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestD3()
+        public void RunIndividualWDC65C02TestD3()
         {
             RunNamedBatch("d3");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestD4()
+        public void RunIndividualWDC65C02TestD4()
         {
             RunNamedBatch("d4");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestD5()
+        public void RunIndividualWDC65C02TestD5()
         {
             RunNamedBatch("d5");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestD6()
+        public void RunIndividualWDC65C02TestD6()
         {
             RunNamedBatch("d6");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestD7()
+        public void RunIndividualWDC65C02TestD7()
         {
             RunNamedBatch("d7");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestD8()
+        public void RunIndividualWDC65C02TestD8()
         {
             RunNamedBatch("d8");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestD9()
+        public void RunIndividualWDC65C02TestD9()
         {
             RunNamedBatch("d9");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestDA()
+        public void RunIndividualWDC65C02TestDA()
         {
             RunNamedBatch("da");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestDB()
+        public void RunIndividualWDC65C02TestDB()
         {
             RunNamedBatch("db");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestDC()
+        public void RunIndividualWDC65C02TestDC()
         {
             RunNamedBatch("dc");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestDD()
+        public void RunIndividualWDC65C02TestDD()
         {
             RunNamedBatch("dd");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestDE()
+        public void RunIndividualWDC65C02TestDE()
         {
             RunNamedBatch("de");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestDF()
+        public void RunIndividualWDC65C02TestDF()
         {
             RunNamedBatch("df");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestE0()
+        public void RunIndividualWDC65C02TestE0()
         {
             RunNamedBatch("e0");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestE1()
+        public void RunIndividualWDC65C02TestE1()
         {
             RunNamedBatch("e1");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestE2()
+        public void RunIndividualWDC65C02TestE2()
         {
             RunNamedBatch("e2");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestE3()
+        public void RunIndividualWDC65C02TestE3()
         {
             RunNamedBatch("e3");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestE4()
+        public void RunIndividualWDC65C02TestE4()
         {
             RunNamedBatch("e4");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestE5()
+        public void RunIndividualWDC65C02TestE5()
         {
             RunNamedBatch("e5");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestE6()
+        public void RunIndividualWDC65C02TestE6()
         {
             RunNamedBatch("e6");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestE7()
+        public void RunIndividualWDC65C02TestE7()
         {
             RunNamedBatch("e7");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestE8()
+        public void RunIndividualWDC65C02TestE8()
         {
             RunNamedBatch("e8");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestE9()
+        public void RunIndividualWDC65C02TestE9()
         {
             RunNamedBatch("e9");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestEA()
+        public void RunIndividualWDC65C02TestEA()
         {
             RunNamedBatch("ea");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestEB()
+        public void RunIndividualWDC65C02TestEB()
         {
             RunNamedBatch("eb");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestEC()
+        public void RunIndividualWDC65C02TestEC()
         {
             RunNamedBatch("ec");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestED()
+        public void RunIndividualWDC65C02TestED()
         {
             RunNamedBatch("ed");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestEE()
+        public void RunIndividualWDC65C02TestEE()
         {
             RunNamedBatch("ee");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestEF()
+        public void RunIndividualWDC65C02TestEF()
         {
             RunNamedBatch("ef");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestF0()
+        public void RunIndividualWDC65C02TestF0()
         {
             RunNamedBatch("f0");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestF1()
+        public void RunIndividualWDC65C02TestF1()
         {
             RunNamedBatch("f1");
         }
 
         [TestMethod]
-        [ExpectedException(typeof(IllegalOpCodeException))]
-        public void RunIndividual6502TestF2()
+        public void RunIndividualWDC65C02TestF2()
         {
             RunNamedBatch("f2");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestF3()
+        public void RunIndividualWDC65C02TestF3()
         {
             RunNamedBatch("f3");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestF4()
+        public void RunIndividualWDC65C02TestF4()
         {
             RunNamedBatch("f4");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestF5()
+        public void RunIndividualWDC65C02TestF5()
         {
             RunNamedBatch("f5");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestF6()
+        public void RunIndividualWDC65C02TestF6()
         {
             RunNamedBatch("f6");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestF7()
+        public void RunIndividualWDC65C02TestF7()
         {
             RunNamedBatch("f7");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestF8()
+        public void RunIndividualWDC65C02TestF8()
         {
             RunNamedBatch("f8");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestF9()
+        public void RunIndividualWDC65C02TestF9()
         {
             RunNamedBatch("f9");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestFA()
+        public void RunIndividualWDC65C02TestFA()
         {
             RunNamedBatch("fa");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestFB()
+        public void RunIndividualWDC65C02TestFB()
         {
             RunNamedBatch("fb");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestFC()
+        public void RunIndividualWDC65C02TestFC()
         {
             RunNamedBatch("fc");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestFD()
+        public void RunIndividualWDC65C02TestFD()
         {
             RunNamedBatch("fd");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestFE()
+        public void RunIndividualWDC65C02TestFE()
         {
             RunNamedBatch("fe");
         }
 
         [TestMethod]
-        public void RunIndividual6502TestFF()
+        public void RunIndividualWDC65C02TestFF()
         {
             RunNamedBatch("ff");
         }

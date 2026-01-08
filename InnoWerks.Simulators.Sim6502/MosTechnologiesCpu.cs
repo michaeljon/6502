@@ -1,16 +1,17 @@
 using System;
+using System.Threading.Tasks;
 using InnoWerks.Processors;
-
-#pragma warning disable RCS1163, IDE0060, CA1707, CA1822
 
 //
 // things to note: http://www.6502.org/tutorials/65c02opcodes.html
 //                 https://xotmatrix.github.io/6502/6502-single-cycle-execution.html
 //
 
+#pragma warning disable RCS1163, IDE0060, CA1707, CA1822
+
 namespace InnoWerks.Simulators
 {
-    public partial class Cpu
+    public abstract class MosTechnologiesCpu : ICpu
     {
         // IRQ, reset, NMI vectors
         public const ushort IrqVectorH = 0xFFFF;
@@ -24,38 +25,36 @@ namespace InnoWerks.Simulators
 
         public const ushort StackBase = 0x0100;
 
-        private readonly IMemory memory;
-
-        private readonly Action<Cpu, ushort> preExecutionCallback;
-
-        private readonly Action<Cpu> postExecutionCallback;
-
         public Registers Registers { get; private set; }
 
         public string OperandDisplay { get; private set; }
 
-        public CpuClass CpuClass { get; private set; }
+        public abstract CpuClass CpuClass { get; }
 
-        private bool illegalInstruction;
+        protected IMemory memory { get; init; }
 
-        public Cpu(
-            CpuClass cpuClass,
-            IMemory memory,
-            Action<Cpu, ushort> preExecutionCallback,
-            Action<Cpu> postExecutionCallback)
+        protected Action<ICpu, ushort> preExecutionCallback { get; init; }
+
+        protected Action<ICpu> postExecutionCallback { get; init; }
+
+        protected bool illegalInstructionEncountered { get; set; }
+
+        protected MosTechnologiesCpu(IMemory memory,
+                                     Action<ICpu, ushort> preExecutionCallback,
+                                     Action<ICpu> postExecutionCallback)
         {
-            CpuClass = cpuClass;
+            this.memory = memory;
 
             Registers = new();
 
-            this.memory = memory;
             this.preExecutionCallback = preExecutionCallback;
             this.postExecutionCallback = postExecutionCallback;
 
             Registers.Reset();
         }
 
-        #region Execution
+        protected abstract void Dispatch(byte operation, bool writeInstructions = false);
+
         public void Reset()
         {
             Registers.Reset();
@@ -125,11 +124,74 @@ namespace InnoWerks.Simulators
         {
             return (ushort)((0xff & StackPop()) | (0xff00 & (StackPop() << 8)));
         }
-        #endregion
 
-        //
-        // CPU Instructions
-        //
+        public int Run(bool stopOnBreak = false, bool writeInstructions = false, int stepsPerSecond = 0)
+        {
+            var instructionCount = 0;
+
+            while (true)
+            {
+                instructionCount++;
+
+                preExecutionCallback?.Invoke(this, Registers.ProgramCounter);
+
+                // T0
+                var operation = memory.Read(Registers.ProgramCounter);
+                // this is a bad hard-coding right now...
+                if (operation == 0x00)
+                {
+                    // BRK
+                    break;
+                }
+
+                Dispatch(operation, writeInstructions);
+
+                if (writeInstructions)
+                {
+                    Console.Error.WriteLine($"  {Registers.GetRegisterDisplay}   {Registers.InternalGetFlagsDisplay,-8}");
+                }
+
+                postExecutionCallback?.Invoke(this);
+
+                if (stepsPerSecond > 0)
+                {
+                    var t = Task.Run(async delegate
+                                {
+                                    await Task.Delay(new TimeSpan((long)(1.0 / stepsPerSecond * 1000) * TimeSpan.TicksPerMillisecond));
+                                    return 0;
+                                });
+                    t.Wait();
+                }
+            }
+
+            return instructionCount;
+        }
+
+        public bool Step(bool writeInstructions = false, bool returnPriorToBreak = false)
+        {
+            // for debugging we're just going to peek at the next
+            // instruction, and if it's both a BRK and we've been asked
+            // to NOT execute, then we'll return
+            var operation = memory.Peek(Registers.ProgramCounter);
+            if (operation == 0x00 && returnPriorToBreak == true)
+            {
+                return true;
+            }
+
+            preExecutionCallback?.Invoke(this, Registers.ProgramCounter);
+
+            // T0
+            operation = memory.Read(Registers.ProgramCounter);
+
+            // rest of memory cycles
+            Dispatch(operation, writeInstructions);
+
+            postExecutionCallback?.Invoke(this);
+
+            // hard-coded BRK, if hit we'll tell the call that we saw and executed a break
+            return operation == 0x00;
+        }
+
         #region InstructionDefinitions
         /// <summary>
         /// <para>ADC - Add with Carry 65C02</para>
@@ -1676,7 +1738,7 @@ namespace InnoWerks.Simulators
 
             if (bytes == 0)
             {
-                illegalInstruction = true;
+                illegalInstructionEncountered = true;
             }
 
             // all we can do is move the PC
@@ -1897,4 +1959,5 @@ namespace InnoWerks.Simulators
         }
         #endregion
     }
+
 }
