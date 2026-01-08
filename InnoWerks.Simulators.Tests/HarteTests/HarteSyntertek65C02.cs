@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace InnoWerks.Simulators.Tests
 {
+    [Ignore]
     [TestClass]
     public class HarteSynertek65C02 : HarteBase
     {

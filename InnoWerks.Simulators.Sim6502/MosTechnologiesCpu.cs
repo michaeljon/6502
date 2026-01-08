@@ -206,7 +206,7 @@ namespace InnoWerks.Simulators
         /// c ← Carry from ALU (bit 8/16 of result)
         /// </code>
         /// </summary>
-        public void ADC_CMOS(ushort addr, byte value)
+        public void ADC65C02(ushort addr, byte value)
         {
             int adjustment = Registers.Carry ? 0x01 : 0x00;
             int w;
@@ -257,7 +257,7 @@ namespace InnoWerks.Simulators
         /// c ← Carry from ALU (bit 8/16 of result)
         /// </code>
         /// </summary>
-        public void ADC_NMOS(ushort addr, byte value)
+        public void ADC6502(ushort addr, byte value)
         {
             int adjustment = Registers.Carry ? 0x01 : 0x00;
 
@@ -1301,7 +1301,7 @@ namespace InnoWerks.Simulators
         /// c ← Carry from ALU(bit 8/16 of result) (set if borrow not required)
         /// </code>
         /// </summary>
-        public void SBC_NMOS(ushort addr, byte value)
+        public void SBC6502(ushort addr, byte value)
         {
             int adjustment = Registers.Carry ? 0x00 : 0x01;
             int result = Registers.A - value - adjustment;
@@ -1357,11 +1357,11 @@ namespace InnoWerks.Simulators
         /// c ← Carry from ALU(bit 8/16 of result) (set if borrow not required)
         /// </code>
         /// </summary>
-        public void SBC_CMOS(ushort addr, byte value)
+        public void SBC65C02(ushort addr, byte value)
         {
             if (Registers.Decimal == false)
             {
-                ADC_CMOS(addr, RegisterMath.TruncateToByte(~value));
+                ADC65C02(addr, RegisterMath.TruncateToByte(~value));
             }
             else
             {
