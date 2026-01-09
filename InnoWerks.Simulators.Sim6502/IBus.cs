@@ -47,28 +47,6 @@ namespace InnoWerks.Simulators
         void Write(ushort address, byte value);
 
         /// <summary>
-        /// Allows for a non-cycle impacting read on the bus.
-        /// </summary>
-        /// <param name="address"></param>
-        /// <returns></returns>
-        ushort PeekWord(ushort address);
-
-        /// <summary>
-        /// Shortcut method to correctly read a word from a memory location.
-        /// Updates the cycle count accordingly.
-        /// </summary>
-        /// <param name="address"></param>
-        /// <returns></returns>
-        ushort ReadWord(ushort address);
-
-        /// <summary>
-        /// Writes a word to memory.
-        /// </summary>
-        /// <param name="address"></param>
-        /// <param name="value"></param>
-        void WriteWord(ushort address, ushort value);
-
-        /// <summary>
         /// Copies a "program" into RAM / ROM at the specified origin. This
         /// method does not impact cycle counts.
         /// </summary>

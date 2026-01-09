@@ -38,4 +38,15 @@
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
         <ServerGarbageCollection>true</ServerGarbageCollection>
     </PropertyGroup>
+
+    <PropertyGroup>
+        <!--
+        Use hard links to speed up build.
+        NOTE: This means dependencies' files might be locked on execute as well, so re-building them while the application is running might fail.
+        -->
+        <CreateHardLinksForAdditionalFilesIfPossible>true</CreateHardLinksForAdditionalFilesIfPossible>
+        <CreateHardLinksForCopyLocalIfPossible>true</CreateHardLinksForCopyLocalIfPossible>
+        <CreateHardLinksForCopyFilesToOutputDirectoryIfPossible>true</CreateHardLinksForCopyFilesToOutputDirectoryIfPossible>
+        <CreateHardLinksForPublishFilesIfPossible>true</CreateHardLinksForPublishFilesIfPossible>
+    </PropertyGroup>
 </Project>

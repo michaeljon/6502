@@ -26,7 +26,7 @@ namespace InnoWerks.Simulators.Tests
 
         protected virtual CpuClass CpuClass { get; }
 
-        protected string TestRoot => Environment.ExpandEnvironmentVariables("%HOME%/src/personal/working-6502");
+        protected string TestRoot => ".";
 
         protected static readonly JsonSerializerOptions SerializerOptions = new()
         {

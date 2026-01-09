@@ -125,6 +125,28 @@ namespace InnoWerks.Simulators
             return (ushort)((0xff & StackPop()) | (0xff00 & (StackPop() << 8)));
         }
 
+        public ushort PeekWord(ushort address)
+        {
+            var lo = bus.Peek(address);
+            var hi = bus.Peek((ushort)(address + 1));
+
+            return (ushort)((hi << 8) | lo);
+        }
+
+        public ushort ReadWord(ushort address)
+        {
+            var lo = bus.Read(address);
+            var hi = bus.Read((ushort)(address + 1));
+
+            return (ushort)((hi << 8) | lo);
+        }
+
+        public void WriteWord(ushort address, ushort value)
+        {
+            bus.Write(address, (byte)(value & 0x00ff));
+            bus.Write((ushort)(address + 1), (byte)((value >> 8) & 0xff));
+        }
+
         public (int intructionCount, int cycleCount) Run(bool stopOnBreak = false, bool writeInstructions = false, int stepsPerSecond = 0)
         {
             var instructionCount = 0;
@@ -1802,7 +1824,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeAbsolute()
         {
-            OperandDisplay = $"${bus.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4}";
+            OperandDisplay = $"${PeekWord((ushort)(Registers.ProgramCounter + 1)):X4}";
             return true;
         }
 
@@ -1830,7 +1852,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeAbsoluteXIndexed()
         {
-            OperandDisplay = $"${bus.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},X";
+            OperandDisplay = $"${PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},X";
             return true;
         }
 
@@ -1846,7 +1868,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeAbsoluteYIndexed()
         {
-            OperandDisplay = $"${bus.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},Y";
+            OperandDisplay = $"${PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},Y";
             return true;
         }
 
@@ -1914,7 +1936,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeAbsoluteIndexedIndirect()
         {
-            OperandDisplay = $"(${bus.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},X)";
+            OperandDisplay = $"(${PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},X)";
             return true;
         }
 
@@ -1960,7 +1982,7 @@ namespace InnoWerks.Simulators
         /// </summary>
         public bool DecodeAbsoluteIndirect()
         {
-            OperandDisplay = $"(${bus.PeekWord((ushort)(Registers.ProgramCounter + 1)):X4})";
+            OperandDisplay = $"(${PeekWord((ushort)(Registers.ProgramCounter + 1)):X4})";
             return true;
         }
         #endregion

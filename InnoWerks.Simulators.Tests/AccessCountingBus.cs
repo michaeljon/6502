@@ -56,47 +56,6 @@ namespace InnoWerks.Simulators.Tests
             return memory[address];
         }
 
-        public ushort PeekWord(ushort address)
-        {
-            var lo = memory[address];
-            var hi = memory[(ushort)(address + 1)];
-
-            return (ushort)((hi << 8) | lo);
-        }
-
-        public ushort ReadWord(ushort address)
-        {
-            IncCycles(1);
-
-            BusAccesses.Add(
-                new JsonHarteTestBusAccess()
-                {
-                    Address = address,
-                    Value = memory[address],
-                    Type = CycleType.Read
-                }
-            );
-
-            IncCycles(1);
-
-            BusAccesses.Add(
-                new JsonHarteTestBusAccess()
-                {
-                    Address = (ushort)(address + 1),
-                    Value = memory[(ushort)(address + 1)],
-                    Type = CycleType.Read
-                }
-            );
-
-            readCounts[address]++;
-            readCounts[(ushort)(address + 1)]++;
-
-            var lo = memory[address];
-            var hi = memory[(ushort)(address + 1)];
-
-            return (ushort)((hi << 8) | lo);
-        }
-
         public void Write(ushort address, byte value)
         {
             IncCycles(1);
@@ -113,37 +72,6 @@ namespace InnoWerks.Simulators.Tests
             writeCounts[address]++;
 
             memory[address] = value;
-        }
-
-        public void WriteWord(ushort address, ushort value)
-        {
-            IncCycles(1);
-
-            BusAccesses.Add(
-                new JsonHarteTestBusAccess()
-                {
-                    Address = address,
-                    Value = value,
-                    Type = CycleType.Write
-                }
-            );
-
-            IncCycles(1);
-
-            BusAccesses.Add(
-                new JsonHarteTestBusAccess()
-                {
-                    Address = (ushort)(address + 1),
-                    Value = value,
-                    Type = CycleType.Write
-                }
-            );
-
-            writeCounts[address]++;
-            writeCounts[(ushort)(address + 1)]++;
-
-            memory[address] = (byte)(value & 0x00ff);
-            memory[(ushort)(address + 1)] = (byte)((value >> 8) & 0xff);
         }
 
         public void Initialize(IEnumerable<JsonHarteRamEntry> mem)

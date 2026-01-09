@@ -4,12 +4,14 @@ using InnoWerks.Processors;
 
 namespace InnoWerks.Simulators
 {
+    public class InstructionSet : Dictionary<byte, OpCodeDefinition> { }
+
     //
     // See https://www.masswerk.at/nowgobang/2021/6502-illegal-opcodes for the DecodeUndefined sizes
     //
     public static class CpuInstructions
     {
-        public static Dictionary<byte, OpCodeDefinition> GetInstructionSet(CpuClass cpuClass)
+        public static InstructionSet GetInstructionSet(CpuClass cpuClass)
         {
             switch (cpuClass)
             {
@@ -27,7 +29,7 @@ namespace InnoWerks.Simulators
             }
         }
 
-        public static readonly Dictionary<byte, OpCodeDefinition> OpCode65C02 = new()
+        public static readonly InstructionSet OpCode65C02 = new()
         {
             { 0x00, new OpCodeDefinition(OpCode.BRK, (cpu, addr, value) => cpu.BRK(addr, value), (cpu) => cpu.DecodeStack(), AddressingMode.Stack) },
             { 0x01, new OpCodeDefinition(OpCode.ORA, (cpu, addr, value) => cpu.ORA(addr, value), (cpu) => cpu.DecodeXIndexedIndirect(), AddressingMode.XIndexedIndirect) },
@@ -302,7 +304,7 @@ namespace InnoWerks.Simulators
             { 0xff, new OpCodeDefinition(OpCode.BBS7, (cpu, addr, value) => cpu.BBS(addr, value, bit: 7), (cpu) => cpu.DecodeZeroPage(), AddressingMode.Relative) },
         };
 
-        public static readonly Dictionary<byte, OpCodeDefinition> OpCode6502 = new()
+        public static readonly InstructionSet OpCode6502 = new()
         {
             { 0x00, new OpCodeDefinition(OpCode.BRK, (cpu, addr, value) => cpu.BRK(addr, value), (cpu) => cpu.DecodeStack(), AddressingMode.Stack) },
             { 0x01, new OpCodeDefinition(OpCode.ORA, (cpu, addr, value) => cpu.ORA(addr, value), (cpu) => cpu.DecodeXIndexedIndirect(), AddressingMode.XIndexedIndirect) },

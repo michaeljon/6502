@@ -7,6 +7,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CommandLine;
 using InnoWerks.Assemblers;
+using InnoWerks.Emulators.Apple;
+using InnoWerks.Processors;
 using InnoWerks.Simulators;
 
 #pragma warning disable CA1822, RCS1213, SYSLIB1045
@@ -17,7 +19,16 @@ namespace Sim6502
     {
         private static bool keepRunning = true;
 
-        private readonly Bus memory = new();
+        private static AppleConfiguration configuration = new()
+        {
+            Model = AppleModel.AppleIIe,
+            CpuClass = CpuClass.WDC65C02,
+            Has80Column = true,
+            HasAuxMemory = true,
+            HasLowercase = true
+        };
+
+        private readonly AppleBus bus = new(configuration);
 
         private readonly Dictionary<ushort, byte> breakpoints = new();
 
@@ -61,14 +72,14 @@ namespace Sim6502
             );
             assembler.Assemble();
 
-            memory.LoadProgram(assembler.ObjectCode, options.Origin);
+            bus.LoadProgram(assembler.ObjectCode, options.Origin);
 
             Console.WriteLine($"Debugging {options.Input}");
             Console.WriteLine("? for help");
 
-            ICpu cpu = options.CpuClass == InnoWerks.Processors.CpuClass.WDC6502 ?
+            ICpu cpu = options.CpuClass == CpuClass.WDC6502 ?
                 new Cpu6502(
-                    memory,
+                    bus,
                     (cpu, programCounter) => { },
                     (cpu) =>
                     {
@@ -76,7 +87,7 @@ namespace Sim6502
                         Console.WriteLine($"PC:{cpu.Registers.ProgramCounter:X4} {cpu.Registers.GetRegisterDisplay} {cpu.Registers.InternalGetFlagsDisplay}");
                     }) :
                 new Cpu65C02(
-                    memory,
+                    bus,
                     (cpu, programCounter) => { },
                     (cpu) =>
                     {
@@ -85,8 +96,8 @@ namespace Sim6502
                     });
 
             // power up initialization
-            memory[MosTechnologiesCpu.RstVectorH] = (byte)((options.Origin & 0xff00) >> 8);
-            memory[MosTechnologiesCpu.RstVectorL] = (byte)(options.Origin & 0xff);
+            bus[MosTechnologiesCpu.RstVectorH] = (byte)((options.Origin & 0xff00) >> 8);
+            bus[MosTechnologiesCpu.RstVectorL] = (byte)(options.Origin & 0xff);
 
             cpu.Reset();
 
@@ -392,15 +403,15 @@ namespace Sim6502
 
         private void SetBreakpoint(ICpu cpu, ushort addr)
         {
-            breakpoints.Add(addr, memory[addr]);
-            memory[addr] = 0x00;
+            breakpoints.Add(addr, bus[addr]);
+            bus[addr] = 0x00;
 
             Console.WriteLine($"Breakpoint at {addr:X4} set");
         }
 
         private void ClearBreakpoint(ICpu cpu, ushort addr)
         {
-            memory[addr] = breakpoints[addr];
+            bus[addr] = breakpoints[addr];
             breakpoints.Remove(addr);
 
             Console.WriteLine($"Breakpoint at {addr:X4} cleared");
@@ -416,7 +427,7 @@ namespace Sim6502
 
             foreach (var (addr, value) in breakpoints)
             {
-                memory[addr] = value;
+                bus[addr] = value;
             }
 
             Console.WriteLine("Breakpoints cleared");
@@ -553,7 +564,7 @@ namespace Sim6502
         {
             for (var i = 0; i < bytes.Count; i++)
             {
-                memory[(ushort)(addr + i)] = bytes[i];
+                bus[(ushort)(addr + i)] = bytes[i];
             }
 
             Console.WriteLine($"{bytes.Count} bytes written to {addr:X4}");
@@ -569,7 +580,7 @@ namespace Sim6502
             // but for now
             for (var i = 0; i < len; i++)
             {
-                Console.WriteLine($"{(addr + i):X4}: ${memory[(ushort)(addr + i)]:X2}");
+                Console.WriteLine($"{(addr + i):X4}: ${bus[(ushort)(addr + i)]:X2}");
             }
         }
 
@@ -599,7 +610,7 @@ namespace Sim6502
                         Console.Write("  ");
                     }
 
-                    Console.Write("{0:X2} ", memory[(ushort)(l + b)]);
+                    Console.Write("{0:X2} ", bus[(ushort)(l + b)]);
                 }
 
                 Console.WriteLine();

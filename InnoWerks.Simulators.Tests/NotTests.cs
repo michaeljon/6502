@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using InnoWerks.Assemblers;
@@ -32,6 +33,11 @@ namespace InnoWerks.Simulators.Tests
             (0x650, 0x650 + 0x28, 20), (0x6d0, 0x6d0 + 0x28, 21), (0x750, 0x750 + 0x28, 22), (0x7d0, 0x7d0 + 0x28, 23),
         ];
 
+        [TestMethod]
+        public void WhereAmI()
+        {
+            Console.WriteLine(TestContext.TestResultsDirectory);
+        }
 
         [TestMethod]
         public void Generate6502OpCodeTable()
@@ -143,7 +149,7 @@ namespace InnoWerks.Simulators.Tests
             return (0, 0);
         }
 
-        private void GenerateOpTable(Dictionary<byte, OpCodeDefinition> opCodeTable)
+        private void GenerateOpTable(InstructionSet opCodeTable)
         {
             TestContext.WriteLine("\r");
             GenerateHeaderFooter();
