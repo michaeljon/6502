@@ -26,6 +26,8 @@ namespace InnoWerks.Simulators.Tests
 
         protected virtual CpuClass CpuClass { get; }
 
+        protected string TestRoot => Environment.ExpandEnvironmentVariables("%HOME%/src/personal/working-6502");
+
         protected static readonly JsonSerializerOptions SerializerOptions = new()
         {
             ReadCommentHandling = JsonCommentHandling.Skip,
@@ -128,7 +130,7 @@ namespace InnoWerks.Simulators.Tests
             };
 
             // run test
-            cpu.Step(writeInstructions: false);
+            var cycleCount = cpu.Step(writeInstructions: false);
 
             var finalRegisters = new Registers()
             {
@@ -148,7 +150,7 @@ namespace InnoWerks.Simulators.Tests
             // we can run these tests to this extent, after this i haven't implemented
             // the "undocumented" opcodes because, well, they're undocumented and
             // probably don't always behave like they should
-            if (ocd.AddressingMode != AddressingMode.Unknown)
+            if (ocd.OpCode != OpCode.Unknown)
             {
                 if (test.Final.S != cpu.Registers.StackPointer) { testFailed = true; results.Add($"{test.Name}: StackPointer expected {test.Final.S:X2} actual {cpu.Registers.StackPointer:X2}"); }
                 if (test.Final.A != cpu.Registers.A) { testFailed = true; results.Add($"{test.Name}: A expected {test.Final.A:X2} actual {cpu.Registers.A:X2}"); }

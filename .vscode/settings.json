@@ -9,5 +9,5 @@
   "csharp.debug.requireExactSource": false,
   "csharp.preview.improvedLaunchExperience": true,
 
-  "editor.formatOnSave": false
+  "editor.formatOnSave": true
 }

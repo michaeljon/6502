@@ -19,7 +19,7 @@ namespace InnoWerks.Simulators
                         Action<ICpu> postExecutionCallback)
             : base(bus, preExecutionCallback, postExecutionCallback) { }
 
-        protected override int Dispatch(byte operation, bool writeInstructions = false)
+        protected override void Dispatch(byte operation, bool writeInstructions = false)
         {
             OpCodeDefinition opCodeDefinition =
                 CpuInstructions.OpCode65C02[operation];
@@ -32,6 +32,8 @@ namespace InnoWerks.Simulators
                     // This is a JAM / KIL
                     throw new IllegalOpCodeException(Registers.ProgramCounter, operation);
                 }
+
+                return;
             }
 
             var stepToExecute = $"{Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}";
@@ -40,10 +42,32 @@ namespace InnoWerks.Simulators
                 Console.Error.Write(stepToExecute);
             }
 
-            bus.BeginTransaction();
-
             switch (opCodeDefinition.OpCode)
             {
+                // This is the case where we're running into an unknown or undocumented
+                // opcode. What we need to do is handle the bus access and cycle counting
+                // correctly for the addressing mode.
+                case OpCode.Unknown:
+                    switch (opCodeDefinition.AddressingMode)
+                    {
+                        case AddressingMode.Immediate:
+                            bus.Read((ushort)(Registers.ProgramCounter + 1));
+                            bus.Read((ushort)(Registers.ProgramCounter + 2));
+
+                            Registers.ProgramCounter += 2;
+
+                            break;
+
+                        case AddressingMode.Implicit:
+                            bus.Read((ushort)(Registers.ProgramCounter + 1));
+
+                            Registers.ProgramCounter++;
+
+                            break;
+                    }
+
+                    break;
+
                 // A. 1. SINGLE-BYTE INSTRUCTIONS
                 // These single-byte instructions require two cycles to execute. During the second
                 // cycle the address of the next instruction in program sequence will be placed on
@@ -927,8 +951,6 @@ namespace InnoWerks.Simulators
                     // this is unexpected...
                     throw new IllegalOpCodeException(Registers.ProgramCounter, operation);
             }
-
-            return bus.EndTransaction();
         }
     }
 }

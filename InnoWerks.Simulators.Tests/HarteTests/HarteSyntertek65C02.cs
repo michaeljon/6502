@@ -1,4 +1,4 @@
-using System;
+using System.IO;
 using InnoWerks.Processors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -8,7 +8,7 @@ namespace InnoWerks.Simulators.Tests
     [TestClass]
     public class HarteSynertek65C02 : HarteBase
     {
-        protected override string BasePath => Environment.ExpandEnvironmentVariables("%HOME%/src/6502/working/65x02/synertek65c02/v1");
+        protected override string BasePath => Path.Join(TestRoot, "65x02/synertek65c02/v1");
 
         protected override CpuClass CpuClass => CpuClass.Synertek65C02;
 

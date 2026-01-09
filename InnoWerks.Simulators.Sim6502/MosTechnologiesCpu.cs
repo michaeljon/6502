@@ -53,7 +53,7 @@ namespace InnoWerks.Simulators
             Registers.Reset();
         }
 
-        protected abstract int Dispatch(byte operation, bool writeInstructions = false);
+        protected abstract void Dispatch(byte operation, bool writeInstructions = false);
 
         public void Reset()
         {
@@ -128,7 +128,8 @@ namespace InnoWerks.Simulators
         public (int intructionCount, int cycleCount) Run(bool stopOnBreak = false, bool writeInstructions = false, int stepsPerSecond = 0)
         {
             var instructionCount = 0;
-            var cycleCount = 0;
+
+            bus.BeginTransaction();
 
             while (true)
             {
@@ -145,7 +146,7 @@ namespace InnoWerks.Simulators
                     break;
                 }
 
-                cycleCount += Dispatch(operation, writeInstructions);
+                Dispatch(operation, writeInstructions);
 
                 if (writeInstructions)
                 {
@@ -165,11 +166,15 @@ namespace InnoWerks.Simulators
                 }
             }
 
+            int cycleCount = bus.EndTransaction();
+
             return (instructionCount, cycleCount);
         }
 
         public int Step(bool writeInstructions = false, bool returnPriorToBreak = false)
         {
+            bus.BeginTransaction();
+
             // for debugging we're just going to peek at the next
             // instruction, and if it's both a BRK and we've been asked
             // to NOT execute, then we'll return
@@ -185,12 +190,12 @@ namespace InnoWerks.Simulators
             operation = bus.Read(Registers.ProgramCounter);
 
             // rest of memory cycles
-            int cycleCount = Dispatch(operation, writeInstructions);
+            Dispatch(operation, writeInstructions);
 
             postExecutionCallback?.Invoke(this);
 
             // hard-coded BRK, if hit we'll tell the caller that we saw and executed a break
-            return cycleCount;
+            return bus.EndTransaction();
         }
 
         #region InstructionDefinitions
@@ -1740,11 +1745,11 @@ namespace InnoWerks.Simulators
             if (bytes == 0)
             {
                 illegalInstructionEncountered = true;
+                return false;
             }
 
             // all we can do is move the PC
             Registers.ProgramCounter = (ushort)(Registers.ProgramCounter + bytes);
-
             return false;
         }
 

@@ -1,4 +1,4 @@
-using System;
+using System.IO;
 using InnoWerks.Processors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -7,7 +7,7 @@ namespace InnoWerks.Simulators.Tests
     [TestClass]
     public class Harte6502 : HarteBase
     {
-        protected override string BasePath => Environment.ExpandEnvironmentVariables("%HOME%/src/6502/working/65x02/6502/v1");
+        protected override string BasePath => Path.Join(TestRoot, "65x02/6502/v1");
 
         protected override CpuClass CpuClass => CpuClass.WDC6502;
 
