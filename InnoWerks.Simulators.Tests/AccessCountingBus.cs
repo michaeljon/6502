@@ -31,7 +31,7 @@ namespace InnoWerks.Simulators.Tests
             return transactionCycles;
         }
 
-        public long CycleCount { get; private set; }
+        public ulong CycleCount { get; private set; }
 
         public byte Peek(ushort address)
         {
@@ -40,7 +40,7 @@ namespace InnoWerks.Simulators.Tests
 
         public byte Read(ushort address)
         {
-            IncCycles(1);
+            Tick(1);
 
             BusAccesses.Add(
                 new JsonHarteTestBusAccess()
@@ -58,7 +58,7 @@ namespace InnoWerks.Simulators.Tests
 
         public void Write(ushort address, byte value)
         {
-            IncCycles(1);
+            Tick(1);
 
             BusAccesses.Add(
                 new JsonHarteTestBusAccess()
@@ -149,9 +149,9 @@ namespace InnoWerks.Simulators.Tests
 
         public List<JsonHarteTestBusAccess> BusAccesses { get; init; }
 
-        private void IncCycles(int howMany)
+        private void Tick(int howMany)
         {
-            CycleCount += howMany;
+            CycleCount += (ulong)howMany;
             transactionCycles += howMany;
         }
     }

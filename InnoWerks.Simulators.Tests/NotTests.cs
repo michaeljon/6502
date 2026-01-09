@@ -86,6 +86,40 @@ namespace InnoWerks.Simulators.Tests
         }
 
         [TestMethod]
+        public void FastLineGeneratorWorks()
+        {
+            // top 1/3
+            Assert.AreEqual(0x0400, AddressFromPageRowCol(false, 0, 0));
+            Assert.AreEqual(0x0481, AddressFromPageRowCol(false, 1, 1));
+            Assert.AreEqual(0x0502, AddressFromPageRowCol(false, 2, 2));
+            Assert.AreEqual(0x0583, AddressFromPageRowCol(false, 3, 3));
+            Assert.AreEqual(0x0604, AddressFromPageRowCol(false, 4, 4));
+            Assert.AreEqual(0x0685, AddressFromPageRowCol(false, 5, 5));
+            Assert.AreEqual(0x0706, AddressFromPageRowCol(false, 6, 6));
+            Assert.AreEqual(0x0787, AddressFromPageRowCol(false, 7, 7));
+
+            // middle 1/3
+            Assert.AreEqual(0x0428, AddressFromPageRowCol(false, 8, 0));
+            Assert.AreEqual(0x04a8, AddressFromPageRowCol(false, 9, 0));
+            Assert.AreEqual(0x0528, AddressFromPageRowCol(false, 10, 0));
+            Assert.AreEqual(0x05a8, AddressFromPageRowCol(false, 11, 0));
+            Assert.AreEqual(0x0628, AddressFromPageRowCol(false, 12, 0));
+            Assert.AreEqual(0x06a8, AddressFromPageRowCol(false, 13, 0));
+            Assert.AreEqual(0x0728, AddressFromPageRowCol(false, 14, 0));
+            Assert.AreEqual(0x07a8, AddressFromPageRowCol(false, 15, 0));
+
+            // bottom 1/3
+            Assert.AreEqual(0x0450, AddressFromPageRowCol(false, 16, 0));
+            Assert.AreEqual(0x04d0, AddressFromPageRowCol(false, 17, 0));
+            Assert.AreEqual(0x0550, AddressFromPageRowCol(false, 18, 0));
+            Assert.AreEqual(0x05d0, AddressFromPageRowCol(false, 19, 0));
+            Assert.AreEqual(0x0650, AddressFromPageRowCol(false, 20, 0));
+            Assert.AreEqual(0x06d0, AddressFromPageRowCol(false, 21, 0));
+            Assert.AreEqual(0x0750, AddressFromPageRowCol(false, 22, 0));
+            Assert.AreEqual(0x07d0, AddressFromPageRowCol(false, 23, 0));
+        }
+
+        [TestMethod]
         public void RowColFromAddress()
         {
             // top 1/3
@@ -147,6 +181,23 @@ namespace InnoWerks.Simulators.Tests
             }
 
             return (0, 0);
+        }
+        private static ushort AddressFromPageRowCol(bool page2, int row, int col)
+        {
+            int pageOffset = page2 ? 0x800 : 0x400;
+
+            int[] textRowBase =
+            [
+                0x000, 0x080, 0x100, 0x180,
+                0x200, 0x280, 0x300, 0x380
+            ];
+
+            return (ushort)(
+                pageOffset +
+                textRowBase[row & 0x07] +
+                (row >> 3) * 40 +
+                col
+            );
         }
 
         private void GenerateOpTable(InstructionSet opCodeTable)

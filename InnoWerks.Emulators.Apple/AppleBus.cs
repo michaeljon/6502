@@ -43,7 +43,7 @@ namespace InnoWerks.Emulators.Apple
             return transactionCycles;
         }
 
-        public long CycleCount { get; private set; }
+        public ulong CycleCount { get; private set; }
 
         public byte Peek(ushort address)
         {
@@ -99,6 +99,10 @@ namespace InnoWerks.Emulators.Apple
             if (origin >= 0xD000)
             {
                 Array.Copy(objectCode, 0, rom, origin - 0xD000, objectCode.Length);
+
+                // power up initialization
+                rom[MosTechnologiesCpu.RstVectorH - 0xD000] = (byte)((origin & 0xff00) >> 8);
+                rom[MosTechnologiesCpu.RstVectorL - 0xD000] = (byte)(origin & 0xff);
             }
             else
             {
@@ -152,7 +156,7 @@ namespace InnoWerks.Emulators.Apple
 
         private void Tick(int howMany)
         {
-            CycleCount += howMany;
+            CycleCount += (ulong)howMany;
             transactionCycles += howMany;
         }
     }

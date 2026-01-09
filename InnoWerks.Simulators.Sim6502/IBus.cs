@@ -21,7 +21,7 @@ namespace InnoWerks.Simulators
         /// Returns the current CPU cycle count since the
         /// last CPU reset.
         /// </summary>
-        long CycleCount { get; }
+        ulong CycleCount { get; }
 
         /// <summary>
         /// Allows for a non-cycle impacting read on the bus.

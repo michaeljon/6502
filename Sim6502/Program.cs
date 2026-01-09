@@ -77,6 +77,10 @@ namespace Sim6502
             Console.WriteLine($"Debugging {options.Input}");
             Console.WriteLine("? for help");
 
+            // power up initialization
+            bus[MosTechnologiesCpu.RstVectorH] = (byte)((options.Origin & 0xff00) >> 8);
+            bus[MosTechnologiesCpu.RstVectorL] = (byte)(options.Origin & 0xff);
+
             ICpu cpu = options.CpuClass == CpuClass.WDC6502 ?
                 new Cpu6502(
                     bus,
@@ -94,10 +98,6 @@ namespace Sim6502
                         Console.WriteLine();
                         Console.WriteLine($"PC:{cpu.Registers.ProgramCounter:X4} {cpu.Registers.GetRegisterDisplay} {cpu.Registers.InternalGetFlagsDisplay}");
                     });
-
-            // power up initialization
-            bus[MosTechnologiesCpu.RstVectorH] = (byte)((options.Origin & 0xff00) >> 8);
-            bus[MosTechnologiesCpu.RstVectorL] = (byte)(options.Origin & 0xff);
 
             cpu.Reset();
 

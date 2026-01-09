@@ -17,8 +17,6 @@ namespace Emu6502
 
         public void Render()
         {
-            Console.SetCursorPosition(0, 0);
-
             bool page2 = softSwitches.Page2;
             Span<char> line = stackalloc char[40];
 
@@ -32,7 +30,8 @@ namespace Emu6502
                     line[col] = DecodeAppleChar(b);
                 }
 
-                Console.WriteLine(line);
+                Console.SetCursorPosition(0, row);
+                Console.Write(line);
             }
         }
 
@@ -43,7 +42,7 @@ namespace Emu6502
 
             // Apple II uses ASCII-ish set
             if (b < 0x20)
-                return ' ';
+                return '.';
 
             return (char)b;
         }
@@ -65,5 +64,47 @@ namespace Emu6502
             0x000, 0x080, 0x100, 0x180,
             0x200, 0x280, 0x300, 0x380
         ];
+
+        public void RenderPage(byte page)
+        {
+            Console.SetCursorPosition(0, 0);
+            PrintPage(page);
+        }
+
+        private void WriteDisplayRam(bool page2)
+        {
+            Console.Clear();
+
+            for (byte p = 0; p < 4; p++)
+            {
+                PrintPage((byte)((page2 == false ? 0x04 : 0x08) + p));
+            }
+        }
+
+        private void PrintPage(byte page)
+        {
+            ArgumentNullException.ThrowIfNull(bus);
+
+            for (var l = page * 0x100; l < (page + 1) * 0x100; l += 16)
+            {
+                Console.Write("{0:X4}:  ", l);
+
+                for (var b = 0; b < 8; b++)
+                {
+                    Console.Write("{0:X2} ", bus[(ushort)(l + b)]);
+                }
+
+                Console.Write("  ");
+
+                for (var b = 8; b < 16; b++)
+                {
+                    Console.Write("{0:X2} ", bus[(ushort)(l + b)]);
+                }
+
+                Console.WriteLine("");
+            }
+
+            Console.WriteLine("");
+        }
     }
 }
