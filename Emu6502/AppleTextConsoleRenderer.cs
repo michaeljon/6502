@@ -20,6 +20,8 @@ namespace Emu6502
             bool page2 = softSwitches.Page2;
             Span<char> line = stackalloc char[40];
 
+            Console.SetCursorPosition(0, 0);
+
             for (int row = 0; row < 24; row++)
             {
                 for (int col = 0; col < 40; col++)
@@ -30,8 +32,7 @@ namespace Emu6502
                     line[col] = DecodeAppleChar(b);
                 }
 
-                Console.SetCursorPosition(0, row);
-                Console.Write(line);
+                Console.WriteLine(line);
             }
         }
 
@@ -42,7 +43,7 @@ namespace Emu6502
 
             // Apple II uses ASCII-ish set
             if (b < 0x20)
-                return '.';
+                return ' ';
 
             return (char)b;
         }
@@ -71,13 +72,37 @@ namespace Emu6502
             PrintPage(page);
         }
 
-        private void WriteDisplayRam(bool page2)
+        public void WriteDisplayRam(bool page2, bool asChar)
         {
             Console.Clear();
 
-            for (byte p = 0; p < 4; p++)
+            byte page = page2 == false ? (byte)4 : (byte)8;
+            int stride = 40;
+
+            for (byte p = page; p < page + 4; p++)
             {
-                PrintPage((byte)((page2 == false ? 0x04 : 0x08) + p));
+                for (var l = page * 0x100; l < (page + 1) * 0x100; l += stride)
+                {
+                    Console.Write("{0:X4}:  ", l);
+
+                    for (var b = 0; b < stride; b++)
+                    {
+                        var val = bus.Peek((ushort)(l + b));
+
+                        if (asChar == false)
+                        {
+                            Console.Write("{0:X2} ", val);
+                        }
+                        else
+                        {
+                            Console.Write("{0} ", DecodeAppleChar(val));
+                        }
+                    }
+
+                    Console.WriteLine("");
+                }
+
+                Console.WriteLine("");
             }
         }
 
@@ -91,14 +116,14 @@ namespace Emu6502
 
                 for (var b = 0; b < 8; b++)
                 {
-                    Console.Write("{0:X2} ", bus[(ushort)(l + b)]);
+                    Console.Write("{0:X2} ", bus.Peek((ushort)(l + b)));
                 }
 
                 Console.Write("  ");
 
                 for (var b = 8; b < 16; b++)
                 {
-                    Console.Write("{0:X2} ", bus[(ushort)(l + b)]);
+                    Console.Write("{0:X2} ", bus.Peek((ushort)(l + b)));
                 }
 
                 Console.WriteLine("");

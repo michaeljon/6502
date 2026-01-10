@@ -38,6 +38,11 @@ namespace InnoWerks.Simulators.Tests
             return memory[address];
         }
 
+        public void Poke(ushort address, byte value)
+        {
+            memory[address] = value;
+        }
+
         public byte Read(ushort address)
         {
             Tick(1);
@@ -87,24 +92,18 @@ namespace InnoWerks.Simulators.Tests
             }
         }
 
-        public void LoadProgram(byte[] objectCode, ushort origin)
+        public void LoadProgramToRom(byte[] objectCode)
+        {
+            ArgumentNullException.ThrowIfNull(objectCode);
+
+            Array.Copy(objectCode, 0, memory, 0, objectCode.Length);
+        }
+
+        public void LoadProgramToRam(byte[] objectCode, ushort origin)
         {
             ArgumentNullException.ThrowIfNull(objectCode);
 
             Array.Copy(objectCode, 0, memory, origin, objectCode.Length);
-        }
-
-        public byte this[ushort address]
-        {
-            get
-            {
-                return memory[address];
-            }
-
-            set
-            {
-                memory[address] = value;
-            }
         }
 
         public (bool matches, ushort differsAtAddr, byte expectedValue, byte actualValue) ValidateMemory(IEnumerable<JsonHarteRamEntry> mem)

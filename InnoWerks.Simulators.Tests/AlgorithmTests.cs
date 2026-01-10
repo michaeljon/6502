@@ -23,11 +23,11 @@ namespace InnoWerks.Simulators.Tests
             assembler.Assemble();
 
             var bus = new AccessCountingBus();
-            bus.LoadProgram(assembler.ObjectCode, Origin);
+            bus.LoadProgramToRam(assembler.ObjectCode, Origin);
 
             // power up initialization
-            bus[MosTechnologiesCpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
-            bus[MosTechnologiesCpu.RstVectorL] = InitializationVector & 0xff;
+            bus.Poke(MosTechnologiesCpu.RstVectorH, (byte)((InitializationVector & 0xff00) >> 8));
+            bus.Poke(MosTechnologiesCpu.RstVectorL, (byte)(InitializationVector & 0xff));
 
             var cpu = new Cpu65C02(
                 bus,
@@ -58,11 +58,11 @@ namespace InnoWerks.Simulators.Tests
             assembler.Assemble();
 
             var bus = new AccessCountingBus();
-            bus.LoadProgram(assembler.ObjectCode, Origin);
+            bus.LoadProgramToRam(assembler.ObjectCode, Origin);
 
             // power up initialization
-            bus[MosTechnologiesCpu.RstVectorH] = (InitializationVector & 0xff00) >> 8;
-            bus[MosTechnologiesCpu.RstVectorL] = InitializationVector & 0xff;
+            bus.Poke(MosTechnologiesCpu.RstVectorH, (byte)((InitializationVector & 0xff00) >> 8));
+            bus.Poke(MosTechnologiesCpu.RstVectorL, (byte)(InitializationVector & 0xff));
 
             var cpu = new Cpu6502(
                 bus,

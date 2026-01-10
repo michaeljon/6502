@@ -72,14 +72,14 @@ namespace Sim6502
             );
             assembler.Assemble();
 
-            bus.LoadProgram(assembler.ObjectCode, options.Origin);
+            bus.LoadProgramToRam(assembler.ObjectCode, options.Origin);
 
             Console.WriteLine($"Debugging {options.Input}");
             Console.WriteLine("? for help");
 
             // power up initialization
-            bus[MosTechnologiesCpu.RstVectorH] = (byte)((options.Origin & 0xff00) >> 8);
-            bus[MosTechnologiesCpu.RstVectorL] = (byte)(options.Origin & 0xff);
+            bus.Poke(MosTechnologiesCpu.RstVectorH, (byte)((options.Origin & 0xff00) >> 8));
+            bus.Poke(MosTechnologiesCpu.RstVectorL, (byte)(options.Origin & 0xff));
 
             ICpu cpu = options.CpuClass == CpuClass.WDC6502 ?
                 new Cpu6502(
@@ -403,15 +403,15 @@ namespace Sim6502
 
         private void SetBreakpoint(ICpu cpu, ushort addr)
         {
-            breakpoints.Add(addr, bus[addr]);
-            bus[addr] = 0x00;
+            breakpoints.Add(addr, bus.Peek(addr));
+            bus.Poke(addr, 0x00);
 
             Console.WriteLine($"Breakpoint at {addr:X4} set");
         }
 
         private void ClearBreakpoint(ICpu cpu, ushort addr)
         {
-            bus[addr] = breakpoints[addr];
+            bus.Poke(addr, breakpoints[addr]);
             breakpoints.Remove(addr);
 
             Console.WriteLine($"Breakpoint at {addr:X4} cleared");
@@ -427,7 +427,7 @@ namespace Sim6502
 
             foreach (var (addr, value) in breakpoints)
             {
-                bus[addr] = value;
+                bus.Poke(addr, value);
             }
 
             Console.WriteLine("Breakpoints cleared");
@@ -564,7 +564,7 @@ namespace Sim6502
         {
             for (var i = 0; i < bytes.Count; i++)
             {
-                bus[(ushort)(addr + i)] = bytes[i];
+                bus.Poke((ushort)(addr + i), bytes[i]);
             }
 
             Console.WriteLine($"{bytes.Count} bytes written to {addr:X4}");
@@ -580,7 +580,7 @@ namespace Sim6502
             // but for now
             for (var i = 0; i < len; i++)
             {
-                Console.WriteLine($"{(addr + i):X4}: ${bus[(ushort)(addr + i)]:X2}");
+                Console.WriteLine($"{(addr + i):X4}: ${bus.Peek((ushort)(addr + i)):X2}");
             }
         }
 
@@ -610,7 +610,7 @@ namespace Sim6502
                         Console.Write("  ");
                     }
 
-                    Console.Write("{0:X2} ", bus[(ushort)(l + b)]);
+                    Console.Write("{0:X2} ", bus.Peek((ushort)(l + b)));
                 }
 
                 Console.WriteLine();

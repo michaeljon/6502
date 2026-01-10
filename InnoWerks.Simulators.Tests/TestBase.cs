@@ -63,23 +63,23 @@ namespace InnoWerks.Simulators.Tests
         }
 
 
-        protected ICpu RunTinyTest(IBus memory, Dictionary<ushort, LineInformation> code, CpuClass cpuClass, int lines = 1)
+        protected ICpu RunTinyTest(IBus bus, Dictionary<ushort, LineInformation> code, CpuClass cpuClass, int lines = 1)
         {
-            ArgumentNullException.ThrowIfNull(memory);
+            ArgumentNullException.ThrowIfNull(bus);
 
             // power up initialization
-            memory[MosTechnologiesCpu.RstVectorH] = 0x00;
-            memory[MosTechnologiesCpu.RstVectorL] = 0x00;
+            bus.Poke(MosTechnologiesCpu.RstVectorH, 0x00);
+            bus.Poke(MosTechnologiesCpu.RstVectorL, 0x00);
 
             ICpu cpu = cpuClass == CpuClass.WDC6502 ?
                 new Cpu6502(
-                    memory,
-                    (cpu, pc) => DummyTraceCallback(cpu, pc, memory, code),
-                    (cpu) => DummyLoggerCallback(cpu, memory, lines)) :
+                    bus,
+                    (cpu, pc) => DummyTraceCallback(cpu, pc, bus, code),
+                    (cpu) => DummyLoggerCallback(cpu, bus, lines)) :
                 new Cpu65C02(
-                    memory,
-                    (cpu, pc) => DummyTraceCallback(cpu, pc, memory, code),
-                    (cpu) => DummyLoggerCallback(cpu, memory, lines));
+                    bus,
+                    (cpu, pc) => DummyTraceCallback(cpu, pc, bus, code),
+                    (cpu) => DummyLoggerCallback(cpu, bus, lines));
 
             cpu.Reset();
             if (code != null)
@@ -100,9 +100,9 @@ namespace InnoWerks.Simulators.Tests
             return cpu;
         }
 
-        protected void PrintPage(IBus memory, byte page)
+        protected void PrintPage(IBus bus, byte page)
         {
-            ArgumentNullException.ThrowIfNull(memory);
+            ArgumentNullException.ThrowIfNull(bus);
 
             for (var l = page * 0x100; l < (page + 1) * 0x100; l += 16)
             {
@@ -110,14 +110,14 @@ namespace InnoWerks.Simulators.Tests
 
                 for (var b = 0; b < 8; b++)
                 {
-                    Console.Write("{0:X2} ", memory[(ushort)(l + b)]);
+                    Console.Write("{0:X2} ", bus.Peek((ushort)(l + b)));
                 }
 
                 Console.Write("  ");
 
                 for (var b = 8; b < 16; b++)
                 {
-                    Console.Write("{0:X2} ", memory[(ushort)(l + b)]);
+                    Console.Write("{0:X2} ", bus.Peek((ushort)(l + b)));
                 }
 
                 Console.WriteLine("");
@@ -126,7 +126,7 @@ namespace InnoWerks.Simulators.Tests
             Console.WriteLine("");
         }
 
-        private static void PrintMemoryLines(IBus memory, int lines)
+        private static void PrintMemoryLines(IBus bus, int lines)
         {
             if (lines == 0)
             {
@@ -155,14 +155,14 @@ namespace InnoWerks.Simulators.Tests
 
                 for (var b = 0; b < 8; b++)
                 {
-                    Console.Write($"{memory[(ushort)((l * 16) + b)]:X2} ");
+                    Console.Write($"{bus.Peek((ushort)((l * 16) + b)):X2} ");
                 }
 
                 Console.Write("\t  ");
 
                 for (var b = 8; b < 16; b++)
                 {
-                    Console.Write($"{memory[(ushort)((l * 16) + b)]:X2} ");
+                    Console.Write($"{bus.Peek((ushort)((l * 16) + b)):X2} ");
                 }
 
                 Console.WriteLine("");

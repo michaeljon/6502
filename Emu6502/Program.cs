@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using CommandLine;
 using InnoWerks.Emulators.Apple;
 using InnoWerks.Simulators;
@@ -13,12 +14,6 @@ namespace Emu6502
     internal sealed class Program
     {
         private static bool keepRunning = true;
-
-        private const bool VerboseSteps = false;
-
-        private static int stepIndex;
-
-        private static readonly List<string> steps = ["|", "/", "-", "\\"];
 
         public static void Main(string[] args)
         {
@@ -59,16 +54,33 @@ namespace Emu6502
 
             var config = new AppleConfiguration
             {
-                Model = AppleModel.AppleIIe,
+                Model = AppleModel.AppleII,
                 HasAuxMemory = true
             };
 
             var bus = new AppleBus(config);
-            bus.LoadProgram(bytes, options.Location);
+            var keyboard = bus.Keyboard;
 
-            // power up initialization
-            bus[MosTechnologiesCpu.RstVectorH] = (byte)((options.Location & 0xff00) >> 8);
-            bus[MosTechnologiesCpu.RstVectorL] = (byte)(options.Location & 0xff);
+            Task.Run(() =>
+            {
+                while (keepRunning)
+                {
+                    if (!Console.KeyAvailable)
+                    {
+                        Thread.Sleep(1);
+                        continue;
+                    }
+
+                    var keyInfo = Console.ReadKey(intercept: true);
+                    var appleKey = MapToAppleKey(keyInfo);
+
+                    if (appleKey != 0)
+                        keyboard.KeyDown(appleKey);
+                }
+            });
+
+
+            bus.LoadProgramToRom(bytes);
 
             var cpu = new Cpu65C02(
                 bus,
@@ -77,7 +89,6 @@ namespace Emu6502
                 {
                     if (keepRunning == false)
                     {
-                        Console.Clear();
                         Console.CursorVisible = true;
                         Environment.Exit(0);
                     }
@@ -97,14 +108,15 @@ namespace Emu6502
 
                 while (bus.CycleCount < target)
                 {
-                    cpu.Step(writeInstructions: VerboseSteps);
-                    // Console.ReadKey();
+                    cpu.Step(writeInstructions: options.SingleStep);
+
+                    if (options.SingleStep == true)
+                    {
+                        Console.ReadKey();
+                    }
                 }
 
-                renderer.RenderPage(1);
-
-                // Console.SetCursorPosition(0, 0);
-                // Console.Write("{0} -- {1}", steps[stepIndex++ % steps.Count], bus.CycleCount);
+                if (options.SingleStep == false) { renderer.Render(); }
 
                 Thread.Sleep(16);
             }
@@ -116,6 +128,25 @@ namespace Emu6502
 #pragma warning disable CS0162 // Unreachable code detected
             return 0;
 #pragma warning restore CS0162 // Unreachable code detected
+        }
+
+        static byte MapToAppleKey(ConsoleKeyInfo key)
+        {
+            if (key.Key == ConsoleKey.Enter)
+                return 0x8D;
+
+            if (key.Key == ConsoleKey.Backspace)
+                return 0x88;
+
+            if (key.Key == ConsoleKey.Escape)
+                return 0x9B;
+
+            char c = char.ToUpperInvariant(key.KeyChar);
+
+            if (c >= 0x20 && c <= 0x7E)
+                return (byte)c;
+
+            return 0;
         }
     }
 }

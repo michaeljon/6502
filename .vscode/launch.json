@@ -43,14 +43,7 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/Emu6502/bin/Debug/net10.0/Emu6502.dll",
-      "args": [
-        "--rom",
-        "../apple2o.rom",
-        "--location",
-        "53248",
-        "--speed",
-        "0"
-      ],
+      "args": ["--rom", "../apple2e.rom", "--speed", "0", "--single-step"],
       "cwd": "${workspaceFolder}/Emu6502",
       "console": "integratedTerminal",
       "stopAtEntry": false,

@@ -25,7 +25,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(0x10, cpu.Registers.A);
@@ -44,7 +44,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(0x0A, cpu.Registers.A);
@@ -64,7 +64,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(0x10, cpu.Registers.A);
@@ -84,10 +84,10 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
-            Assert.AreEqual(0x0a, bus[0xe0]);
+            Assert.AreEqual(0x0a, bus.Peek(0xe0));
         }
 
         [TestMethod]
@@ -104,7 +104,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
@@ -125,7 +125,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
@@ -146,7 +146,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
@@ -167,7 +167,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsFalse(cpu.Registers.Carry);
@@ -188,7 +188,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
@@ -209,7 +209,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
@@ -230,7 +230,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
@@ -251,7 +251,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Carry);
@@ -272,7 +272,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC65C02);
             Assert.IsFalse(cpu.Registers.Carry);
@@ -293,7 +293,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC65C02);
             Assert.IsFalse(cpu.Registers.Carry);
@@ -314,7 +314,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Overflow);
@@ -334,7 +334,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Zero);
@@ -355,7 +355,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(0x9a, cpu.Registers.A);
@@ -376,7 +376,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC65C02);
             Assert.AreEqual(0x00, cpu.Registers.A);
@@ -397,7 +397,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.IsTrue(cpu.Registers.Zero);
@@ -422,7 +422,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(c, cpu.Registers.Carry);
@@ -449,7 +449,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC65C02);
             Assert.AreEqual(c, cpu.Registers.Carry);
@@ -474,7 +474,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(c, cpu.Registers.Carry);
@@ -499,7 +499,7 @@ namespace InnoWerks.Simulators.Tests
                 0x0000
             );
             assembler.Assemble();
-            bus.LoadProgram(assembler.ObjectCode, 0);
+            bus.LoadProgramToRam(assembler.ObjectCode, 0);
 
             var cpu = RunTinyTest(bus, assembler.ProgramByAddress, CpuClass.WDC6502);
             Assert.AreEqual(c, cpu.Registers.Carry);

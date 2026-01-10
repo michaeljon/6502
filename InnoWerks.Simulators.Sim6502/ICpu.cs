@@ -17,7 +17,8 @@ namespace InnoWerks.Simulators
         CpuClass CpuClass { get; }
 
         /// <summary>
-        /// Provides access to the CPU's register set
+        /// Provides access to the CPU's register set. This is used primarily
+        /// as a development feature.
         /// </summary>
         Registers Registers { get; }
 
@@ -37,7 +38,8 @@ namespace InnoWerks.Simulators
         (int intructionCount, int cycleCount) Run(bool stopOnBreak = false, bool writeInstructions = false, int stepsPerSecond = 0);
 
         /// <summary>
-        /// Runs a single cycle-accurate CPU instruction
+        /// Runs a single cycle-accurate CPU instruction and returns the number of
+        /// cycles "consumed" during that instruction.
         /// </summary>
         /// <param name="writeInstructions"></param>
         /// <param name="returnPriorToBreak"></param>
@@ -46,32 +48,18 @@ namespace InnoWerks.Simulators
 
         /// <summary>
         /// Pushes a byte onto the stack at the current value of SP
-        /// and adjusts SP accordingly.
+        /// and adjusts SP accordingly. This is used as a development
+        /// feature for running the core 6502 simulator.
         /// </summary>
         /// <param name="b"></param>
         void StackPush(byte b);
 
         /// <summary>
         /// Pops a byte from the stack at the current value of SP
-        /// and adjusts SP accordingly.
+        /// and adjusts SP accordingly. This is used as a development
+        /// feature for running the core 6502 simulator.
         /// </summary>
         /// <returns></returns>
         byte StackPop();
-
-        /// <summary>
-        /// Pushes a word to the stack at the current value of SP
-        /// and adjusts the stack accordingly. Pushes the high-order
-        /// byte first, then the low-order byte.
-        /// </summary>
-        /// <param name="s"></param>
-        void StackPushWord(ushort s);
-
-        /// <summary>
-        /// Pops a word from the stack at the current value of SP
-        /// and adjusts the stack accordingly. Pops the low-order
-        /// byte first, followed by the high-order byte.
-        /// </summary>
-        /// <returns></returns>
-        ushort StackPopWord();
     }
 }

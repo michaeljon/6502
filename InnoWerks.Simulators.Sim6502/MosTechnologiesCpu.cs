@@ -17,9 +17,11 @@ namespace InnoWerks.Simulators
         public const ushort IrqVectorH = 0xFFFF;
         public const ushort IrqVectorL = 0xFFFE;
 
+        // Reset vectors
         public const ushort RstVectorH = 0xFFFD;
         public const ushort RstVectorL = 0xFFFC;
 
+        // NMI vectors
         public const ushort NmiVectorH = 0xFFFB;
         public const ushort NmiVectorL = 0xFFFA;
 
@@ -58,6 +60,8 @@ namespace InnoWerks.Simulators
         public void Reset()
         {
             Registers.Reset();
+
+            // this needs to reset the soft switches via the bus
 
             // load PC from reset vector
             byte pcl = bus.Peek(RstVectorL);
