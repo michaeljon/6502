@@ -13,6 +13,8 @@ namespace InnoWerks.Emulators.Apple
             rom = romImage;
         }
 
+        public DevicePriority Priority => DevicePriority.Slot;
+
         public bool Handles(ushort address)
         {
             ushort baseAddr = (ushort)(0xC100 + (slot * 0x100));

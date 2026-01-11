@@ -1,8 +1,20 @@
 namespace InnoWerks.Simulators
 {
+    public enum DevicePriority
+    {
+        System = 0,
+
+        SoftSwitch = 1,
+
+        Slot = 2
+    }
+
+
 #pragma warning disable CA1716
     public interface IDevice
     {
+        DevicePriority Priority { get; }
+
         bool Handles(ushort address);
 
         byte Read(ushort address);

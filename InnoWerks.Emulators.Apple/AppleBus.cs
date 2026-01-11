@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple
@@ -25,12 +26,6 @@ namespace InnoWerks.Emulators.Apple
 
         public SoftSwitchRam SoftSwitches { get; init; }
 
-        //
-        // for now we're going to do this, later we'll change
-        // this to a collection of devices
-        //
-        public AppleKeyboard Keyboard { get; }
-
         // main and auxiliary ram
         private readonly byte[] mainRam;
 
@@ -44,9 +39,6 @@ namespace InnoWerks.Emulators.Apple
         {
             configuration = config;
             SoftSwitches = new SoftSwitchRam(config);
-
-            // create some devices, this needs to come in via the config
-            Keyboard = new AppleKeyboard(SoftSwitches);
 
             mainRam = new byte[64 * 1024];
 
@@ -143,24 +135,12 @@ namespace InnoWerks.Emulators.Apple
             Array.Copy(objectCode, 0, mainRam, origin, objectCode.Length);
         }
 
+        private static bool IsSlotAddress(ushort address)
+            => (address >= 0xC100 && address <= 0xC7FF) || (address >= 0xC800 && address <= 0xCFFF);
+
+
         private byte ReadImpl(ushort address)
         {
-            // $C000–$C0FF soft switches
-            if (SoftSwitchRam.Handles(address))
-            {
-                return SoftSwitches.Read(address);
-            }
-
-            // if we have any devices see if they actually handle
-            // this memory location, then ask them to do so
-            foreach (var device in devices)
-            {
-                if (device.Handles(address))
-                {
-                    return device.Read(address);
-                }
-            }
-
             // RAM ($0000–$BFFF)
             if (address < 0xC000)
             {
@@ -170,6 +150,33 @@ namespace InnoWerks.Emulators.Apple
                 }
 
                 return mainRam[address];
+            }
+
+            foreach (var device in devices.Where(d => d.Priority == DevicePriority.System))
+            {
+                if (device.Handles(address))
+                {
+                    return device.Read(address);
+                }
+            }
+
+            foreach (var device in devices.Where(d => d.Priority == DevicePriority.SoftSwitch))
+            {
+                if (device.Handles(address))
+                {
+                    return device.Read(address);
+                }
+            }
+
+            if (IsSlotAddress(address))
+            {
+                foreach (var device in devices.Where(d => d.Priority == DevicePriority.Slot))
+                {
+                    if (device.Handles(address))
+                    {
+                        return device.Read(address);
+                    }
+                }
             }
 
             return configuration.Model switch
@@ -207,12 +214,6 @@ namespace InnoWerks.Emulators.Apple
 
         private void WriteImpl(ushort address, byte value)
         {
-            if (SoftSwitchRam.Handles(address))
-            {
-                SoftSwitches.Write(address);
-                return;
-            }
-
             if (address < 0xC000)
             {
                 var bank = (configuration.Model == AppleModel.AppleIIe && SoftSwitches.AuxWrite && IsAuxAddress(address))
@@ -222,6 +223,35 @@ namespace InnoWerks.Emulators.Apple
                 return;
             }
 
+            foreach (var device in devices.Where(d => d.Priority == DevicePriority.System))
+            {
+                if (device.Handles(address))
+                {
+                    device.Write(address, value);
+                    return;
+                }
+            }
+
+            foreach (var device in devices.Where(d => d.Priority == DevicePriority.SoftSwitch))
+            {
+                if (device.Handles(address))
+                {
+                    device.Write(address, value);
+                    return;
+                }
+            }
+
+            if (IsSlotAddress(address))
+            {
+                foreach (var device in devices.Where(d => d.Priority == DevicePriority.Slot))
+                {
+                    if (device.Handles(address))
+                    {
+                        device.Write(address, value);
+                        return;
+                    }
+                }
+            }
             switch (configuration.Model)
             {
                 case AppleModel.AppleII:

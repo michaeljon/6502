@@ -1,6 +1,9 @@
+using System.Net.Sockets;
+using InnoWerks.Simulators;
+
 namespace InnoWerks.Emulators.Apple
 {
-    public sealed class SoftSwitchRam
+    public sealed class SoftSwitchRam : IDevice
     {
         private readonly AppleConfiguration configuration;
 
@@ -28,12 +31,9 @@ namespace InnoWerks.Emulators.Apple
 
         public bool RamWrite { get; private set; }
 
-        // Keyboard
-        public byte KeyLatch { get; set; }
+        public DevicePriority Priority => DevicePriority.SoftSwitch;
 
-        public bool KeyStrobe { get; set; }
-
-        public static bool Handles(ushort address)
+        public bool Handles(ushort address)
             => address >= SoftSwitch.BASE && address <= SoftSwitch.TOP;
 
         public SoftSwitchRam(AppleConfiguration configuration)
@@ -45,15 +45,6 @@ namespace InnoWerks.Emulators.Apple
         {
             switch (address)
             {
-                case SoftSwitch.KBD:
-                    return KeyStrobe
-                        ? (byte)(KeyLatch | 0x80)
-                        : (byte)KeyLatch;
-
-                case SoftSwitch.KBDSTROBE:
-                    KeyStrobe = false;
-                    return 0;
-
                 case SoftSwitch.TEXTOFF: TextMode = false; return 0;
                 case SoftSwitch.TEXTON: TextMode = true; return 0;
 
@@ -95,19 +86,10 @@ namespace InnoWerks.Emulators.Apple
             return 0x00;
         }
 
-        public void Write(ushort address)
+        public void Write(ushort address, byte value)
         {
             switch (address)
             {
-                // Keyboard write: writing here typically clears the strobe
-                case SoftSwitch.KBD:
-                    break;
-
-                case SoftSwitch.KBDSTROBE:
-                    KeyStrobe = false;
-                    KeyLatch &= 0x7f;
-                    break;
-
                 // Video switches
                 case SoftSwitch.TEXTOFF: TextMode = false; break;
                 case SoftSwitch.TEXTON: TextMode = true; break;
@@ -135,6 +117,14 @@ namespace InnoWerks.Emulators.Apple
 
                     // unimplemented: do nothing
             }
+        }
+
+        public void Reset()
+        {
+            TextMode = true;
+            RomEnabled = true;
+            RomBank = 0;
+            RomRead = true;
         }
     }
 }

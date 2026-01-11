@@ -21,6 +21,8 @@ namespace InnoWerks.Simulators.Tests
 
         private int transactionCycles;
 
+        public void AddDevice(IDevice device) { }
+
         public void BeginTransaction()
         {
             transactionCycles = 0;
