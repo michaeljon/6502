@@ -2,9 +2,9 @@ namespace InnoWerks.Emulators.Apple
 {
     public sealed class AppleKeyboard : IKeyboard
     {
-        private readonly SoftSwitches softSwitches;
+        private readonly SoftSwitchRam softSwitches;
 
-        public AppleKeyboard(SoftSwitches softSwitches)
+        public AppleKeyboard(SoftSwitchRam softSwitches)
         {
             this.softSwitches = softSwitches;
         }

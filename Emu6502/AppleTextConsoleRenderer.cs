@@ -7,9 +7,9 @@ namespace Emu6502
     public sealed class AppleTextConsoleRenderer
     {
         private readonly IBus bus;
-        private readonly SoftSwitches softSwitches;
+        private readonly SoftSwitchRam softSwitches;
 
-        public AppleTextConsoleRenderer(IBus bus, SoftSwitches softSwitches)
+        public AppleTextConsoleRenderer(IBus bus, SoftSwitchRam softSwitches)
         {
             this.bus = bus;
             this.softSwitches = softSwitches;

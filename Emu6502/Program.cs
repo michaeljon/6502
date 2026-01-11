@@ -54,7 +54,7 @@ namespace Emu6502
 
             var config = new AppleConfiguration
             {
-                Model = AppleModel.AppleII,
+                Model = AppleModel.AppleIIe,
                 HasAuxMemory = true
             };
 
@@ -108,12 +108,13 @@ namespace Emu6502
 
                 while (bus.CycleCount < target)
                 {
-                    cpu.Step(writeInstructions: options.SingleStep);
-
                     if (options.SingleStep == true)
                     {
+                        Console.Write("> ");
                         Console.ReadKey();
                     }
+
+                    cpu.Step(writeInstructions: options.SingleStep);
                 }
 
                 if (options.SingleStep == false) { renderer.Render(); }

@@ -22,7 +22,7 @@ namespace InnoWerks.Emulators.Apple
     {
         private readonly AppleConfiguration configuration;
 
-        public SoftSwitches SoftSwitches { get; init; }
+        public SoftSwitchRam SoftSwitches { get; init; }
 
         //
         // for now we're going to do this, later we'll change
@@ -42,7 +42,7 @@ namespace InnoWerks.Emulators.Apple
         public AppleBus(AppleConfiguration config)
         {
             configuration = config;
-            SoftSwitches = new SoftSwitches(config);
+            SoftSwitches = new SoftSwitchRam(config);
 
             // create some devices, this needs to come in via the config
             Keyboard = new AppleKeyboard(SoftSwitches);
@@ -102,11 +102,25 @@ namespace InnoWerks.Emulators.Apple
             // including the initialization vector values at 0xfffd, and 0xfffc
             if (configuration.Model == AppleModel.AppleIIe)
             {
-                if (objectCode.Length != 32 * 1024)
-                    throw new InvalidOperationException("IIe ROM must be 32 KB");
-
-                Array.Copy(objectCode, 0, romBanks[0], 0, 16 * 1024);
-                Array.Copy(objectCode, 16 * 1024, romBanks[1], 0, 16 * 1024);
+                if (objectCode.Length == 32 * 1024)
+                {
+                    // let's try something and only load the last 16k to $c000
+                    Array.Copy(objectCode, 16 * 1024, romBanks[0], 0, 16 * 1024);
+                }
+                else if (objectCode.Length == 20 * 1024)
+                {
+                    // this is the weird rom with an extra 4k page
+                    Array.Copy(objectCode, 16 * 1024, romBanks[0], 0, 16 * 1024);
+                }
+                else if (objectCode.Length == 16 * 1024)
+                {
+                    // let's try something and only load the last 16k to $c000
+                    Array.Copy(objectCode, 0, romBanks[0], 0, 16 * 1024);
+                }
+                else
+                {
+                    throw new InvalidOperationException("IIe ROM must be 16, 20, or 32 KB");
+                }
             }
             else
             {
@@ -124,7 +138,7 @@ namespace InnoWerks.Emulators.Apple
         private byte ReadImpl(ushort address)
         {
             // $C000–$C0FF soft switches
-            if (SoftSwitches.Handles(address))
+            if (SoftSwitchRam.Handles(address))
                 return SoftSwitches.Read(address);
 
             // RAM ($0000–$BFFF)
@@ -136,13 +150,6 @@ namespace InnoWerks.Emulators.Apple
                 }
 
                 return mainRam[address];
-            }
-
-            // Slot probe region $C100–$C1FF
-            if (address >= 0xC100 && address < 0xD000)
-            {
-                // Boot ROM expects $A0 for empty slot responses
-                return 0xA0;
             }
 
             return configuration.Model switch
@@ -178,7 +185,7 @@ namespace InnoWerks.Emulators.Apple
 
         private void WriteImpl(ushort address, byte value)
         {
-            if (SoftSwitches.Handles(address))
+            if (SoftSwitchRam.Handles(address))
             {
                 SoftSwitches.Write(address);
                 return;

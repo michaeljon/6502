@@ -10,3 +10,5 @@ TestResults/
 temp/
 
 *.o
+
+roms/
