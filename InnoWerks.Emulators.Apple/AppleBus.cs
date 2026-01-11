@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple
@@ -56,6 +57,13 @@ namespace InnoWerks.Emulators.Apple
             romBanks = new byte[2][];
             romBanks[0] = new byte[16 * 1024];
             romBanks[1] = new byte[16 * 1024];
+        }
+
+        private readonly List<IDevice> devices = [];
+
+        public void AddDevice(IDevice device)
+        {
+            devices.Add(device);
         }
 
         public void BeginTransaction()
@@ -139,7 +147,19 @@ namespace InnoWerks.Emulators.Apple
         {
             // $C000–$C0FF soft switches
             if (SoftSwitchRam.Handles(address))
+            {
                 return SoftSwitches.Read(address);
+            }
+
+            // if we have any devices see if they actually handle
+            // this memory location, then ask them to do so
+            foreach (var device in devices)
+            {
+                if (device.Handles(address))
+                {
+                    return device.Read(address);
+                }
+            }
 
             // RAM ($0000–$BFFF)
             if (address < 0xC000)
@@ -164,7 +184,9 @@ namespace InnoWerks.Emulators.Apple
         {
             // $C100–$CFFF slots / expansion (no cards yet)
             if (address < 0xD000)
+            {
                 return 0x00;
+            }
 
             // $D000–$FFFF ROM (12 KB)
             return romBanks[0][address - 0xD000];

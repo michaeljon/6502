@@ -2,6 +2,8 @@ namespace InnoWerks.Simulators
 {
     public interface IBus
     {
+        void AddDevice(IDevice device);
+
         /// <summary>
         /// Starts a memory transaction to record a single
         /// CPU step's cycle count. Initializes the transaction
@@ -69,8 +71,8 @@ namespace InnoWerks.Simulators
         void LoadProgramToRom(byte[] objectCode);
 
         /// <summary>
-        /// Copies a "program" into RAM at the specified origin. For RAM-targeted 
-        /// loads the origin is written to the initialization vector and is used 
+        /// Copies a "program" into RAM at the specified origin. For RAM-targeted
+        /// loads the origin is written to the initialization vector and is used
         /// for starting the program.
         ///
         /// This allows for custom ROMs and non-Apple code to use this bus
