@@ -11,4 +11,4 @@ temp/
 
 *.o
 
-roms/
+Emu6502/roms/jace/

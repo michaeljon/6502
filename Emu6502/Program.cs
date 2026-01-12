@@ -38,8 +38,20 @@ namespace Emu6502
 
         private static int RunEmulator(CliOptions options)
         {
-            var bytes = File.ReadAllBytes(options.RomFile);
-            Console.WriteLine($"ROM is {bytes.Length} bytes");
+            var mainRom = File.ReadAllBytes("roms/apple2e.rom");
+            Console.WriteLine($"ROM is {mainRom.Length} bytes");
+
+            byte[] diskIIRom = File.ReadAllBytes("roms/DiskII.rom");
+            Console.WriteLine($"diskIIRom is {diskIIRom.Length} bytes");
+
+            // Some ROMs are 256 bytes, some are larger.
+            // If larger, extract first 256 bytes.
+            if (diskIIRom.Length > 256)
+            {
+                var trimmed = new byte[256];
+                Array.Copy(diskIIRom, trimmed, 256);
+                diskIIRom = trimmed;
+            }
 
             Console.CancelKeyPress += (sender, e) =>
             {
@@ -60,12 +72,14 @@ namespace Emu6502
 
             // create the devices
             var keyboard = new KeyboardDevice();
+            var diskII = new DiskIISlotDevice(diskIIRom);
 
             // create the bus
             var bus = new AppleBus(config);
 
             // add the devices to the bus
             bus.AddDevice(keyboard);
+            bus.AddDevice(diskII);
 
             Task.Run(() =>
             {
@@ -97,7 +111,7 @@ namespace Emu6502
             });
 
 
-            bus.LoadProgramToRom(bytes);
+            bus.LoadProgramToRom(mainRom);
 
             var cpu = new Cpu65C02(
                 bus,

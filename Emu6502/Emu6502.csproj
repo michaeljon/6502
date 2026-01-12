@@ -13,4 +13,12 @@
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Include="roms\**\*">
+      <Link>roms\%(RecursiveDir)/%(FileName)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

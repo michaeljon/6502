@@ -136,8 +136,10 @@ namespace InnoWerks.Emulators.Apple
         }
 
         private static bool IsSlotAddress(ushort address)
-            => (address >= 0xC100 && address <= 0xC7FF) || (address >= 0xC800 && address <= 0xCFFF);
-
+            => (address >= 0xC080 && address <= 0xC0FF)   // Slot I/O
+             || (address >= 0xC100 && address <= 0xC7FF) // Expansion ROM (optional)
+             || (address >= 0xC600 && address <= 0xC6FF) // Slot ROM
+             || (address >= 0xC800 && address <= 0xCFFF); // Extended ROM
 
         private byte ReadImpl(ushort address)
         {
@@ -168,14 +170,12 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            if (IsSlotAddress(address))
+            foreach (var device in devices.Where(d => d.Priority == DevicePriority.Slot))
             {
-                foreach (var device in devices.Where(d => d.Priority == DevicePriority.Slot))
+                if (device.Handles(address))
                 {
-                    if (device.Handles(address))
-                    {
+                    if (address >= 0xC080 && address <= 0xC08F)
                         return device.Read(address);
-                    }
                 }
             }
 
@@ -201,6 +201,10 @@ namespace InnoWerks.Emulators.Apple
 
         private byte ReadAppleIIe(ushort address)
         {
+            // RAM under ROM disabled
+            if (address < 0xD000)
+                return mainRam[address];
+
             // ROM visible across $C000–$FFFF unless overridden
             if (SoftSwitches.RomEnabled)
             {
@@ -241,17 +245,15 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            if (IsSlotAddress(address))
+            foreach (var device in devices.Where(d => d.Priority == DevicePriority.Slot))
             {
-                foreach (var device in devices.Where(d => d.Priority == DevicePriority.Slot))
+                if (device.Handles(address))
                 {
-                    if (device.Handles(address))
-                    {
-                        device.Write(address, value);
-                        return;
-                    }
+                    device.Write(address, value);
+                    return;
                 }
             }
+
             switch (configuration.Model)
             {
                 case AppleModel.AppleII:
