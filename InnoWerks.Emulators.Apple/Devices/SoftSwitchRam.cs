@@ -31,7 +31,11 @@ namespace InnoWerks.Emulators.Apple
 
         public bool RamWrite { get; private set; }
 
+        public bool UseInternalRom { get; private set; }
+
         public DevicePriority Priority => DevicePriority.SoftSwitch;
+
+        public int Slot => -1;
 
         public bool Handles(ushort address)
             => address >= SoftSwitch.BASE && address <= SoftSwitch.TOP;
@@ -60,6 +64,14 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitch.RAMDRON: AuxRead = true; return 0;
                 case SoftSwitch.RAMWRTOFF: AuxWrite = false; return 0;
                 case SoftSwitch.RAMWRTON: AuxWrite = true; return 0;
+
+                case SoftSwitch.INTCXROMON:
+                    UseInternalRom = true;
+                    return 0;
+
+                case SoftSwitch.INTCXROMOFF:
+                    UseInternalRom = false;
+                    return 0;
 
                 case 0xC080:
                     RomEnabled = true;
@@ -121,6 +133,8 @@ namespace InnoWerks.Emulators.Apple
 
         public void Reset()
         {
+            UseInternalRom = true;
+
             TextMode = true;
             RomEnabled = true;
             RomBank = 0;

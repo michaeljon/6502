@@ -15,6 +15,8 @@ namespace InnoWerks.Simulators
     {
         DevicePriority Priority { get; }
 
+        int Slot { get; }
+
         bool Handles(ushort address);
 
         byte Read(ushort address);

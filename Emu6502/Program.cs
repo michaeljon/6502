@@ -77,8 +77,10 @@ namespace Emu6502
             // create the bus
             var bus = new AppleBus(config);
 
-            // add the devices to the bus
+            // add system the devices to the bus
             bus.AddDevice(keyboard);
+
+            // add slotted devices
             bus.AddDevice(diskII);
 
             Task.Run(() =>
@@ -93,20 +95,7 @@ namespace Emu6502
 
                     var key = Console.ReadKey(intercept: true);
 
-                    byte ascii = key.KeyChar switch
-                    {
-                        '\r' => 0x0D,
-                        '\n' => 0x0D,
-                        _ => (byte)char.ToUpperInvariant(key.KeyChar)
-                    };
-
                     keyboard.InjectKey(MapToAppleKey(key));
-
-                    // var keyInfo = Console.ReadKey(intercept: true);
-                    // var appleKey = MapToAppleKey(keyInfo);
-
-                    // if (appleKey != 0)
-                    //     keyboard.KeyDown(appleKey);
                 }
             });
 

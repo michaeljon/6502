@@ -4,11 +4,8 @@ using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple
 {
-    public sealed class DiskIISlotDevice : IDevice
+    public sealed class DiskIISlotDevice : SlotRomDevice
     {
-        private const ushort IO_BASE = 0xC080; // Disk II I/O base
-        private const ushort SLOT6_OFFSET = 0x080;
-
         // Disk state (simplified)
         private readonly byte[] trackBuffer = new byte[256];  // single track buffer
         private int trackPosition;
@@ -18,42 +15,22 @@ namespace InnoWerks.Emulators.Apple
         private bool driveMotorOn;
         private bool writeEnabled;
 
-        private readonly byte[] rom; // 256-byte slot ROM
-
-        public DevicePriority Priority => DevicePriority.Slot;
-
         public DiskIISlotDevice(byte[] romImage)
+            : base(6, romImage) { }
+
+        public override bool Handles(ushort address)
         {
-            ArgumentNullException.ThrowIfNull(romImage, nameof(romImage));
-
-            if (romImage.Length < 256)
-            {
-                throw new ArgumentException("Disk II ROM must be at least 256 bytes");
-            }
-
-            rom = romImage;
+            return IsIoReadRequest(address);
         }
 
-        public bool Handles(ushort address)
+        public override byte Read(ushort address)
         {
-            return (address >= IO_BASE + SLOT6_OFFSET && address <= IO_BASE + SLOT6_OFFSET + 0x0F) // I/O registers
-                   || (address >= 0xC800 && address <= 0xC8FF);
-        }
-
-        public byte Read(ushort address)
-        {
-            if (address >= 0xC800 && address <= 0xC8FF)
+            if (IsRomReadRequest(address))
             {
-                return rom[address - 0xC800];
+                return ReadSlotRom(address);
             }
 
-            if (address >= IO_BASE + SLOT6_OFFSET && address <= IO_BASE + SLOT6_OFFSET + 0x0F)
-            {
-                // handle disk I/O register reads here
-                return 0x00; // placeholder
-            }
-
-            switch (address - IO_BASE)
+            switch (address - IoBaseAddressLo)
             {
                 case 0x0C: // DATA register ($C08C)
                     // Return next byte from track buffer
@@ -73,9 +50,9 @@ namespace InnoWerks.Emulators.Apple
             }
         }
 
-        public void Write(ushort address, byte value)
+        public override void Write(ushort address, byte value)
         {
-            switch (address - IO_BASE)
+            switch (address - IoBaseAddressLo)
             {
                 case 0x00: // CONTROL / STATUS command
                     // Simplified: interpret bits
@@ -102,7 +79,7 @@ namespace InnoWerks.Emulators.Apple
             }
         }
 
-        public void Reset()
+        public override void Reset()
         {
             trackPosition = 0;
             currentDrive = 0;
