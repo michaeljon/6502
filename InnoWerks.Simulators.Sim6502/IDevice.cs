@@ -17,6 +17,8 @@ namespace InnoWerks.Simulators
 
         int Slot { get; }
 
+        string Name { get; }
+
         bool Handles(ushort address);
 
         byte Read(ushort address);

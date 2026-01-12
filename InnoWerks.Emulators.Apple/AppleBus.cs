@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using InnoWerks.Processors;
 using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple
@@ -51,11 +52,24 @@ namespace InnoWerks.Emulators.Apple
             romBanks[1] = new byte[16 * 1024];
         }
 
-        private readonly List<IDevice> devices = [];
+        private readonly List<IDevice> systemDevices = [];
+
+        private readonly Dictionary<int, IDevice> slotDevices = [];
 
         public void AddDevice(IDevice device)
         {
-            devices.Add(device);
+            ArgumentNullException.ThrowIfNull(device, nameof(device));
+
+            switch (device.Priority)
+            {
+                case DevicePriority.System:
+                    systemDevices.Add(device);
+                    break;
+
+                case DevicePriority.Slot:
+                    slotDevices.Add(device.Slot, device);
+                    break;
+            }
         }
 
         public void BeginTransaction()
@@ -136,7 +150,7 @@ namespace InnoWerks.Emulators.Apple
         }
 
         private static bool IsSlotAddress(ushort address)
-            => (address >= 0xC100 && address <= 0xC7FF) || (address >= 0xC800 && address <= 0xCFFF);
+            => address >= 0xC080 && address <= 0xCFFF;
 
         private byte ReadImpl(ushort address)
         {
@@ -152,7 +166,7 @@ namespace InnoWerks.Emulators.Apple
             }
 
             // TODO: sort and select these once when the board is configured
-            foreach (var device in devices.Where(d => d.Priority == DevicePriority.System))
+            foreach (var device in systemDevices)
             {
                 if (device.Handles(address))
                 {
@@ -160,22 +174,56 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            foreach (var device in devices.Where(d => d.Priority == DevicePriority.SoftSwitch))
+            if (SoftSwitches.Handles(address))
             {
-                if (device.Handles(address))
+                return SoftSwitches.Read(address);
+            }
+
+            /*
+            if address in $C080–$C0FF:
+                slot = (address >> 4) & 7
+                route to slot[slot].io[address & $0F]
+
+            elif address in $C100–$C7FF:
+                slot = (address >> 8) & 7
+                route to slot[slot].rom[address & $FF]
+
+            elif address in $C800–$CFFF:
+                slot = (address >> 9) & 3   # slots 1–4 only
+                route to slot[slot].expansion_rom[address & $1FF]
+            */
+
+            if (0xC080 <= address && address <= 0xC0FF)
+            {
+                var slot = (address >> 4) & 7;
+                SimDebugger.Info("Read IO {0} {1:X4}\n", slot, address);
+
+                slotDevices.TryGetValue(slot, out var device);
+                if (device?.Handles(address) == true)
                 {
                     return device.Read(address);
                 }
             }
-
-            if (IsSlotAddress(address))
+            else if (SoftSwitches.UseInternalRom == false && 0xC100 <= address && address <= 0xC700)
             {
-                foreach (var device in devices.Where(d => d.Priority == DevicePriority.Slot).OrderBy(d => d.Slot))
+                var slot = (address >> 8) & 7;
+                SimDebugger.Info("Read ROM {0} {1:X4}\n", slot, address);
+
+                slotDevices.TryGetValue(slot, out var device);
+                if (device?.Handles(address) == true)
                 {
-                    if (device.Handles(address))
-                    {
-                        return device.Read(address);
-                    }
+                    return device.Read(address);
+                }
+            }
+            else if (SoftSwitches.UseInternalRom == false && 0xC800 <= address && address <= 0xCFFF)
+            {
+                var slot = (address >> 9) & 3;
+                SimDebugger.Info("Read ExROM {0} {1:X4}\n", slot, address);
+
+                slotDevices.TryGetValue(slot, out var device);
+                if (device?.Handles(address) == true)
+                {
+                    return device.Read(address);
                 }
             }
 
@@ -223,7 +271,7 @@ namespace InnoWerks.Emulators.Apple
                 return;
             }
 
-            foreach (var device in devices.Where(d => d.Priority == DevicePriority.System))
+            foreach (var device in systemDevices)
             {
                 if (device.Handles(address))
                 {
@@ -232,24 +280,60 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            foreach (var device in devices.Where(d => d.Priority == DevicePriority.SoftSwitch))
+            if (SoftSwitches.Handles(address))
             {
-                if (device.Handles(address))
+                SoftSwitches.Write(address, value);
+                return;
+            }
+
+            /*
+            if address in $C080–$C0FF:
+                slot = (address >> 4) & 7
+                route to slot[slot].io[address & $0F]
+
+            elif address in $C100–$C7FF:
+                slot = (address >> 8) & 7
+                route to slot[slot].rom[address & $FF]
+
+            elif address in $C800–$CFFF:
+                slot = (address >> 9) & 3   # slots 1–4 only
+                route to slot[slot].expansion_rom[address & $1FF]
+            */
+
+            if (0xC080 <= address && address <= 0xC0FF)
+            {
+                var slot = (address >> 4) & 7;
+                SimDebugger.Info("Write IO {0} {1:X4}\n", slot, address);
+
+                slotDevices.TryGetValue(slot, out var device);
+                if (device?.Handles(address) == true)
                 {
                     device.Write(address, value);
                     return;
                 }
             }
-
-            if (IsSlotAddress(address))
+            else if (SoftSwitches.UseInternalRom == false && 0xC100 <= address && address <= 0xC700)
             {
-                foreach (var device in devices.Where(d => d.Priority == DevicePriority.Slot))
+                var slot = (address >> 8) & 7;
+                SimDebugger.Info("Write ROM {0} {1:X4}\n", slot, address);
+
+                slotDevices.TryGetValue(slot, out var device);
+                if (device?.Handles(address) == true)
                 {
-                    if (device.Handles(address))
-                    {
-                        device.Write(address, value);
-                        return;
-                    }
+                    device.Write(address, value);
+                    return;
+                }
+            }
+            else if (SoftSwitches.UseInternalRom == false && 0xC800 <= address && address <= 0xCFFF)
+            {
+                var slot = (address >> 9) & 3;
+                SimDebugger.Info("Write ExROM {0} {1:X4}\n", slot, address);
+
+                slotDevices.TryGetValue(slot, out var device);
+                if (device?.Handles(address) == true)
+                {
+                    device.Write(address, value);
+                    return;
                 }
             }
 

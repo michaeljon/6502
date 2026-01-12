@@ -1,5 +1,7 @@
 using System;
+using InnoWerks.Processors;
 using InnoWerks.Simulators;
+using Microsoft.VisualBasic;
 
 namespace InnoWerks.Emulators.Apple
 {
@@ -27,13 +29,16 @@ namespace InnoWerks.Emulators.Apple
 
         public const ushort ROM_BASE_ADDR = 0xC100;
 
+        public const ushort EXPANSION_ROM_BASE_ADDR = 0xC800;
+
         private readonly byte[] rom = new byte[256];
 
-        private readonly byte[] auxRom = new byte[2048];
+        private readonly byte[] expansionRom = new byte[2048];
 
-        protected SlotRomDevice(int slot, byte[] romImage)
+        protected SlotRomDevice(int slot, string name, byte[] romImage)
         {
             ArgumentNullException.ThrowIfNull(romImage, nameof(romImage));
+            ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
 
             ArgumentOutOfRangeException.ThrowIfGreaterThan(slot, 7, nameof(slot));
             ArgumentOutOfRangeException.ThrowIfLessThan(slot, 0, nameof(slot));
@@ -44,16 +49,22 @@ namespace InnoWerks.Emulators.Apple
             }
 
             Slot = slot;
+            Name = name;
 
             if (romImage.Length > 256)
             {
+                if (Slot < 1 || Slot > 4)
+                {
+                    throw new ArgumentException("Only devices in slots 1-4 can use extra ROM space $C800-$CFFF");
+                }
+
                 if (romImage.Length - 256 > 2048)
                 {
                     throw new ArgumentException("Device ROM can be no longer than 256 bytes + 2k");
                 }
 
                 HasAuxRom = true;
-                Array.Copy(romImage, 256, auxRom, 0, romImage.Length - 256);
+                Array.Copy(romImage, 256, expansionRom, 0, romImage.Length - 256);
             }
 
             Array.Copy(romImage, 0, rom, 0, 256);
@@ -65,6 +76,8 @@ namespace InnoWerks.Emulators.Apple
 
         public int Slot { get; }
 
+        public string Name { get; }
+
         public abstract bool Handles(ushort address);
 
         public abstract byte Read(ushort address);
@@ -75,30 +88,58 @@ namespace InnoWerks.Emulators.Apple
 
         protected bool HasAuxRom { get; init; }
 
+        // 16 bytes bytes
         protected ushort IoBaseAddressLo => (ushort)(IO_BASE_ADDR + (Slot * 0x10));
 
         protected ushort IoBaseAddressHi => (ushort)(IO_BASE_ADDR + (Slot * 0x10) + 0x0F);
 
-        protected ushort RomBaseAddressLo => (ushort)(ROM_BASE_ADDR + (Slot * 0x100));
+        // 256 bytes
+        protected ushort RomBaseAddressLo => (ushort)(ROM_BASE_ADDR + ((Slot - 1) * 0x100));
 
-        protected ushort RomBaseAddressHi => (ushort)(ROM_BASE_ADDR + (Slot * 0x100) + 0xFF);
+        protected ushort RomBaseAddressHi => (ushort)(ROM_BASE_ADDR + ((Slot - 1) * 0x100) + 0xFF);
 
-        protected bool IsIoReadRequest(ushort address)
+        // 2048 bytes
+        protected ushort ExpansionBaseAddressLo => (ushort)(EXPANSION_ROM_BASE_ADDR + ((Slot - 1) * 0x100));
+
+        protected ushort ExpansionBaseAddressHi => (ushort)(EXPANSION_ROM_BASE_ADDR + ((Slot - 1) * 0x100) + 0x03FF);
+
+        protected virtual bool IsIoReadRequest(ushort address)
         {
+            // SimDebugger.Info("Slot {0} IsIoReadRequest({1:X4})\n", Slot, address);
+
             return IoBaseAddressLo <= address && address <= IoBaseAddressHi;
         }
 
-        protected bool IsRomReadRequest(ushort address)
+        protected virtual bool IsRomReadRequest(ushort address)
         {
-            // we need to worry about reading $CFFFF
+            // SimDebugger.Info("Slot {0} IsRomReadRequest({1:X4})\n", Slot, address);
 
-            return RomBaseAddressLo <= address && address <= RomBaseAddressHi;
+            if (Slot > 0 && Slot <= 4)
+            {
+                // allow for expansion rom
+                return (RomBaseAddressLo <= address && address <= RomBaseAddressHi) || (ExpansionBaseAddressLo <= address && address <= ExpansionBaseAddressHi);
+            }
+            else
+            {
+                // this is just a regular rom read
+                return RomBaseAddressLo <= address && address <= RomBaseAddressHi;
+            }
         }
 
-        protected byte ReadSlotRom(ushort address)
+        protected virtual byte ReadSlotRom(ushort address)
         {
-            ushort baseAddr = (ushort)(ROM_BASE_ADDR + (Slot * 0x100));
-            return rom[address - baseAddr];
+            // SimDebugger.Info("Slot {0} ReadSlotRom({1:X4})\n", Slot, address);
+
+            if (ExpansionBaseAddressLo <= address && address <= ExpansionBaseAddressHi)
+            {
+                ushort baseAddr = (ushort)(EXPANSION_ROM_BASE_ADDR + ((Slot - 1) * 0x200));
+                return expansionRom[address - baseAddr];
+            }
+            else
+            {
+                ushort baseAddr = (ushort)(ROM_BASE_ADDR + ((Slot - 1) * 0x100));
+                return rom[address - baseAddr];
+            }
         }
 
         protected void WriteSlotRom(ushort address, byte value)

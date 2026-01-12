@@ -131,7 +131,11 @@ namespace Emu6502
                     if (options.SingleStep == true)
                     {
                         Console.Write("> ");
-                        Console.ReadKey();
+                        var key = Console.ReadKey();
+                        if (key.KeyChar == 'G')
+                        {
+                            options.SingleStep = false;
+                        }
                     }
 
                     cpu.Step(writeInstructions: options.SingleStep);

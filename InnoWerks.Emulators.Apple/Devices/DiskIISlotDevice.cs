@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using InnoWerks.Processors;
 using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple
@@ -16,11 +17,11 @@ namespace InnoWerks.Emulators.Apple
         private bool writeEnabled;
 
         public DiskIISlotDevice(byte[] romImage)
-            : base(6, romImage) { }
+            : base(6, "Disk II", romImage) { }
 
         public override bool Handles(ushort address)
         {
-            return IsIoReadRequest(address);
+            return IsIoReadRequest(address) || IsRomReadRequest(address);
         }
 
         public override byte Read(ushort address)

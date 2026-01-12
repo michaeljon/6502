@@ -16,7 +16,7 @@ namespace InnoWerks.Emulators.Apple
         public const ushort RAMWRTOFF = 0xC004;  // Write enable main memory from $0200-$BFFF
         public const ushort RAMWRTON = 0xC005;  // Write enable aux memory from $0200-$BFFF
         public const ushort INTCXROMOFF = 0xC006;  // Enable slot ROM from $C100-$CFFF
-        public const ushort INTCXROMON = 0xC007;  // Enable main ROM from $C100-$CFFF $
+        public const ushort INTCXROMON = 0xC007;  // Enable main ROM from $C100-$CFFF
         public const ushort ALZTPOFF = 0xC008;  // Enable main memory from $0000-$01FF & avl BSR
         public const ushort ALTZPON = 0xC009;  //  Enable aux memory from $0000-$01FF & avl BSR
         public const ushort SLOTC3ROMOFF = 0xC00A;  // Enable main ROM from $C300-$C3FF

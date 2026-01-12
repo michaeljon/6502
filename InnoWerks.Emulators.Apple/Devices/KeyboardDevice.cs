@@ -1,3 +1,4 @@
+using System;
 using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple
@@ -10,6 +11,8 @@ namespace InnoWerks.Emulators.Apple
         public DevicePriority Priority => DevicePriority.System;
 
         public int Slot => -1;
+
+        public string Name => "Keyboard";
 
         public bool Handles(ushort address)
             => address == SoftSwitch.KBD || address == SoftSwitch.KBDSTROBE;
