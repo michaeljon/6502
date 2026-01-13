@@ -7,9 +7,9 @@ namespace Emu6502
     public sealed class AppleTextConsoleRenderer
     {
         private readonly IBus bus;
-        private readonly SoftSwitchRam softSwitches;
+        private readonly ISoftSwitchStateProvider softSwitches;
 
-        public AppleTextConsoleRenderer(IBus bus, SoftSwitchRam softSwitches)
+        public AppleTextConsoleRenderer(IBus bus, ISoftSwitchStateProvider softSwitches)
         {
             this.bus = bus;
             this.softSwitches = softSwitches;
@@ -17,7 +17,7 @@ namespace Emu6502
 
         public void Render()
         {
-            bool page2 = softSwitches.Page2;
+            bool page2 = softSwitches.State[SoftSwitch.Page2];
             Span<char> line = stackalloc char[40];
 
             Console.SetCursorPosition(0, 0);

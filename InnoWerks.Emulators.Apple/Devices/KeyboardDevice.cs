@@ -15,20 +15,20 @@ namespace InnoWerks.Emulators.Apple
         public string Name => "Keyboard";
 
         public bool Handles(ushort address)
-            => address == SoftSwitch.KBD || address == SoftSwitch.KBDSTROBE;
+            => address == SoftSwitchAddress.KBD || address == SoftSwitchAddress.KBDSTRB;
 
         public byte Read(ushort address)
         {
             switch (address)
             {
-                case SoftSwitch.KBD:
+                case SoftSwitchAddress.KBD:
                     return keyStrobe
                         ? (byte)(keyLatch | 0x80)
                         : keyLatch;
 
-                case SoftSwitch.KBDSTROBE:
+                case SoftSwitchAddress.KBDSTRB:
                     keyStrobe = false;
-                    return 0;
+                    break;
             }
 
             return 0;
@@ -36,7 +36,7 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
-            if (address == SoftSwitch.KBDSTROBE)
+            if (address == SoftSwitchAddress.KBDSTRB)
             {
                 keyStrobe = false;
                 keyLatch &= 0x7f;

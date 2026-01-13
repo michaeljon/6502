@@ -39,10 +39,7 @@ namespace Emu6502
         private static int RunEmulator(CliOptions options)
         {
             var mainRom = File.ReadAllBytes("roms/apple2e.rom");
-            Console.WriteLine($"ROM is {mainRom.Length} bytes");
-
             byte[] diskIIRom = File.ReadAllBytes("roms/DiskII.rom");
-            Console.WriteLine($"diskIIRom is {diskIIRom.Length} bytes");
 
             // Some ROMs are 256 bytes, some are larger.
             // If larger, extract first 256 bytes.
@@ -64,10 +61,13 @@ namespace Emu6502
                 Environment.Exit(0);
             };
 
-            var config = new AppleConfiguration
+            var config = new AppleConfiguration(AppleModel.AppleIIe)
             {
-                Model = AppleModel.AppleIIe,
-                HasAuxMemory = true
+                CpuClass = InnoWerks.Processors.CpuClass.WDC65C02,
+                HasAuxMemory = false,
+                Has80Column = false,
+                HasLowercase = false,
+                RamSize = 64
             };
 
             // create the devices
@@ -81,7 +81,7 @@ namespace Emu6502
             bus.AddDevice(keyboard);
 
             // add slotted devices
-            bus.AddDevice(diskII);
+            // bus.AddDevice(diskII);
 
             Task.Run(() =>
             {
@@ -116,7 +116,7 @@ namespace Emu6502
 
             cpu.Reset();
 
-            var renderer = new AppleTextConsoleRenderer(bus, bus.SoftSwitches);
+            var renderer = new AppleTextConsoleRenderer(bus, bus.softSwitches);
 
             Console.CursorVisible = false;
             Console.Clear();
@@ -130,6 +130,7 @@ namespace Emu6502
                 {
                     if (options.SingleStep == true)
                     {
+                        // Console.SetCursorPosition(0, 26);
                         Console.Write("> ");
                         var key = Console.ReadKey();
                         if (key.KeyChar == 'G')
@@ -139,6 +140,11 @@ namespace Emu6502
                     }
 
                     cpu.Step(writeInstructions: options.SingleStep);
+
+                    if (options.SingleStep == true)
+                    {
+                        Console.WriteLine(cpu.Registers);
+                    }
                 }
 
                 if (options.SingleStep == false) { renderer.Render(); }

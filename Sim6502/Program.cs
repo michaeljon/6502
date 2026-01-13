@@ -19,9 +19,8 @@ namespace Sim6502
     {
         private static bool keepRunning = true;
 
-        private static AppleConfiguration configuration = new()
+        private static readonly AppleConfiguration configuration = new(AppleModel.AppleIIe)
         {
-            Model = AppleModel.AppleIIe,
             CpuClass = CpuClass.WDC65C02,
             Has80Column = true,
             HasAuxMemory = true,

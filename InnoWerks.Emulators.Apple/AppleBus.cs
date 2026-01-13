@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using InnoWerks.Processors;
 using InnoWerks.Simulators;
 
@@ -25,7 +26,7 @@ namespace InnoWerks.Emulators.Apple
     {
         private readonly AppleConfiguration configuration;
 
-        public SoftSwitchRam SoftSwitches { get; init; }
+        public ISoftSwitchStateProvider softSwitches { get; init; }
 
         // main and auxiliary ram
         private readonly byte[] mainRam;
@@ -38,13 +39,17 @@ namespace InnoWerks.Emulators.Apple
 
         public AppleBus(AppleConfiguration config)
         {
+            ArgumentNullException.ThrowIfNull(config);
+
             configuration = config;
-            SoftSwitches = new SoftSwitchRam(config);
+            softSwitches = config.SoftSwitchStateProvider;
 
             mainRam = new byte[64 * 1024];
 
             if (configuration.Model == AppleModel.AppleIIe && configuration.HasAuxMemory)
+            {
                 auxRam = new byte[64 * 1024];
+            }
 
             // todo: come back around and replace this per configuration
             romBanks = new byte[2][];
@@ -98,12 +103,16 @@ namespace InnoWerks.Emulators.Apple
         {
             Tick(1);
 
+            // SimDebugger.Info($"[AB] Read({address:X4})\n");
+
             return ReadImpl(address);
         }
 
         public void Write(ushort address, byte value)
         {
             Tick(1);
+
+            // SimDebugger.Info($"[AB] Write({address:X4}, {value:X2})\n");
 
             WriteImpl(address, value);
         }
@@ -154,10 +163,23 @@ namespace InnoWerks.Emulators.Apple
 
         private byte ReadImpl(ushort address)
         {
+            // Maybe toggle INTC8ROM
+            if ((address & 0xFF00) == 0xC300 && softSwitches.State[SoftSwitch.Slot3RomEnabled] == false)
+            {
+                softSwitches.State[SoftSwitch.IntC8RomEnabled] = false;
+                return 0x00;
+            }
+
+            if (address == 0xCFFF)
+            {
+                softSwitches.State[SoftSwitch.IntC8RomEnabled] = true;
+                return 0x00;
+            }
+
             // RAM ($0000–$BFFF)
             if (address < 0xC000)
             {
-                if (configuration.Model == AppleModel.AppleIIe && SoftSwitches.AuxRead && IsAuxAddress(address))
+                if (configuration.Model == AppleModel.AppleIIe && softSwitches.State[SoftSwitch.AuxRead] && IsAuxAddress(address))
                 {
                     return auxRam[address];
                 }
@@ -174,9 +196,9 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            if (SoftSwitches.Handles(address))
+            if (((IDevice)softSwitches).Handles(address))
             {
-                return SoftSwitches.Read(address);
+                return ((IDevice)softSwitches).Read(address);
             }
 
             /*
@@ -196,33 +218,33 @@ namespace InnoWerks.Emulators.Apple
             if (0xC080 <= address && address <= 0xC0FF)
             {
                 var slot = (address >> 4) & 7;
-                SimDebugger.Info("Read IO {0} {1:X4}\n", slot, address);
 
                 slotDevices.TryGetValue(slot, out var device);
                 if (device?.Handles(address) == true)
                 {
+                    SimDebugger.Info("Read IO {0} {1:X4}\n", slot, address);
                     return device.Read(address);
                 }
             }
-            else if (SoftSwitches.UseInternalRom == false && 0xC100 <= address && address <= 0xC700)
+            else if (softSwitches.State[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
             {
                 var slot = (address >> 8) & 7;
-                SimDebugger.Info("Read ROM {0} {1:X4}\n", slot, address);
 
                 slotDevices.TryGetValue(slot, out var device);
                 if (device?.Handles(address) == true)
                 {
+                    SimDebugger.Info("Read ROM {0} {1:X4}\n", slot, address);
                     return device.Read(address);
                 }
             }
-            else if (SoftSwitches.UseInternalRom == false && 0xC800 <= address && address <= 0xCFFF)
+            else if (softSwitches.State[SoftSwitch.IntC8RomEnabled] == true && 0xC800 <= address && address <= 0xCFFF)
             {
                 var slot = (address >> 9) & 3;
-                SimDebugger.Info("Read ExROM {0} {1:X4}\n", slot, address);
 
                 slotDevices.TryGetValue(slot, out var device);
                 if (device?.Handles(address) == true)
                 {
+                    SimDebugger.Info("Read ExROM {0} {1:X4}\n", slot, address);
                     return device.Read(address);
                 }
             }
@@ -250,10 +272,10 @@ namespace InnoWerks.Emulators.Apple
         private byte ReadAppleIIe(ushort address)
         {
             // ROM visible across $C000–$FFFF unless overridden
-            if (SoftSwitches.RomEnabled)
+            if (0xC000 <= address && address <= 0xFFFF)
             {
                 int offset = address - 0xC000;
-                return romBanks[SoftSwitches.RomBank][offset];
+                return romBanks[softSwitches.State[SoftSwitch.AuxRead] ? 1 : 0][offset];
             }
 
             // ROM disabled → RAM
@@ -264,7 +286,7 @@ namespace InnoWerks.Emulators.Apple
         {
             if (address < 0xC000)
             {
-                var bank = (configuration.Model == AppleModel.AppleIIe && SoftSwitches.AuxWrite && IsAuxAddress(address))
+                var bank = (configuration.Model == AppleModel.AppleIIe && softSwitches.State[SoftSwitch.AuxWrite] == true && IsAuxAddress(address))
                     ? auxRam
                     : mainRam;
                 bank[address] = value;
@@ -280,9 +302,9 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            if (SoftSwitches.Handles(address))
+            if (((IDevice)softSwitches).Handles(address))
             {
-                SoftSwitches.Write(address, value);
+                ((IDevice)softSwitches).Write(address, value);
                 return;
             }
 
@@ -303,35 +325,35 @@ namespace InnoWerks.Emulators.Apple
             if (0xC080 <= address && address <= 0xC0FF)
             {
                 var slot = (address >> 4) & 7;
-                SimDebugger.Info("Write IO {0} {1:X4}\n", slot, address);
 
                 slotDevices.TryGetValue(slot, out var device);
                 if (device?.Handles(address) == true)
                 {
+                    SimDebugger.Info("Write IO {0} {1:X4}\n", slot, address);
                     device.Write(address, value);
                     return;
                 }
             }
-            else if (SoftSwitches.UseInternalRom == false && 0xC100 <= address && address <= 0xC700)
+            else if (softSwitches.State[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
             {
                 var slot = (address >> 8) & 7;
-                SimDebugger.Info("Write ROM {0} {1:X4}\n", slot, address);
 
                 slotDevices.TryGetValue(slot, out var device);
                 if (device?.Handles(address) == true)
                 {
+                    SimDebugger.Info("Write ROM {0} {1:X4}\n", slot, address);
                     device.Write(address, value);
                     return;
                 }
             }
-            else if (SoftSwitches.UseInternalRom == false && 0xC800 <= address && address <= 0xCFFF)
+            else if (softSwitches.State[SoftSwitch.IntC8RomEnabled] == true && 0xC800 <= address && address <= 0xCFFF)
             {
                 var slot = (address >> 9) & 3;
-                SimDebugger.Info("Write ExROM {0} {1:X4}\n", slot, address);
 
                 slotDevices.TryGetValue(slot, out var device);
                 if (device?.Handles(address) == true)
                 {
+                    SimDebugger.Info("Write ExROM {0} {1:X4}\n", slot, address);
                     device.Write(address, value);
                     return;
                 }
@@ -357,7 +379,7 @@ namespace InnoWerks.Emulators.Apple
             if (configuration.Model == AppleModel.AppleIIe)
             {
                 // ROM write-through enabled (rare, but firmware does this)
-                if (SoftSwitches.RomWrite)
+                if (softSwitches.State[SoftSwitch.AuxWrite] == true)
                 {
                     mainRam[address] = value;
                 }
@@ -380,13 +402,14 @@ namespace InnoWerks.Emulators.Apple
         private void WriteAppleIIe(ushort address, byte value)
         {
             // Writes to ROM are normally ignored
-            if (SoftSwitches.RomWrite)
+            if (softSwitches.State[SoftSwitch.AuxWrite] == true)
             {
                 mainRam[address] = value; // ROM write-through
                 return;
             }
 
             // All other writes above $C000 go nowhere (slots/expansion ignored for now)
+            SimDebugger.Info("Write to auxRam / auxRom {1:X4}\n", address);
         }
 
         private static bool IsAuxAddress(ushort address)

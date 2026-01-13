@@ -91,7 +91,7 @@ namespace InnoWerks.Simulators
              $"A:{A:X2} X:{X:X2} Y:{Y:X2} SP:{StackPointer:X2} PS:{ProcessorStatus:X2}";
 
         public string GetFlagsDisplay =>
-            $"PS:{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}{(Unused ? '-' : '-')}{(Decimal ? 'D' : 'd')}{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
+            $"PS:{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}{(Unused ? '-' : '-')}{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
 
         public string InternalGetFlagsDisplay =>
             $"{(Negative ? 'N' : 'n')}{(Overflow ? 'V' : 'v')}{(Unused ? '-' : '-')}{(Break ? 'B' : 'b')}{(Decimal ? 'D' : 'd')}{(Interrupt ? 'I' : 'i')}{(Zero ? 'Z' : 'z')}{(Carry ? 'C' : 'c')}";
