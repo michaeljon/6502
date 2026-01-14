@@ -26,7 +26,7 @@ namespace InnoWerks.Emulators.Apple
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"HandleVideo({address:X4})\n");
+            SimDebugger.Info($"HandleDisplay({address:X4})\n");
 
             switch (address)
             {
@@ -49,7 +49,7 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"HandleVideo({address:X4}, {value:X2})\n");
+            SimDebugger.Info($"HandleDisplay({address:X4}, {value:X2})\n");
 
             switch (address)
             {

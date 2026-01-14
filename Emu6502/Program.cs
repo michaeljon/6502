@@ -86,7 +86,7 @@ namespace Emu6502
             bus.AddDevice(new Cassette());
             bus.AddDevice(new Speaker());
             bus.AddDevice(new Strobe());
-            // bus.AddDevice(new MemoryIIe());
+            bus.AddDevice(new MemoryIIe());
 
             // add slotted devices
             // bus.AddDevice(new DiskIISlotDevice(diskIIRom));

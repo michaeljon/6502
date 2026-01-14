@@ -23,12 +23,12 @@ namespace InnoWerks.Processors
 
         private static void Msg(string msg, bool nl, string format, params object[] args)
         {
-            // Debug.Write(msg);
-            // Debug.Write(string.Format(CultureInfo.InvariantCulture, format, args));
-            // if (nl == true)
-            // {
-            //     Debug.Write(Environment.NewLine);
-            // }
+            Debug.Write(msg);
+            Debug.Write(string.Format(CultureInfo.InvariantCulture, format, args));
+            if (nl == true)
+            {
+                Debug.Write(Environment.NewLine);
+            }
         }
     }
 }
