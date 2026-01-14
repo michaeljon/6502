@@ -8,7 +8,7 @@ namespace InnoWerks.Emulators.Apple
 {
     public class Speaker : IDevice
     {
-        public Dictionary<SoftSwitch, bool> State { get; } = [];
+        private bool spkr;
 
         public DevicePriority Priority => DevicePriority.SoftSwitch;
 
@@ -26,10 +26,8 @@ namespace InnoWerks.Emulators.Apple
             switch (address)
             {
                 case SoftSwitchAddress.SPKR:
-                    State[SoftSwitch.Speaker] = !State[SoftSwitch.Speaker];
+                    spkr = !spkr;
                     return 0;
-
-                case SoftSwitchAddress.TAPEIN: return (byte)(State[SoftSwitch.TapeIn] ? 0x80 : 0x00);
             }
 
             return 0x00;
@@ -42,17 +40,14 @@ namespace InnoWerks.Emulators.Apple
             switch (address)
             {
                 case SoftSwitchAddress.SPKR:
-                    State[SoftSwitch.Speaker] = !State[SoftSwitch.Speaker];
+                    spkr = !spkr;
                     break;
             }
         }
 
         public void Reset()
         {
-            foreach (SoftSwitch sw in Enum.GetValues<SoftSwitch>().OrderBy(v => v))
-            {
-                State[sw] = false;
-            }
+            spkr = false;
         }
     }
 }

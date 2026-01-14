@@ -8,7 +8,7 @@ namespace InnoWerks.Emulators.Apple
 {
     public class Paddles : IDevice
     {
-        public Dictionary<SoftSwitch, bool> State { get; } = [];
+        private readonly bool[] state = new bool[4];
 
         public DevicePriority Priority => DevicePriority.SoftSwitch;
 
@@ -25,10 +25,10 @@ namespace InnoWerks.Emulators.Apple
 
             return address switch
             {
-                SoftSwitchAddress.PADDLE0 => (byte)(State[SoftSwitch.Paddle0] ? 0x80 : 0x00),
-                SoftSwitchAddress.PADDLE1 => (byte)(State[SoftSwitch.Paddle1] ? 0x80 : 0x00),
-                SoftSwitchAddress.PADDLE2 => (byte)(State[SoftSwitch.Paddle2] ? 0x80 : 0x00),
-                SoftSwitchAddress.PADDLE3 => (byte)(State[SoftSwitch.Paddle3] ? 0x80 : 0x00),
+                SoftSwitchAddress.PADDLE0 => (byte)(state[0] ? 0x80 : 0x00),
+                SoftSwitchAddress.PADDLE1 => (byte)(state[1] ? 0x80 : 0x00),
+                SoftSwitchAddress.PADDLE2 => (byte)(state[2] ? 0x80 : 0x00),
+                SoftSwitchAddress.PADDLE3 => (byte)(state[3] ? 0x80 : 0x00),
                 _ => 0x00,
             };
         }
@@ -40,9 +40,9 @@ namespace InnoWerks.Emulators.Apple
 
         public void Reset()
         {
-            foreach (SoftSwitch sw in Enum.GetValues<SoftSwitch>().OrderBy(v => v))
+            for (var i = 0; i < state.Length; i++)
             {
-                State[sw] = false;
+                state[i] = false;
             }
         }
     }

@@ -68,8 +68,6 @@ namespace InnoWerks.Emulators.Apple
             }
 
             Array.Copy(romImage, 0, rom, 0, 256);
-
-            rom = romImage;
         }
 
         public DevicePriority Priority => DevicePriority.Slot;

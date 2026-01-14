@@ -42,6 +42,8 @@ namespace Emu6502
             var mainRom = File.ReadAllBytes("roms/apple2e.rom");
             byte[] diskIIRom = File.ReadAllBytes("roms/DiskII.rom");
 
+            byte[] dos33 = File.ReadAllBytes("disks/dos33.dsk");
+
             // Some ROMs are 256 bytes, some are larger.
             // If larger, extract first 256 bytes.
             if (diskIIRom.Length > 256)
@@ -80,7 +82,6 @@ namespace Emu6502
 
             // add system the devices to the bus
             bus.AddDevice(keyboard);
-            bus.AddDevice(new LanguageCard());
             bus.AddDevice(display);
             bus.AddDevice(new Annunciators());
             bus.AddDevice(new Paddles());
@@ -89,7 +90,10 @@ namespace Emu6502
             bus.AddDevice(new Strobe());
 
             // add slotted devices
-            // bus.AddDevice(new DiskIISlotDevice(diskIIRom));
+            var diskDevice = new DiskIISlotDevice(diskIIRom);
+            DiskIINibble.LoadDisk(diskDevice.GetDrive(1), dos33);
+
+            bus.AddDevice(diskDevice);
 
             Task.Run(() =>
             {

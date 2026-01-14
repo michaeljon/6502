@@ -8,7 +8,7 @@ namespace InnoWerks.Emulators.Apple
 {
     public class Annunciators : IDevice
     {
-        public Dictionary<SoftSwitch, bool> State { get; } = [];
+        private readonly bool[] state = new bool[4];
 
         public DevicePriority Priority => DevicePriority.SoftSwitch;
 
@@ -26,14 +26,14 @@ namespace InnoWerks.Emulators.Apple
             switch (address)
             {
                 // hanldle if IOU == true case
-                case SoftSwitchAddress.CLRAN0: State[SoftSwitch.Annunciator0] = false; return 0;
-                case SoftSwitchAddress.SETAN0: State[SoftSwitch.Annunciator0] = true; return 0;
-                case SoftSwitchAddress.CLRAN1: State[SoftSwitch.Annunciator1] = false; return 0;
-                case SoftSwitchAddress.SETAN1: State[SoftSwitch.Annunciator1] = true; return 0;
-                case SoftSwitchAddress.CLRAN2: State[SoftSwitch.Annunciator2] = false; return 0;
-                case SoftSwitchAddress.SETAN2: State[SoftSwitch.Annunciator2] = true; return 0;
-                case SoftSwitchAddress.CLRAN3: State[SoftSwitch.Annunciator3] = false; return 0;
-                case SoftSwitchAddress.SETAN3: State[SoftSwitch.Annunciator3] = true; return 0;
+                case SoftSwitchAddress.CLRAN0: state[0] = false; return 0;
+                case SoftSwitchAddress.SETAN0: state[0] = true; return 0;
+                case SoftSwitchAddress.CLRAN1: state[1] = false; return 0;
+                case SoftSwitchAddress.SETAN1: state[1] = true; return 0;
+                case SoftSwitchAddress.CLRAN2: state[2] = false; return 0;
+                case SoftSwitchAddress.SETAN2: state[2] = true; return 0;
+                case SoftSwitchAddress.CLRAN3: state[3] = false; return 0;
+                case SoftSwitchAddress.SETAN3: state[3] = true; return 0;
             }
 
             return 0x00;
@@ -46,22 +46,22 @@ namespace InnoWerks.Emulators.Apple
             switch (address)
             {
                 // handle weirdness with IOU
-                case SoftSwitchAddress.CLRAN0: State[SoftSwitch.Annunciator0] = false; break;
-                case SoftSwitchAddress.SETAN0: State[SoftSwitch.Annunciator0] = true; break;
-                case SoftSwitchAddress.CLRAN1: State[SoftSwitch.Annunciator1] = false; break;
-                case SoftSwitchAddress.SETAN1: State[SoftSwitch.Annunciator1] = true; break;
-                case SoftSwitchAddress.CLRAN2: State[SoftSwitch.Annunciator2] = false; break;
-                case SoftSwitchAddress.SETAN2: State[SoftSwitch.Annunciator2] = true; break;
-                case SoftSwitchAddress.CLRAN3: State[SoftSwitch.Annunciator3] = false; break;
-                case SoftSwitchAddress.SETAN3: State[SoftSwitch.Annunciator3] = true; break;
+                case SoftSwitchAddress.CLRAN0: state[0] = false; break;
+                case SoftSwitchAddress.SETAN0: state[0] = true; break;
+                case SoftSwitchAddress.CLRAN1: state[1] = false; break;
+                case SoftSwitchAddress.SETAN1: state[1] = true; break;
+                case SoftSwitchAddress.CLRAN2: state[2] = false; break;
+                case SoftSwitchAddress.SETAN2: state[2] = true; break;
+                case SoftSwitchAddress.CLRAN3: state[3] = false; break;
+                case SoftSwitchAddress.SETAN3: state[3] = true; break;
             }
         }
 
         public void Reset()
         {
-            foreach (SoftSwitch sw in Enum.GetValues<SoftSwitch>().OrderBy(v => v))
+            for (var i = 0; i < state.Length; i++)
             {
-                State[sw] = false;
+                state[i] = false;
             }
         }
     }

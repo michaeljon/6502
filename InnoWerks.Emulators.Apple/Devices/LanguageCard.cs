@@ -13,13 +13,18 @@ namespace InnoWerks.Emulators.Apple
 
         private int preWrite;
 
-        public Dictionary<SoftSwitch, bool> State { get; } = [];
+        private bool lcBank1;
+
+        private bool lcReadEnabled;
+
+        private bool lcWriteEnabled;
+
 
         public DevicePriority Priority => DevicePriority.SoftSwitch;
 
         public int Slot => -1;
 
-        public string Name => "Language Card";
+        public string Name => "II/II+ Language Card";
 
         public bool Handles(ushort address)
             => address == 0xC011 || address == 0xC012 || (address >= 0xC080 && address <= 0xC08F);
@@ -30,11 +35,11 @@ namespace InnoWerks.Emulators.Apple
 
             if (address == 0xC011)
             {
-                return HandleC011(address);
+                return HandleC011();
             }
             else if (address == 0xC012)
             {
-                return HandleC012(address);
+                return HandleC012();
             }
             else if (address >= 0xC080 && address <= 0xC08F)
             {
@@ -53,23 +58,18 @@ namespace InnoWerks.Emulators.Apple
 
         public void Reset()
         {
-            foreach (SoftSwitch sw in Enum.GetValues<SoftSwitch>().OrderBy(v => v))
-            {
-                State[sw] = false;
-            }
-
             // enable language card
-            State[SoftSwitch.LcBank2] = true;
+            lcBank1 = false;
         }
 
-        private byte HandleC011(ushort address)
+        private byte HandleC011()
         {
-            return (byte)(State[SoftSwitch.LcBank2] ? 0x80 : 0x00);
+            return (byte)(lcBank1 == false ? 0x80 : 0x00);
         }
 
-        private byte HandleC012(ushort address)
+        private byte HandleC012()
         {
-            return (byte)(State[SoftSwitch.LanguageCardEnabled] ? 0x80 : 0x00);
+            return (byte)(lcReadEnabled ? 0x80 : 0x00);
         }
 
         private byte HandleReadC08x(ushort address)
@@ -78,24 +78,24 @@ namespace InnoWerks.Emulators.Apple
             if ((address & LANG_A3) != 0)
             {
                 // 1 = any access sets Bank_1
-                State[SoftSwitch.LcBank2] = true;
+                lcBank1 = true;
             }
             else
             {
                 // 0 = any access resets Bank_1
-                State[SoftSwitch.LcBank2] = false;
+                lcBank1 = false;
             }
 
             // Read enable
             if (((address & LANG_A0A1) == 0) || ((address & LANG_A0A1) == 3))
             {
                 // 00, 11 - set READ_ENABLE
-                State[SoftSwitch.AuxRead] = true;
+                lcReadEnabled = true;
             }
             else
             {
                 // 01, 10 - reset READ_ENABLE
-                State[SoftSwitch.AuxRead] = false;
+                lcReadEnabled = false;
             }
 
             // PRE_WRITE
@@ -116,20 +116,17 @@ namespace InnoWerks.Emulators.Apple
             if ((old_pre_write == 1) && ((address & 0b00000001) == 1))
             {
                 // PRE_WRITE set, read 1 or 3, 00000000 - reset WRITE_ENABLE'
-                State[SoftSwitch.AuxWrite] = false;
+                lcWriteEnabled = false;
             }
 
             if ((address & 0b00000001) == 0)
             {
                 // read 0 or 2, set _WRITE_ENABLE, 00000001 - set WRITE_ENABLE'
-                State[SoftSwitch.AuxWrite] = true;
+                lcWriteEnabled = true;
             }
 
-            SimDebugger.Info("FF_BANK_1: %d, FF_READ_ENABLE: %d, FF_PRE_WRITE: %d, _FF_WRITE_ENABLE: %d\n",
-                State[SoftSwitch.LcBank2],
-                State[SoftSwitch.AuxRead],
-                preWrite,
-                State[SoftSwitch.AuxWrite]);
+            SimDebugger.Info("lcBank1: {0}, lcReadEnabled: {1}, preWrite: {2}, lcWriteEnabled: {3}\n",
+                lcBank1, lcReadEnabled, preWrite, lcWriteEnabled);
 
             // handle the MMU configuration here
             return 0x00;
@@ -141,24 +138,24 @@ namespace InnoWerks.Emulators.Apple
             if ((address & LANG_A3) != 0)
             {
                 // 1 = any access sets Bank_1
-                State[SoftSwitch.LcBank2] = true;
+                lcBank1 = true;
             }
             else
             {
                 // 0 = any access resets Bank_1
-                State[SoftSwitch.LcBank2] = false;
+                lcBank1 = false;
             }
 
             // Read enable
             if (((address & LANG_A0A1) == 0) || ((address & LANG_A0A1) == 3))
             {
                 // 00, 11 - set READ_ENABLE
-                State[SoftSwitch.AuxRead] = true;
+                lcReadEnabled = true;
             }
             else
             {
                 // 01, 10 - reset READ_ENABLE
-                State[SoftSwitch.AuxRead] = false;
+                lcReadEnabled = false;
             }
 
             // PRE_WRITE -- any write, reests PRE_WRITE
@@ -168,14 +165,11 @@ namespace InnoWerks.Emulators.Apple
             if ((address & 0b00000001) == 0)
             {
                 // write 0 or 2
-                State[SoftSwitch.AuxWrite] = true;
+                lcWriteEnabled = true;
             }
 
-            SimDebugger.Info("FF_BANK_1: %d, FF_READ_ENABLE: %d, FF_PRE_WRITE: %d, _FF_WRITE_ENABLE: %d\n",
-                State[SoftSwitch.LcBank2],
-                State[SoftSwitch.AuxRead],
-                preWrite,
-                State[SoftSwitch.AuxWrite]);
+            SimDebugger.Info("lcBank1: {0}, lcReadEnabled: {1}, preWrite: {2}, lcWriteEnabled: {3}\n",
+                lcBank1, lcReadEnabled, preWrite, lcWriteEnabled);
         }
     }
 }

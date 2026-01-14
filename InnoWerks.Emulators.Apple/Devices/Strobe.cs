@@ -8,7 +8,8 @@ namespace InnoWerks.Emulators.Apple
 {
     public class Strobe : IDevice
     {
-        public Dictionary<SoftSwitch, bool> State { get; } = [];
+#pragma warning disable CS0414
+        private bool strobe;
 
         public DevicePriority Priority => DevicePriority.SoftSwitch;
 
@@ -26,7 +27,7 @@ namespace InnoWerks.Emulators.Apple
             switch (address)
             {
                 case SoftSwitchAddress.STROBE:
-                    State[SoftSwitch.GameStrobe] = true;
+                    strobe = true;
                     return 0;
             }
 
@@ -40,10 +41,7 @@ namespace InnoWerks.Emulators.Apple
 
         public void Reset()
         {
-            foreach (SoftSwitch sw in Enum.GetValues<SoftSwitch>().OrderBy(v => v))
-            {
-                State[sw] = false;
-            }
+            strobe = false;
         }
     }
 }

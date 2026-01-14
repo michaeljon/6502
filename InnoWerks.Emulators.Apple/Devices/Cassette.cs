@@ -8,7 +8,9 @@ namespace InnoWerks.Emulators.Apple
 {
     public class Cassette : IDevice
     {
-        public Dictionary<SoftSwitch, bool> State { get; } = [];
+        private bool tapeIn;
+
+        private bool tapeOut;
 
         public DevicePriority Priority => DevicePriority.SoftSwitch;
 
@@ -26,10 +28,10 @@ namespace InnoWerks.Emulators.Apple
             switch (address)
             {
                 case SoftSwitchAddress.TAPEOUT:
-                    State[SoftSwitch.TapeOut] = !State[SoftSwitch.TapeOut];
+                    tapeOut = !tapeOut;
                     return 0;
 
-                case SoftSwitchAddress.TAPEIN: return (byte)(State[SoftSwitch.TapeIn] ? 0x80 : 0x00);
+                case SoftSwitchAddress.TAPEIN: return (byte)(tapeIn ? 0x80 : 0x00);
             }
 
             return 0x00;
@@ -42,17 +44,15 @@ namespace InnoWerks.Emulators.Apple
             switch (address)
             {
                 case SoftSwitchAddress.TAPEOUT:
-                    State[SoftSwitch.TapeOut] = !State[SoftSwitch.TapeOut];
+                    tapeOut = !tapeOut;
                     break;
             }
         }
 
         public void Reset()
         {
-            foreach (SoftSwitch sw in Enum.GetValues<SoftSwitch>().OrderBy(v => v))
-            {
-                State[sw] = false;
-            }
+            tapeIn = false;
+            tapeOut = false;
         }
     }
 }

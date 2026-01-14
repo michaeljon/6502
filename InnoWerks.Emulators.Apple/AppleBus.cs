@@ -94,18 +94,18 @@ namespace InnoWerks.Emulators.Apple
         {
             Tick(1);
 
-            // Maybe toggle INTC8ROM
-            if ((address & 0xFF00) == 0xC300 && state[SoftSwitch.Slot3RomEnabled] == false)
-            {
-                state[SoftSwitch.IntC8RomEnabled] = false;
-                return 0x00;
-            }
+            // // Maybe toggle INTC8ROM
+            // if ((address & 0xFF00) == 0xC300 && state[SoftSwitch.Slot3RomEnabled] == false)
+            // {
+            //     state[SoftSwitch.IntC8RomEnabled] = false;
+            //     return 0x00;
+            // }
 
-            if (address == 0xCFFF)
-            {
-                state[SoftSwitch.IntC8RomEnabled] = true;
-                return 0x00;
-            }
+            // if (address == 0xCFFF)
+            // {
+            //     state[SoftSwitch.IntC8RomEnabled] = true;
+            //     return 0x00;
+            // }
 
             // RAM ($0000–$BFFF)
             if (address < 0xC000)
@@ -160,7 +160,7 @@ namespace InnoWerks.Emulators.Apple
                 slotDevices.TryGetValue(slot, out var device);
                 if (device?.Handles(address) == true)
                 {
-                    SimDebugger.Info("Read IO {0} {1:X4}\n", slot, address);
+                    // SimDebugger.Info("Read slot {0} IO {1:X4}\n", slot, address);
                     return device.Read(address);
                 }
             }
@@ -169,21 +169,40 @@ namespace InnoWerks.Emulators.Apple
                 var slot = (address >> 8) & 7;
 
                 slotDevices.TryGetValue(slot, out var device);
-                if (device?.Handles(address) == true)
+
+                if (device == null)
                 {
-                    SimDebugger.Info("Read ROM {0} {1:X4}\n", slot, address);
+                    return 0xFF;
+                }
+
+                if (device.Handles(address) == true)
+                {
+                    // SimDebugger.Info("Read slot {0} ROM {1:X4}\n", slot, address);
                     return device.Read(address);
                 }
             }
-            else if (state[SoftSwitch.IntC8RomEnabled] == true && 0xC800 <= address && address <= 0xCFFF)
+            else if (state[SoftSwitch.IntC8RomEnabled] == false && 0xC800 <= address && address <= 0xCFFF)
             {
-                var slot = (address >> 9) & 3;
-
-                slotDevices.TryGetValue(slot, out var device);
-                if (device?.Handles(address) == true)
+                if (state[SoftSwitch.IntC8RomEnabled] == false)
                 {
-                    SimDebugger.Info("Read ExROM {0} {1:X4}\n", slot, address);
-                    return device.Read(address);
+                    return memory.Read(address);
+                }
+                else
+                {
+                    var slot = (address >> 9) & 3;
+
+                    slotDevices.TryGetValue(slot, out var device);
+
+                    if (device == null)
+                    {
+                        return 0xFF;
+                    }
+
+                    if (device.Handles(address) == true)
+                    {
+                        SimDebugger.Info("Read slot {0} C8XX ROM {1:X4}\n", slot, address);
+                        return device.Read(address);
+                    }
                 }
             }
 
@@ -269,7 +288,7 @@ namespace InnoWerks.Emulators.Apple
                     return;
                 }
             }
-            else if (state[SoftSwitch.IntC8RomEnabled] == true && 0xC800 <= address && address <= 0xCFFF)
+            else if (state[SoftSwitch.IntC8RomEnabled] == false && 0xC800 <= address && address <= 0xCFFF)
             {
                 var slot = (address >> 9) & 3;
 

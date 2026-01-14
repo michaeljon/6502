@@ -57,7 +57,8 @@ namespace InnoWerks.Emulators.Apple
 
         // Language Card banks
         LanguageCardEnabled,
-        LcBank2,
-        LcWriteEnabled
+        LcBank1,
+        LcReadEnabled,
+        LcWriteEnabled,
     }
 }
