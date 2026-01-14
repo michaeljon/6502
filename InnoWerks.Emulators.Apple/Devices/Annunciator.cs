@@ -6,7 +6,7 @@ using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple
 {
-    public class Annunciators : IDevice, ISoftSwitchStateProvider
+    public class Annunciators : IDevice
     {
         public Dictionary<SoftSwitch, bool> State { get; } = [];
 

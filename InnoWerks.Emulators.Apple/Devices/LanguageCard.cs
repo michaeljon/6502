@@ -6,7 +6,7 @@ using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple
 {
-    public class LanguageCard : IDevice, ISoftSwitchStateProvider
+    public class LanguageCard : IDevice
     {
         private const ushort LANG_A3 = 0b00001000;
         private const ushort LANG_A0A1 = 0b00000011;
@@ -24,13 +24,10 @@ namespace InnoWerks.Emulators.Apple
         public bool Handles(ushort address)
             => address == 0xC011 || address == 0xC012 || (address >= 0xC080 && address <= 0xC08F);
 
-        public LanguageCard()
-        {
-            Reset();
-        }
-
         public byte Read(ushort address)
         {
+            SimDebugger.Info($"HandleLanguageCard({address:X4})\n");
+
             if (address == 0xC011)
             {
                 return HandleC011(address);
@@ -49,6 +46,8 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
+            SimDebugger.Info($"HandleLanguageCard({address:X4}, {value:X2})\n");
+
             HandleWriteC08x(address, value);
         }
 

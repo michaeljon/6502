@@ -6,7 +6,7 @@ using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple
 {
-    public class Buttons : IDevice, ISoftSwitchStateProvider
+    public class Buttons : IDevice
     {
         public Dictionary<SoftSwitch, bool> State { get; } = [];
 
@@ -21,7 +21,7 @@ namespace InnoWerks.Emulators.Apple
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"HandlePaddle({address:X4})\n");
+            SimDebugger.Info($"HandleButton({address:X4})\n");
 
             return address switch
             {
@@ -34,7 +34,7 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"HandlePaddle({address:X4}, {value:X2})\n");
+            SimDebugger.Info($"HandleButton({address:X4}, {value:X2})\n");
         }
 
         public void Reset()

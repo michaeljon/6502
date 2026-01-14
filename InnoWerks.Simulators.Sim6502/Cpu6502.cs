@@ -36,9 +36,9 @@ namespace InnoWerks.Simulators
                 return;
             }
 
-            var stepToExecute = $"{Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}";
             if (writeInstructions)
             {
+                var stepToExecute = $"{Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}";
                 Console.Error.Write(stepToExecute);
             }
 

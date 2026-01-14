@@ -71,22 +71,22 @@ namespace Emu6502
                 RamSize = 64
             };
 
-            // create the devices
-            var keyboard = new Keyboard();
-
             // create the bus
             var bus = new AppleBus(config);
+
+            // create the devices
+            var keyboard = new Keyboard();
+            var display = new Display(bus);
 
             // add system the devices to the bus
             bus.AddDevice(keyboard);
             bus.AddDevice(new LanguageCard());
-            bus.AddDevice(new Display());
+            bus.AddDevice(display);
             bus.AddDevice(new Annunciators());
             bus.AddDevice(new Paddles());
             bus.AddDevice(new Cassette());
             bus.AddDevice(new Speaker());
             bus.AddDevice(new Strobe());
-            bus.AddDevice(new MemoryIIe());
 
             // add slotted devices
             // bus.AddDevice(new DiskIISlotDevice(diskIIRom));
@@ -124,8 +124,6 @@ namespace Emu6502
 
             cpu.Reset();
 
-            var renderer = new AppleTextConsoleRenderer(bus, bus.softSwitches);
-
             Console.CursorVisible = false;
             Console.Clear();
 
@@ -157,7 +155,7 @@ namespace Emu6502
                     }
                 }
 
-                if (options.SingleStep == false) { renderer.Render(); }
+                if (options.SingleStep == false) { display.Render(); }
 
                 Thread.Sleep(16);
             }

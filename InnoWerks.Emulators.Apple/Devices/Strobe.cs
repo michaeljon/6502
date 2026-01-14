@@ -6,7 +6,7 @@ using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple
 {
-    public class Strobe : IDevice, ISoftSwitchStateProvider
+    public class Strobe : IDevice
     {
         public Dictionary<SoftSwitch, bool> State { get; } = [];
 

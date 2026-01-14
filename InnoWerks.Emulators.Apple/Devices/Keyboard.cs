@@ -1,4 +1,5 @@
 using System;
+using InnoWerks.Processors;
 using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple

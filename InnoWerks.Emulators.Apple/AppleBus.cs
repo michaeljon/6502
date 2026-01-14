@@ -26,49 +26,50 @@ namespace InnoWerks.Emulators.Apple
     {
         private readonly AppleConfiguration configuration;
 
-        public ISoftSwitchStateProvider softSwitches { get; init; }
-
-        // main and auxiliary ram
-        private readonly byte[] mainRam;
-
-        private readonly byte[] auxRam;      // IIe only
-
-        private readonly byte[][] romBanks;         // $D000–$FFFF
-
         private int transactionCycles;
 
-        public AppleBus(AppleConfiguration config)
-        {
-            ArgumentNullException.ThrowIfNull(config);
-
-            configuration = config;
-            softSwitches = config.SoftSwitchStateProvider;
-
-            mainRam = new byte[64 * 1024];
-
-            if (configuration.Model == AppleModel.AppleIIe && configuration.HasAuxMemory)
-            {
-                auxRam = new byte[64 * 1024];
-            }
-
-            // todo: come back around and replace this per configuration
-            romBanks = new byte[2][];
-            romBanks[0] = new byte[16 * 1024];
-            romBanks[1] = new byte[16 * 1024];
-        }
+        private readonly MemoryIIe memory;
 
         private readonly List<IDevice> systemDevices = [];
 
         private readonly Dictionary<int, IDevice> slotDevices = [];
 
+        private readonly List<IDevice> softSwitchDevices = [];
+
+        private Dictionary<SoftSwitch, bool> state { get; } = [];
+
+        public AppleBus(AppleConfiguration configuration)
+        {
+            ArgumentNullException.ThrowIfNull(configuration);
+
+            this.configuration = configuration;
+            this.memory = new MemoryIIe(configuration);
+
+            // this.memory = configuration.Model == AppleModel.AppleII || configuration.Model == AppleModel.AppleIIPlus
+            //     ? new MemoryIIe(configuration)
+            //     : new MemoryIIe(configuration);
+
+            foreach (SoftSwitch sw in Enum.GetValues<SoftSwitch>().OrderBy(v => v))
+            {
+                state[sw] = false;
+            }
+        }
+
         public void AddDevice(IDevice device)
         {
             ArgumentNullException.ThrowIfNull(device, nameof(device));
+
+            // this really shouldn't be here
+            device.Reset();
 
             switch (device.Priority)
             {
                 case DevicePriority.System:
                     systemDevices.Add(device);
+                    break;
+
+                case DevicePriority.SoftSwitch:
+                    softSwitchDevices.Add(device);
                     break;
 
                 case DevicePriority.Slot:
@@ -89,105 +90,29 @@ namespace InnoWerks.Emulators.Apple
 
         public ulong CycleCount { get; private set; }
 
-        public byte Peek(ushort address)
-        {
-            return ReadImpl(address);
-        }
-
-        public void Poke(ushort address, byte value)
-        {
-            WriteImpl(address, value);
-        }
-
         public byte Read(ushort address)
         {
             Tick(1);
 
-            // SimDebugger.Info($"[AB] Read({address:X4})\n");
-
-            return ReadImpl(address);
-        }
-
-        public void Write(ushort address, byte value)
-        {
-            Tick(1);
-
-            // SimDebugger.Info($"[AB] Write({address:X4}, {value:X2})\n");
-
-            WriteImpl(address, value);
-        }
-
-        public void LoadProgramToRom(byte[] objectCode)
-        {
-            ArgumentNullException.ThrowIfNull(objectCode);
-
-            // we assume a rom load is going to write the entire rom,
-            // including the initialization vector values at 0xfffd, and 0xfffc
-            if (configuration.Model == AppleModel.AppleIIe)
-            {
-                if (objectCode.Length == 32 * 1024)
-                {
-                    // let's try something and only load the last 16k to $c000
-                    Array.Copy(objectCode, 16 * 1024, romBanks[0], 0, 16 * 1024);
-                }
-                else if (objectCode.Length == 20 * 1024)
-                {
-                    // this is the weird rom with an extra 4k page
-                    Array.Copy(objectCode, 16 * 1024, romBanks[0], 0, 16 * 1024);
-                }
-                else if (objectCode.Length == 16 * 1024)
-                {
-                    // let's try something and only load the last 16k to $c000
-                    Array.Copy(objectCode, 0, romBanks[0], 0, 16 * 1024);
-                }
-                else
-                {
-                    throw new InvalidOperationException("IIe ROM must be 16, 20, or 32 KB");
-                }
-            }
-            else
-            {
-                Array.Copy(objectCode, 0, romBanks[0], 0, objectCode.Length);
-            }
-        }
-
-        public void LoadProgramToRam(byte[] objectCode, ushort origin)
-        {
-            ArgumentNullException.ThrowIfNull(objectCode);
-
-            Array.Copy(objectCode, 0, mainRam, origin, objectCode.Length);
-        }
-
-        private static bool IsSlotAddress(ushort address)
-            => address >= 0xC080 && address <= 0xCFFF;
-
-        private byte ReadImpl(ushort address)
-        {
             // Maybe toggle INTC8ROM
-            if ((address & 0xFF00) == 0xC300 && softSwitches.State[SoftSwitch.Slot3RomEnabled] == false)
+            if ((address & 0xFF00) == 0xC300 && state[SoftSwitch.Slot3RomEnabled] == false)
             {
-                softSwitches.State[SoftSwitch.IntC8RomEnabled] = false;
+                state[SoftSwitch.IntC8RomEnabled] = false;
                 return 0x00;
             }
 
             if (address == 0xCFFF)
             {
-                softSwitches.State[SoftSwitch.IntC8RomEnabled] = true;
+                state[SoftSwitch.IntC8RomEnabled] = true;
                 return 0x00;
             }
 
             // RAM ($0000–$BFFF)
             if (address < 0xC000)
             {
-                if (configuration.Model == AppleModel.AppleIIe && softSwitches.State[SoftSwitch.AuxRead] && IsAuxAddress(address))
-                {
-                    return auxRam[address];
-                }
-
-                return mainRam[address];
+                return memory.Read(address);
             }
 
-            // TODO: sort and select these once when the board is configured
             foreach (var device in systemDevices)
             {
                 if (device.Handles(address))
@@ -196,9 +121,22 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            if (((IDevice)softSwitches).Handles(address))
+            // this block, if the address is handled, short-circuit returns
+            switch (address)
             {
-                return ((IDevice)softSwitches).Read(address);
+                case SoftSwitchAddress.RDCXROM: return (byte)(state[SoftSwitch.SlotRomEnabled] ? 0x80 : 0x00);
+                case SoftSwitchAddress.RDC3ROM: return (byte)(state[SoftSwitch.Slot3RomEnabled] ? 0x80 : 0x00);
+
+                case SoftSwitchAddress.RDIOUDIS: return (byte)(state[SoftSwitch.IOU] ? 0x80 : 0x00);
+                case SoftSwitchAddress.RDDHIRES: return (byte)(state[SoftSwitch.DoubleHiRes] ? 0x80 : 0x00);
+            }
+
+            foreach (var softSwitchDevice in softSwitchDevices)
+            {
+                if (softSwitchDevice.Handles(address))
+                {
+                    return softSwitchDevice.Read(address);
+                }
             }
 
             /*
@@ -226,7 +164,7 @@ namespace InnoWerks.Emulators.Apple
                     return device.Read(address);
                 }
             }
-            else if (softSwitches.State[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
+            else if (state[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
             {
                 var slot = (address >> 8) & 7;
 
@@ -237,7 +175,7 @@ namespace InnoWerks.Emulators.Apple
                     return device.Read(address);
                 }
             }
-            else if (softSwitches.State[SoftSwitch.IntC8RomEnabled] == true && 0xC800 <= address && address <= 0xCFFF)
+            else if (state[SoftSwitch.IntC8RomEnabled] == true && 0xC800 <= address && address <= 0xCFFF)
             {
                 var slot = (address >> 9) & 3;
 
@@ -249,47 +187,16 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            return configuration.Model switch
-            {
-                AppleModel.AppleII or AppleModel.AppleIIPlus => ReadAppleII(address),
-                AppleModel.AppleIIe => ReadAppleIIe(address),
-                _ => 0xFF,
-            };
+            return memory.Read(address);
         }
 
-        private byte ReadAppleII(ushort address)
+        public void Write(ushort address, byte value)
         {
-            // $C100–$CFFF slots / expansion (no cards yet)
-            if (address < 0xD000)
-            {
-                return 0x00;
-            }
+            Tick(1);
 
-            // $D000–$FFFF ROM (12 KB)
-            return romBanks[0][address - 0xD000];
-        }
-
-        private byte ReadAppleIIe(ushort address)
-        {
-            // ROM visible across $C000–$FFFF unless overridden
-            if (0xC000 <= address && address <= 0xFFFF)
-            {
-                int offset = address - 0xC000;
-                return romBanks[softSwitches.State[SoftSwitch.AuxRead] ? 1 : 0][offset];
-            }
-
-            // ROM disabled → RAM
-            return mainRam[address];
-        }
-
-        private void WriteImpl(ushort address, byte value)
-        {
             if (address < 0xC000)
             {
-                var bank = (configuration.Model == AppleModel.AppleIIe && softSwitches.State[SoftSwitch.AuxWrite] == true && IsAuxAddress(address))
-                    ? auxRam
-                    : mainRam;
-                bank[address] = value;
+                memory.Write(address, value);
                 return;
             }
 
@@ -302,10 +209,26 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            if (((IDevice)softSwitches).Handles(address))
+            // this block, if the address is handle, short-circuit returns
+            switch (address)
             {
-                ((IDevice)softSwitches).Write(address, value);
-                return;
+                case SoftSwitchAddress.SETSLOTCXROM: state[SoftSwitch.SlotRomEnabled] = true; return;
+                case SoftSwitchAddress.SETINTCXROM: state[SoftSwitch.SlotRomEnabled] = false; return;
+
+                case SoftSwitchAddress.SETINTC3ROM: state[SoftSwitch.Slot3RomEnabled] = false; return;
+                case SoftSwitchAddress.SETSLOTC3ROM: state[SoftSwitch.Slot3RomEnabled] = true; return;
+
+                case SoftSwitchAddress.IOUDISON: state[SoftSwitch.IOU] = true; return;
+                case SoftSwitchAddress.IOUDISOFF: state[SoftSwitch.IOU] = false; return;
+            }
+
+            foreach (var softSwitchDevice in softSwitchDevices)
+            {
+                if (softSwitchDevice.Handles(address))
+                {
+                    softSwitchDevice.Write(address, value);
+                    return;
+                }
             }
 
             /*
@@ -334,7 +257,7 @@ namespace InnoWerks.Emulators.Apple
                     return;
                 }
             }
-            else if (softSwitches.State[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
+            else if (state[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
             {
                 var slot = (address >> 8) & 7;
 
@@ -346,7 +269,7 @@ namespace InnoWerks.Emulators.Apple
                     return;
                 }
             }
-            else if (softSwitches.State[SoftSwitch.IntC8RomEnabled] == true && 0xC800 <= address && address <= 0xCFFF)
+            else if (state[SoftSwitch.IntC8RomEnabled] == true && 0xC800 <= address && address <= 0xCFFF)
             {
                 var slot = (address >> 9) & 3;
 
@@ -359,81 +282,37 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            switch (configuration.Model)
-            {
-                case AppleModel.AppleII:
-                case AppleModel.AppleIIPlus:
-                    WriteAppleII(address, value);
-                    break;
-
-                case AppleModel.AppleIIe:
-                    WriteAppleIIe(address, value);
-                    break;
-            }
-
-            // $C100–$CFFF slots / expansion (ignored)
-            if (address < 0xD000)
-                return;
-
-            // $D000–$FFFF ROM or RAM
-            if (configuration.Model == AppleModel.AppleIIe)
-            {
-                // ROM write-through enabled (rare, but firmware does this)
-                if (softSwitches.State[SoftSwitch.AuxWrite] == true)
-                {
-                    mainRam[address] = value;
-                }
-
-                return;
-            }
-
-            // Apple II / II+ ROM is always read-only
+            memory.Write(address, value);
         }
 
-        private static void WriteAppleII(ushort address, byte value)
+        public byte Peek(ushort address)
         {
-            // Writes to $C100–$CFFF (slot / expansion ROM) ignored for now
-            if (address < 0xD000)
-                return;
-
-            // Writes to ROM ($D000–$FFFF) ignored
+            return memory.Read(address);
         }
 
-        private void WriteAppleIIe(ushort address, byte value)
+        public void Poke(ushort address, byte value)
         {
-            // Writes to ROM are normally ignored
-            if (softSwitches.State[SoftSwitch.AuxWrite] == true)
-            {
-                mainRam[address] = value; // ROM write-through
-                return;
-            }
-
-            // All other writes above $C000 go nowhere (slots/expansion ignored for now)
-            SimDebugger.Info("Write to auxRam / auxRom {1:X4}\n", address);
+            memory.Write(address, value);
         }
 
-        private static bool IsAuxAddress(ushort address)
+        public void LoadProgramToRom(byte[] objectCode)
         {
-            // Text/graphics pages & zero page behavior can be refined later
-            return address < 0xC000;
+            ArgumentNullException.ThrowIfNull(objectCode);
+
+            memory.LoadProgramToRom(objectCode);
+        }
+
+        public void LoadProgramToRam(byte[] objectCode, ushort origin)
+        {
+            ArgumentNullException.ThrowIfNull(objectCode);
+
+            memory.LoadProgramToRam(objectCode, origin);
         }
 
         private void Tick(int howMany)
         {
             CycleCount += (ulong)howMany;
             transactionCycles += howMany;
-        }
-
-        private static void LogRead(ushort address)
-        {
-            if (address == 0xfffc || address == 0xfffd)
-            {
-                Console.Error.WriteLine("Initialization vector read for address ${0:X4}", address);
-            }
-            else if (0xc080 <= address && address <= 0xc083)
-            {
-                Console.Error.WriteLine("ROM bank switch read ${0:X4}", address);
-            }
         }
     }
 }
