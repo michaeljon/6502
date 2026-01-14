@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using InnoWerks.Processors;
 
@@ -56,6 +57,8 @@ namespace InnoWerks.Simulators
         }
 
         protected abstract void Dispatch(byte operation, bool writeInstructions = false);
+
+        protected abstract OpCodeDefinition GetOpCodeDefinition(byte operation);
 
         public void Reset()
         {
@@ -222,6 +225,30 @@ namespace InnoWerks.Simulators
 
             // hard-coded BRK, if hit we'll tell the caller that we saw and executed a break
             return bus.EndTransaction();
+        }
+
+        public (OpCodeDefinition opCodeDefinition, string decode) PeekInstruction()
+        {
+            var operation = bus.Peek(Registers.ProgramCounter);
+
+            OpCodeDefinition opCodeDefinition =
+                CpuInstructions.OpCode65C02[operation];
+
+            // decode the operand based on the opcode and addressing mode
+            if (opCodeDefinition.DecodeOperand(this) == false)
+            {
+                if (illegalInstructionEncountered == true)
+                {
+                    // This is a JAM / KIL
+                    throw new IllegalOpCodeException(Registers.ProgramCounter, operation);
+                }
+
+                return (null, $"Invalid operation {operation:X2}");
+            }
+
+            var stepToExecute = $"{bus.CycleCount:X16} {Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}\n";
+
+            return (opCodeDefinition, stepToExecute);
         }
 
         #region InstructionDefinitions

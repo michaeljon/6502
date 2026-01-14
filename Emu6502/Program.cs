@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -71,17 +72,24 @@ namespace Emu6502
             };
 
             // create the devices
-            var keyboard = new KeyboardDevice();
-            var diskII = new DiskIISlotDevice(diskIIRom);
+            var keyboard = new Keyboard();
 
             // create the bus
             var bus = new AppleBus(config);
 
             // add system the devices to the bus
             bus.AddDevice(keyboard);
+            bus.AddDevice(new LanguageCard());
+            bus.AddDevice(new Display());
+            bus.AddDevice(new Annunciators());
+            bus.AddDevice(new Paddles());
+            bus.AddDevice(new Cassette());
+            bus.AddDevice(new Speaker());
+            bus.AddDevice(new Strobe());
+            // bus.AddDevice(new MemoryIIe());
 
             // add slotted devices
-            // bus.AddDevice(diskII);
+            // bus.AddDevice(new DiskIISlotDevice(diskIIRom));
 
             Task.Run(() =>
             {
@@ -130,7 +138,9 @@ namespace Emu6502
                 {
                     if (options.SingleStep == true)
                     {
-                        // Console.SetCursorPosition(0, 26);
+                        var (opcode, decode) = cpu.PeekInstruction();
+
+                        Console.Write(decode);
                         Console.Write("> ");
                         var key = Console.ReadKey();
                         if (key.KeyChar == 'G')
@@ -139,7 +149,7 @@ namespace Emu6502
                         }
                     }
 
-                    cpu.Step(writeInstructions: options.SingleStep);
+                    cpu.Step(writeInstructions: false);
 
                     if (options.SingleStep == true)
                     {

@@ -33,7 +33,7 @@ namespace InnoWerks.Simulators
 
         public override string ToString()
         {
-            return OpCode.ToString();
+            return $"{OpCode} {AddressingMode}";
         }
     }
 }

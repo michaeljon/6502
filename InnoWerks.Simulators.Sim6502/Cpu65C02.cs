@@ -953,5 +953,10 @@ namespace InnoWerks.Simulators
                     throw new IllegalOpCodeException(Registers.ProgramCounter, operation);
             }
         }
+
+        protected override OpCodeDefinition GetOpCodeDefinition(byte operation)
+        {
+            return CpuInstructions.OpCode65C02[operation];
+        }
     }
 }

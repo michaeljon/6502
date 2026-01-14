@@ -46,6 +46,8 @@ namespace InnoWerks.Simulators
         /// <returns>true if the CPU encounters a BRK instruction</returns>
         int Step(bool writeInstructions = false, bool returnPriorToBreak = false);
 
+        (OpCodeDefinition opCodeDefinition, string decode) PeekInstruction();
+
         /// <summary>
         /// Pushes a byte onto the stack at the current value of SP
         /// and adjusts SP accordingly. This is used as a development
