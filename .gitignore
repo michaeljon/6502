@@ -12,3 +12,6 @@ temp/
 *.o
 
 Emu6502/roms/jace/
+
+*.py
+*.tsv

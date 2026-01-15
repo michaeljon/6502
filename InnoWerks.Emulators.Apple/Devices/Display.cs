@@ -81,43 +81,48 @@ namespace InnoWerks.Emulators.Apple
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"Read Display({address:X4})\n");
+            // SimDebugger.Info($"Read Display({address:X4})\n");
 
             switch (address)
             {
                 // this looks like a keyboard here, because it is
+                // this is also known as CLR80STORE
                 case SoftSwitchAddress.KBD:
                     return softSwitches.State[SoftSwitch.KeyboardStrobe]
                         ? (byte)(softSwitches.KeyLatch | 0x80)
                         : softSwitches.KeyLatch;
 
                 case SoftSwitchAddress.RDALTCHR:
+                    // bool altCharSet = softSwitches.State[SoftSwitch.AltCharSet];
+
+                    // if (softSwitches.State[SoftSwitch.Store80] && softSwitches.State[SoftSwitch.TextMode])
+                    // {
+                    //     altCharSet = false;
+                    // }
+
+                    // // again: live sampling
+                    // return (byte)((altCharSet ^ phase) ? 0x80 : 0x00);
+
                     if (softSwitches.State[SoftSwitch.VerticalBlank])
                     {
                         return 0x00;
                     }
 
-                    bool altCharSet = softSwitches.State[SoftSwitch.AltCharSet];
-
-                    if (softSwitches.State[SoftSwitch.Store80] && softSwitches.State[SoftSwitch.TextMode])
-                    {
-                        altCharSet = false;
-                    }
-
-                    // again: live sampling
-                    return (byte)((altCharSet ^ phase) ? 0x80 : 0x00);
+                    return (byte)(softSwitches.State[SoftSwitch.AltCharSet] ? 0x80 : 0x00);
 
                 case SoftSwitchAddress.RD80VID:
+                    // bool video80 = softSwitches.State[SoftSwitch.EightyColumnMode]
+                    //             && (!softSwitches.State[SoftSwitch.TextMode] || !softSwitches.State[SoftSwitch.MixedMode]);
+
+                    // // real hardware: this is sampled from the video generator
+                    // return (byte)((video80 ^ phase) ? 0x80 : 0x00);
+
                     if (softSwitches.State[SoftSwitch.VerticalBlank])
                     {
                         return 0x00;
                     }
 
-                    bool video80 = softSwitches.State[SoftSwitch.EightyColumnMode]
-                                && (!softSwitches.State[SoftSwitch.TextMode] || !softSwitches.State[SoftSwitch.MixedMode]);
-
-                    // real hardware: this is sampled from the video generator
-                    return (byte)((video80 ^ phase) ? 0x80 : 0x00);
+                    return (byte)(softSwitches.State[SoftSwitch.EightyColumnMode] ? 0x80 : 0x00);
 
                 case SoftSwitchAddress.RD80STORE: return (byte)(softSwitches.State[SoftSwitch.Store80] ? 0x80 : 0x00);
 
@@ -161,7 +166,7 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"Write Display({address:X4}, {value:X2})\n");
+            // SimDebugger.Info($"Write Display({address:X4}, {value:X2})\n");
 
             switch (address)
             {

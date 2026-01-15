@@ -39,7 +39,7 @@ namespace InnoWerks.Emulators.Apple
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"Read Keyboard({address:X4})\n");
+            // SimDebugger.Info($"Read Keyboard({address:X4})\n");
 
             switch (address)
             {
@@ -62,7 +62,7 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"Write Keyboard({address:X4}, {value:X2})\n");
+            // SimDebugger.Info($"Write Keyboard({address:X4}, {value:X2})\n");
 
             if (address == SoftSwitchAddress.KBDSTRB)
             {
@@ -75,8 +75,8 @@ namespace InnoWerks.Emulators.Apple
 
         public void Reset()
         {
-            softSwitches.KeyLatch = 0x8d;
-            softSwitches.State[SoftSwitch.KeyboardStrobe] = true;
+            softSwitches.KeyLatch = 0x00;
+            softSwitches.State[SoftSwitch.KeyboardStrobe] = false;
         }
 
         /// <summary>

@@ -71,7 +71,7 @@ namespace InnoWerks.Emulators.Apple
             softSwitches.State[SoftSwitch.Annunciator0] = false;
             softSwitches.State[SoftSwitch.Annunciator1] = false;
             softSwitches.State[SoftSwitch.Annunciator2] = false;
-            softSwitches.State[SoftSwitch.Annunciator3] = false;
+            softSwitches.State[SoftSwitch.Annunciator3] = true;
         }
     }
 }
