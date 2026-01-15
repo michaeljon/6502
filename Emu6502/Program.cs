@@ -67,7 +67,7 @@ namespace Emu6502
             var config = new AppleConfiguration(AppleModel.AppleIIe)
             {
                 CpuClass = InnoWerks.Processors.CpuClass.WDC65C02,
-                HasAuxMemory = false,
+                HasAuxMemory = true,
                 Has80Column = false,
                 HasLowercase = false,
                 RamSize = 64
@@ -75,6 +75,18 @@ namespace Emu6502
 
             // create the bus
             var bus = new AppleBus(config);
+
+            var cpu = new Cpu65C02(
+                bus,
+                (cpu, programCounter) => { },
+                (cpu) =>
+                {
+                    if (keepRunning == false)
+                    {
+                        Console.CursorVisible = true;
+                        Environment.Exit(0);
+                    }
+                });
 
             // create the devices
             var keyboard = new Keyboard();
@@ -114,18 +126,6 @@ namespace Emu6502
 
             bus.LoadProgramToRom(mainRom);
 
-            var cpu = new Cpu65C02(
-                bus,
-                (cpu, programCounter) => { },
-                (cpu) =>
-                {
-                    if (keepRunning == false)
-                    {
-                        Console.CursorVisible = true;
-                        Environment.Exit(0);
-                    }
-                });
-
             cpu.Reset();
 
             Console.CursorVisible = false;
@@ -151,7 +151,7 @@ namespace Emu6502
                         }
                     }
 
-                    cpu.Step(writeInstructions: false);
+                    cpu.Step(writeInstructions: options.Trace);
 
                     if (options.SingleStep == true)
                     {

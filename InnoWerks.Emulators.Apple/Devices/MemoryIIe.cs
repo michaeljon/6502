@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.X86;
 using InnoWerks.Processors;
 using InnoWerks.Simulators;
 
@@ -9,15 +11,49 @@ namespace InnoWerks.Emulators.Apple
 {
     public class MemoryIIe : IDevice
     {
+        private readonly List<ushort> handles =
+        [
+            SoftSwitchAddress.CLR80STORE,
+            SoftSwitchAddress.SET80STORE,
+
+            SoftSwitchAddress.RDMAINRAM,
+            SoftSwitchAddress.RDCARDRAM,
+
+            SoftSwitchAddress.WRMAINRAM,
+            SoftSwitchAddress.WRCARDRAM,
+
+            SoftSwitchAddress.SETSTDZP,
+            SoftSwitchAddress.SETALTZP,
+
+            SoftSwitchAddress.RDRAMRD,
+            SoftSwitchAddress.RDRAMWRT,
+
+            SoftSwitchAddress.RDALTZP,
+
+            SoftSwitchAddress.RD80STORE,
+            SoftSwitchAddress.RDLCBNK2,
+            SoftSwitchAddress.RDLCRAM,
+
+            0xC080, 0xC081, 0xC082, 0xC083, 0xC084, 0xC085, 0xC086, 0xC087,
+            0xC088, 0xC089, 0xC08A, 0xC08B, 0xC08C, 0xC08D, 0xC08E, 0xC08F,
+        ];
+
         private const ushort LANG_A3 = 0b00001000;
+
         private const ushort LANG_A0A1 = 0b00000011;
 
+        private const ushort LANG_A0 = 0b00000001;
+
         private readonly AppleConfiguration configuration;
+
+        private ICpu cpu;
 
         // main and auxiliary ram
         private readonly byte[] mainRam;
 
         private readonly byte[] auxRam;          // IIe only
+
+        private readonly byte[][] lcRam;          // IIe only
 
         // swappable lo rom banks
         private readonly byte[][] loRom;         // $D000–$DFFF
@@ -51,6 +87,9 @@ namespace InnoWerks.Emulators.Apple
             if (configuration.Model == AppleModel.AppleIIe && configuration.HasAuxMemory)
             {
                 auxRam = new byte[64 * 1024];
+                lcRam = new byte[2][];
+                lcRam[0] = new byte[4 * 1024];          // 4k RAM bank 1
+                lcRam[1] = new byte[4 * 1024];          // 4k RAM bank 2
             }
 
             // todo: come back around and replace this per configuration
@@ -62,72 +101,63 @@ namespace InnoWerks.Emulators.Apple
             hiRom = new byte[8 * 1024];             // 8k ROM
         }
 
-        public bool Handles(ushort address) => true;
+        public bool Handles(ushort address) =>
+            handles.Contains(address);
 
         public byte Read(ushort address)
         {
-            // RAM
-            if (address < 0xC000)
+            if (address < 0x0200)
             {
-                if (configuration.Model == AppleModel.AppleIIe && State[SoftSwitch.AuxRead])
-                {
-                    return auxRam[address];
-                }
-                else
-                {
-                    return mainRam[address];
-                }
+                return State[SoftSwitch.ZpAux] ? auxRam[address] : mainRam[address];
             }
-
-            // soft switches
-            if (0xC000 <= address && address <= 0xC0FF)
+            else if (address < 0xC000)
+            {
+                return State[SoftSwitch.AuxRead] ? auxRam[address] : mainRam[address];
+            }
+            else if (0xC000 <= address && address <= 0xC0FF)
             {
                 switch (address)
                 {
+                    case SoftSwitchAddress.RDLCBNK2: return (byte)(State[SoftSwitch.LcBank1] ? 0x80 : 0x00);
+                    case SoftSwitchAddress.RDLCRAM: return (byte)(State[SoftSwitch.LcReadEnabled] ? 0x80 : 0x00);
+
                     case SoftSwitchAddress.RDRAMRD: return (byte)(State[SoftSwitch.AuxRead] ? 0x80 : 0x00);
                     case SoftSwitchAddress.RDRAMWRT: return (byte)(State[SoftSwitch.AuxWrite] ? 0x80 : 0x00);
 
                     case SoftSwitchAddress.RDALTZP: return (byte)(State[SoftSwitch.ZpAux] ? 0x80 : 0x00);
 
                     case SoftSwitchAddress.RD80STORE: return (byte)(State[SoftSwitch.Store80] ? 0x80 : 0x00);
-                    case SoftSwitchAddress.RDTEXT: return (byte)(State[SoftSwitch.TextMode] ? 0x80 : 0x00);
-                    case SoftSwitchAddress.RDMIXED: return (byte)(State[SoftSwitch.MixedMode] ? 0x80 : 0x00);
-                    case SoftSwitchAddress.RDPAGE2: return (byte)(State[SoftSwitch.Page2] ? 0x80 : 0x00);
-                    case SoftSwitchAddress.RDHIRES: return (byte)(State[SoftSwitch.HiRes] ? 0x80 : 0x00);
                 }
 
-                if (address == SoftSwitchAddress.KBDSTRB)
+                if (address >= 0xC080 && address <= 0xC08F)
                 {
-                    return HandleC011();
+                    HandleReadC08x(address);
                 }
-                else if (address == SoftSwitchAddress.RDLCBNK2)
-                {
-                    return HandleC012();
-                }
-                else if (address >= 0xC080 && address <= 0xC08F)
-                {
-                    return HandleReadC08x(address);
-                }
-
-                return 0xFF;
             }
-
-            // $C100-$CFFF was handled by the bus, if slot rom is enabled,
-            // otherwise we're being asked to handle it
-            if (0xC000 <= address && address <= 0xCFFF)
+            else if (0xC100 <= address && address <= 0xCFFF)
             {
+                if (State[SoftSwitch.AuxRead] == true)
+                {
+                    return auxRam[address];
+                }
+
                 int offset = address - 0xC000;
                 return cxRom[offset];
             }
             else if (0xD000 <= address && address <= 0xDFFF)
             {
-                if (State[SoftSwitch.LcReadEnabled])
+                int offset = address - 0xD000;
+                if (State[SoftSwitch.LcReadEnabled] == true)
                 {
-                    return mainRam[address];
+                    return lcRam[State[SoftSwitch.LcBank1] ? 1 : 0][offset];
                 }
 
-                int offset = address - 0xD000;
-                return loRom[State[SoftSwitch.AuxRead] ? 1 : 0][offset];
+                if (State[SoftSwitch.AuxRead] == true)
+                {
+                    return auxRam[address];
+                }
+
+                return loRom[State[SoftSwitch.LcBank1] ? 1 : 0][offset];
             }
             else if (0xE000 <= address && address <= 0xFFFF)
             {
@@ -140,21 +170,29 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
+            if (address < 0x0200)
+            {
+                if (State[SoftSwitch.ZpAux] == true)
+                {
+                    auxRam[address] = value;
+                }
+                else
+                {
+                    mainRam[address] = value;
+                }
+            }
             if (address < 0xC000)
             {
                 if (configuration.Model == AppleModel.AppleIIe && State[SoftSwitch.AuxWrite])
                 {
                     auxRam[address] = value;
-                    return;
                 }
                 else
                 {
                     mainRam[address] = value;
-                    return;
                 }
             }
-
-            if (0xC000 <= address && address <= 0xC0FF)
+            else if (0xC000 <= address && address <= 0xC0FF)
             {
                 switch (address)
                 {
@@ -175,29 +213,38 @@ namespace InnoWerks.Emulators.Apple
                 {
                     HandleWriteC08x(address, value);
                 }
+
+                return;
             }
-
-            // $D000–$FFFF ROM or RAM
-            if (configuration.Model == AppleModel.AppleIIe)
+            else if (0xC100 <= address && address <= 0xCFFF)
             {
-                if (0xD000 <= address && address <= 0xDFFF)
-                {
-                    if (State[SoftSwitch.LcWriteEnabled])
-                    {
-                        mainRam[address] = value;
-                    }
-
-                    return;
-                }
-
-                // ROM write-through enabled (rare, but firmware does this)
                 if (State[SoftSwitch.AuxWrite] == true)
+                {
+                    auxRam[address] = value;
+                }
+            }
+            else if (0xD000 <= address && address <= 0xDFFF)
+            {
+                if (State[SoftSwitch.LcWriteEnabled] == true)
+                {
+                    lcRam[State[SoftSwitch.LcBank1] ? 1 : 0][address - 0xD000] = value;
+                }
+                else if (State[SoftSwitch.AuxWrite] == true)
+                {
+                    auxRam[address] = value;
+                }
+            }
+            else if (0xE000 <= address && address <= 0xFFFF)
+            {
+                if (State[SoftSwitch.AuxWrite] == true)
+                {
+                    auxRam[address] = value;
+                }
+                else
                 {
                     mainRam[address] = value;
                 }
             }
-
-            // Apple II / II+ ROM is always read-only
         }
 
         public void Reset()
@@ -241,120 +288,63 @@ namespace InnoWerks.Emulators.Apple
             Array.Copy(objectCode, 0, mainRam, origin, objectCode.Length);
         }
 
-        private byte HandleC011()
+        public void SetCpu(ICpu cpu)
         {
-            return (byte)(State[SoftSwitch.LcBank1] == false ? 0x80 : 0x00);
+            ArgumentNullException.ThrowIfNull(cpu, nameof(cpu));
+
+            this.cpu = cpu;
         }
 
-        private byte HandleC012()
+        private void HandleReadC08x(ushort address)
         {
-            return (byte)(State[SoftSwitch.LcReadEnabled] ? 0x80 : 0x00);
-        }
+            SimDebugger.Info($"HandleReadC08x({address:X4})\n");
 
-        private byte HandleReadC08x(ushort address)
-        {
             // Bank select
-            if ((address & LANG_A3) != 0)
-            {
-                // 1 = any access sets Bank_1
-                State[SoftSwitch.LcBank1] = true;
-            }
-            else
-            {
-                // 0 = any access resets Bank_1
-                State[SoftSwitch.LcBank1] = false;
-            }
+            State[SoftSwitch.LcBank1] = (address & LANG_A3) != 0;
 
             // Read enable
-            if (((address & LANG_A0A1) == 0) || ((address & LANG_A0A1) == 3))
+            int low = address & LANG_A0A1;
+            State[SoftSwitch.LcReadEnabled] = (low == 0 || low == 3);
+
+            // Write enable sequencing (critical)
+            if ((address & LANG_A0) == 1)
             {
-                // 00, 11 - set READ_ENABLE
-                State[SoftSwitch.LcReadEnabled] = true;
+                if (preWrite == 1)
+                    State[SoftSwitch.LcWriteEnabled] = true;
+                else
+                    preWrite = 1;
             }
             else
             {
-                // 01, 10 - reset READ_ENABLE
-                State[SoftSwitch.LcReadEnabled] = false;
-            }
-
-            // PRE_WRITE
-            int old_pre_write = preWrite;
-
-            if ((address & 0b00000001) == 1)
-            {
-                // read 1 or 3, 00000001 - set PRE_WRITE
-                preWrite = 1;
-            }
-            else
-            {
-                // read 0 or 2, 00000000 - reset PRE_WRITE
                 preWrite = 0;
-            }
-
-            // Write Enable
-            if ((old_pre_write == 1) && ((address & 0b00000001) == 1))
-            {
-                // PRE_WRITE set, read 1 or 3, 00000000 - reset WRITE_ENABLE'
                 State[SoftSwitch.LcWriteEnabled] = false;
             }
-
-            if ((address & 0b00000001) == 0)
-            {
-                // read 0 or 2, set _WRITE_ENABLE, 00000001 - set WRITE_ENABLE'
-                State[SoftSwitch.LcWriteEnabled] = true;
-            }
-
-            SimDebugger.Info("LcBank1: {0}, LcReadEnabled: {1}, preWrite: {2}, LcWriteEnabled: {3}\n",
-                State[SoftSwitch.LcBank1],
-                State[SoftSwitch.LcReadEnabled],
-                preWrite,
-                State[SoftSwitch.LcWriteEnabled]);
-
-            // handle the MMU configuration here
-            return 0x00;
         }
 
         private void HandleWriteC08x(ushort address, byte value)
         {
-            // Bank select
-            if ((address & LANG_A3) != 0)
-            {
-                // 1 = any access sets Bank_1
-                State[SoftSwitch.LcBank1] = true;
-            }
-            else
-            {
-                // 0 = any access resets Bank_1
-                State[SoftSwitch.LcBank1] = false;
-            }
+            SimDebugger.Info($"HandleWriteC08x({address:X4}, {value:X2})\n");
 
-            // Read enable
-            if (((address & LANG_A0A1) == 0) || ((address & LANG_A0A1) == 3))
-            {
-                // 00, 11 - set READ_ENABLE
-                State[SoftSwitch.LcReadEnabled] = true;
-            }
-            else
-            {
-                // 01, 10 - reset READ_ENABLE
-                State[SoftSwitch.LcReadEnabled] = false;
-            }
-
-            // PRE_WRITE -- any write, reests PRE_WRITE
             preWrite = 0;
 
-            // Write Enable
-            if ((address & 0b00000001) == 0)
-            {
-                // write 0 or 2
-                State[SoftSwitch.LcWriteEnabled] = true;
-            }
+            // Writes to C08x do NOT affect LC state on real hardware
 
-            SimDebugger.Info("LcBank1: {0}, LcReadEnabled: {1}, preWrite: {2}, LcWriteEnabled: {3}\n",
-                State[SoftSwitch.LcBank1],
-                State[SoftSwitch.LcReadEnabled],
-                preWrite,
-                State[SoftSwitch.LcWriteEnabled]);
+            // // If CPU is currently executing from LC RAM, ignore LC control changes
+            // if (cpu.Registers.ProgramCounter >= 0xD000 && cpu.Registers.ProgramCounter <= 0xFFFF && State[SoftSwitch.LcWriteEnabled])
+            // {
+            //     return;
+            // }
+
+            // // Bank select
+            // State[SoftSwitch.LcBank1] = (address & LANG_A3) != 0;
+
+            // // Read enable
+            // int low = address & LANG_A0A1;
+            // State[SoftSwitch.LcReadEnabled] = (low == 0 || low == 3);
+
+            // // Any write clears write capability
+            // preWrite = 0;
+            // State[SoftSwitch.LcWriteEnabled] = false;
         }
     }
 }

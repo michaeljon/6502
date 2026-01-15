@@ -27,6 +27,8 @@ namespace InnoWerks.Simulators
         /// </summary>
         ulong CycleCount { get; }
 
+        void SetCpu(ICpu cpu);
+
         /// <summary>
         /// Allows for a non-cycle impacting read on the bus. This is
         /// used for debug and CPU-internal access the underlying memory.

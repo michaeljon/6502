@@ -17,7 +17,12 @@ namespace InnoWerks.Simulators
         public Cpu65C02(IBus bus,
                         Action<ICpu, ushort> preExecutionCallback,
                         Action<ICpu> postExecutionCallback)
-            : base(bus, preExecutionCallback, postExecutionCallback) { }
+            : base(bus, preExecutionCallback, postExecutionCallback)
+        {
+            ArgumentNullException.ThrowIfNull(bus, nameof(bus));
+
+            bus.SetCpu(this);
+        }
 
         protected override void Dispatch(byte operation, bool writeInstructions = false)
         {

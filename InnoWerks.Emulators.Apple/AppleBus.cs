@@ -26,6 +26,10 @@ namespace InnoWerks.Emulators.Apple
     {
         private readonly AppleConfiguration configuration;
 
+#pragma warning disable CA5394 // Do not use insecure randomness
+        private byte floatingBus = (byte)(new Random().Next() & 0xFF);
+#pragma warning restore CA5394 // Do not use insecure randomness
+
         private int transactionCycles;
 
         private readonly MemoryIIe memory;
@@ -44,10 +48,6 @@ namespace InnoWerks.Emulators.Apple
 
             this.configuration = configuration;
             this.memory = new MemoryIIe(configuration);
-
-            // this.memory = configuration.Model == AppleModel.AppleII || configuration.Model == AppleModel.AppleIIPlus
-            //     ? new MemoryIIe(configuration)
-            //     : new MemoryIIe(configuration);
 
             foreach (SoftSwitch sw in Enum.GetValues<SoftSwitch>().OrderBy(v => v))
             {
@@ -90,6 +90,12 @@ namespace InnoWerks.Emulators.Apple
 
         public ulong CycleCount { get; private set; }
 
+        public void SetCpu(ICpu cpu)
+        {
+            ArgumentNullException.ThrowIfNull(cpu, nameof(cpu));
+            memory.SetCpu(cpu);
+        }
+
         public byte Read(ushort address)
         {
             Tick(1);
@@ -110,14 +116,16 @@ namespace InnoWerks.Emulators.Apple
             // RAM ($0000–$BFFF)
             if (address < 0xC000)
             {
-                return memory.Read(address);
+                floatingBus = memory.Read(address);
+                return floatingBus;
             }
 
             foreach (var device in systemDevices)
             {
                 if (device.Handles(address))
                 {
-                    return device.Read(address);
+                    floatingBus = device.Read(address);
+                    return floatingBus;
                 }
             }
 
@@ -164,49 +172,57 @@ namespace InnoWerks.Emulators.Apple
                     return device.Read(address);
                 }
             }
-            else if (state[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
+
+            bool lcActive = memory.State[SoftSwitch.LcReadEnabled] || memory.State[SoftSwitch.LcWriteEnabled];
+            if (lcActive == false)
             {
-                var slot = (address >> 8) & 7;
-
-                slotDevices.TryGetValue(slot, out var device);
-
-                if (device == null)
+                if (state[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
                 {
-                    return 0xFF;
-                }
-
-                if (device.Handles(address) == true)
-                {
-                    // SimDebugger.Info("Read slot {0} ROM {1:X4}\n", slot, address);
-                    return device.Read(address);
-                }
-            }
-            else if (state[SoftSwitch.IntC8RomEnabled] == false && 0xC800 <= address && address <= 0xCFFF)
-            {
-                if (state[SoftSwitch.IntC8RomEnabled] == false)
-                {
-                    return memory.Read(address);
-                }
-                else
-                {
-                    var slot = (address >> 9) & 3;
+                    var slot = (address >> 8) & 7;
 
                     slotDevices.TryGetValue(slot, out var device);
 
                     if (device == null)
                     {
-                        return 0xFF;
+                        return floatingBus;
                     }
 
                     if (device.Handles(address) == true)
                     {
-                        SimDebugger.Info("Read slot {0} C8XX ROM {1:X4}\n", slot, address);
+                        // SimDebugger.Info("Read slot {0} ROM {1:X4}\n", slot, address);
                         return device.Read(address);
+                    }
+
+                    return floatingBus;
+                }
+                else if (state[SoftSwitch.IntC8RomEnabled] == false && 0xC800 <= address && address <= 0xCFFF)
+                {
+                    if (state[SoftSwitch.IntC8RomEnabled] == false)
+                    {
+                        return memory.Read(address);
+                    }
+                    else
+                    {
+                        var slot = (address >> 9) & 3;
+
+                        slotDevices.TryGetValue(slot, out var device);
+
+                        if (device == null)
+                        {
+                            return floatingBus;
+                        }
+
+                        if (device.Handles(address) == true)
+                        {
+                            SimDebugger.Info("Read slot {0} C8XX ROM {1:X4}\n", slot, address);
+                            return device.Read(address);
+                        }
                     }
                 }
             }
 
-            return memory.Read(address);
+            floatingBus = memory.Read(address);
+            return floatingBus;
         }
 
         public void Write(ushort address, byte value)
@@ -276,28 +292,33 @@ namespace InnoWerks.Emulators.Apple
                     return;
                 }
             }
-            else if (state[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
-            {
-                var slot = (address >> 8) & 7;
 
-                slotDevices.TryGetValue(slot, out var device);
-                if (device?.Handles(address) == true)
+            bool lcActive = memory.State[SoftSwitch.LcReadEnabled] || memory.State[SoftSwitch.LcWriteEnabled];
+            if (lcActive == false)
+            {
+                if (state[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
                 {
-                    SimDebugger.Info("Write ROM {0} {1:X4}\n", slot, address);
-                    device.Write(address, value);
-                    return;
+                    var slot = (address >> 8) & 7;
+
+                    slotDevices.TryGetValue(slot, out var device);
+                    if (device?.Handles(address) == true)
+                    {
+                        SimDebugger.Info("Write ROM {0} {1:X4}\n", slot, address);
+                        device.Write(address, value);
+                        return;
+                    }
                 }
-            }
-            else if (state[SoftSwitch.IntC8RomEnabled] == false && 0xC800 <= address && address <= 0xCFFF)
-            {
-                var slot = (address >> 9) & 3;
-
-                slotDevices.TryGetValue(slot, out var device);
-                if (device?.Handles(address) == true)
+                else if (state[SoftSwitch.IntC8RomEnabled] == false && 0xC800 <= address && address <= 0xCFFF)
                 {
-                    SimDebugger.Info("Write ExROM {0} {1:X4}\n", slot, address);
-                    device.Write(address, value);
-                    return;
+                    var slot = (address >> 9) & 3;
+
+                    slotDevices.TryGetValue(slot, out var device);
+                    if (device?.Handles(address) == true)
+                    {
+                        SimDebugger.Info("Write ExROM {0} {1:X4}\n", slot, address);
+                        device.Write(address, value);
+                        return;
+                    }
                 }
             }
 

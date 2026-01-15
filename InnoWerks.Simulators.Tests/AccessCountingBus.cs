@@ -35,6 +35,8 @@ namespace InnoWerks.Simulators.Tests
 
         public ulong CycleCount { get; private set; }
 
+        public void SetCpu(ICpu cpu) => throw new NotImplementedException();
+
         public byte Peek(ushort address)
         {
             return memory[address];
