@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using InnoWerks.Processors;
 using InnoWerks.Simulators;
 
@@ -6,12 +7,19 @@ namespace InnoWerks.Emulators.Apple
 {
     public sealed class Keyboard : IDevice
     {
-        private byte keyLatch;
-        private bool keyStrobe;
+        private readonly SoftSwitches softSwitches;
 
-        private bool openApple;
-        private bool solidApple;
-        private bool shiftKey;
+        private readonly List<ushort> handles =
+        [
+            // read
+            SoftSwitchAddress.KBD,
+            SoftSwitchAddress.OPENAPPLE,
+            SoftSwitchAddress.SOLIDAPPLE,
+            SoftSwitchAddress.SHIFT,
+
+            // read/write
+            SoftSwitchAddress.KBDSTRB,
+        ];
 
         public DevicePriority Priority => DevicePriority.System;
 
@@ -19,43 +27,56 @@ namespace InnoWerks.Emulators.Apple
 
         public string Name => "Keyboard";
 
+        public Keyboard(SoftSwitches softSwitches)
+        {
+            ArgumentNullException.ThrowIfNull(softSwitches, nameof(softSwitches));
+
+            this.softSwitches = softSwitches;
+        }
+
         public bool Handles(ushort address)
-            => address == SoftSwitchAddress.KBD || address == SoftSwitchAddress.KBDSTRB;
+            => handles.Contains(address);
 
         public byte Read(ushort address)
         {
+            SimDebugger.Info($"Read Keyboard({address:X4})\n");
+
             switch (address)
             {
                 case SoftSwitchAddress.KBD:
-                    return keyStrobe
-                        ? (byte)(keyLatch | 0x80)
-                        : keyLatch;
+                    return softSwitches.State[SoftSwitch.KeyboardStrobe]
+                        ? (byte)(softSwitches.KeyLatch | 0x80)
+                        : softSwitches.KeyLatch;
 
                 case SoftSwitchAddress.KBDSTRB:
-                    keyStrobe = false;
+                    softSwitches.State[SoftSwitch.KeyboardStrobe] = false;
                     break;
 
-                case SoftSwitchAddress.OPENAPPLE: return (byte)(openApple ? 0x80 : 0x00);
-                case SoftSwitchAddress.SOLIDAPPLE: return (byte)(solidApple ? 0x80 : 0x00);
-                case SoftSwitchAddress.SHIFT: return (byte)(shiftKey ? 0x80 : 0x00);
+                case SoftSwitchAddress.OPENAPPLE: return (byte)(softSwitches.State[SoftSwitch.OpenApple] ? 0x80 : 0x00);
+                case SoftSwitchAddress.SOLIDAPPLE: return (byte)(softSwitches.State[SoftSwitch.SolidApple] ? 0x80 : 0x00);
+                case SoftSwitchAddress.SHIFT: return (byte)(softSwitches.State[SoftSwitch.ShiftKey] ? 0x80 : 0x00);
             }
 
-            return 0;
+            return 0x00;
         }
 
         public void Write(ushort address, byte value)
         {
+            SimDebugger.Info($"Write Keyboard({address:X4}, {value:X2})\n");
+
             if (address == SoftSwitchAddress.KBDSTRB)
             {
-                keyStrobe = false;
-                keyLatch &= 0x7f;
+                softSwitches.State[SoftSwitch.KeyboardStrobe] = false;
+                softSwitches.KeyLatch &= 0x7f;
             }
         }
 
+        public void Tick(int cycles) {/* NO-OP */ }
+
         public void Reset()
         {
-            keyLatch = 0;
-            keyStrobe = false;
+            softSwitches.KeyLatch = 0x8d;
+            softSwitches.State[SoftSwitch.KeyboardStrobe] = true;
         }
 
         /// <summary>
@@ -63,26 +84,26 @@ namespace InnoWerks.Emulators.Apple
         /// </summary>
         public void InjectKey(byte ascii)
         {
-            keyLatch = ascii;
-            keyStrobe = true;
+            softSwitches.KeyLatch = ascii;
+            softSwitches.State[SoftSwitch.KeyboardStrobe] = true;
         }
 
         public void OpenApple()
         {
-            openApple = true;
-            keyStrobe = true;
+            softSwitches.State[SoftSwitch.OpenApple] = true;
+            softSwitches.State[SoftSwitch.KeyboardStrobe] = true;
         }
 
         public void SolidApple()
         {
-            solidApple = true;
-            keyStrobe = true;
+            softSwitches.State[SoftSwitch.SolidApple] = true;
+            softSwitches.State[SoftSwitch.KeyboardStrobe] = true;
         }
 
         public void ShiftKey()
         {
-            shiftKey = true;
-            keyStrobe = true;
+            softSwitches.State[SoftSwitch.ShiftKey] = true;
+            softSwitches.State[SoftSwitch.KeyboardStrobe] = true;
         }
     }
 }

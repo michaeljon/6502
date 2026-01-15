@@ -8,7 +8,11 @@ namespace InnoWerks.Emulators.Apple
 {
     public class Display : IDevice
     {
-        public Dictionary<SoftSwitch, bool> State { get; } = [];
+        private const int CyclesPerLine = 65;
+        private const int LinesPerFrame = 262;
+        private const int VBlankStart = 192;
+
+        private readonly SoftSwitches softSwitches;
 
         public DevicePriority Priority => DevicePriority.SoftSwitch;
 
@@ -18,59 +22,138 @@ namespace InnoWerks.Emulators.Apple
 
         private readonly List<ushort> handles =
         [
-            // read
-            SoftSwitchAddress.RD80VID,
-            SoftSwitchAddress.RDVBL,
-
-            // write
-            SoftSwitchAddress.CLR80VID,
-            SoftSwitchAddress.SET80VID,
-
             SoftSwitchAddress.CLRALTCHAR,
             SoftSwitchAddress.SETALTCHAR,
+            SoftSwitchAddress.RDALTCHR,
 
-            // read / write
+            SoftSwitchAddress.CLR80VID,
+            SoftSwitchAddress.SET80VID,
+            SoftSwitchAddress.RD80VID,
+
+            SoftSwitchAddress.CLR80STORE,
+            SoftSwitchAddress.SET80STORE,
+            SoftSwitchAddress.RD80STORE,
+
+            SoftSwitchAddress.TXTPAGE1,
+            SoftSwitchAddress.TXTPAGE2,
+            SoftSwitchAddress.RDPAGE2,
+
             SoftSwitchAddress.TXTCLR,
             SoftSwitchAddress.TXTSET,
+            SoftSwitchAddress.RDTEXT,
+
             SoftSwitchAddress.MIXCLR,
             SoftSwitchAddress.MIXSET,
-            SoftSwitchAddress.TXTPAGE1,
+            SoftSwitchAddress.RDMIXED,
 
-            SoftSwitchAddress.TXTPAGE2,
-            SoftSwitchAddress.TXTPAGE1,
             SoftSwitchAddress.LORES,
             SoftSwitchAddress.HIRES,
+            SoftSwitchAddress.RDHIRES,
+
+            SoftSwitchAddress.IOUDISON,
+            SoftSwitchAddress.IOUDISOFF,
+            SoftSwitchAddress.RDIOUDIS,
+
+            SoftSwitchAddress.DHIRESON,
+            SoftSwitchAddress.DHIRESOFF,
+            SoftSwitchAddress.RDDHIRES,
+
+            SoftSwitchAddress.RDVBL,
         ];
 
         private readonly IBus bus;
 
+        private ulong hCycle;
+        private int vLine;
+        private bool phase;
+
         public bool Handles(ushort address)
             => handles.Contains(address);
 
-        public Display(IBus bus)
+        public Display(IBus bus, SoftSwitches softSwitches)
         {
+            ArgumentNullException.ThrowIfNull(bus);
+            ArgumentNullException.ThrowIfNull(softSwitches);
+
             this.bus = bus;
+            this.softSwitches = softSwitches;
         }
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"HandleDisplay({address:X4})\n");
+            SimDebugger.Info($"Read Display({address:X4})\n");
 
             switch (address)
             {
-                case SoftSwitchAddress.RD80VID: return (byte)(State[SoftSwitch.EightyColumnFirmware] ? 0x80 : 0x00);
-                case SoftSwitchAddress.RDVBL: return (byte)(State[SoftSwitch.VerticalBlank] ? 0x80 : 0x00);
+                // this looks like a keyboard here, because it is
+                case SoftSwitchAddress.KBD:
+                    return softSwitches.State[SoftSwitch.KeyboardStrobe]
+                        ? (byte)(softSwitches.KeyLatch | 0x80)
+                        : softSwitches.KeyLatch;
 
-                case SoftSwitchAddress.TXTCLR: State[SoftSwitch.TextMode] = false; return 0;
-                case SoftSwitchAddress.TXTSET: State[SoftSwitch.TextMode] = true; return 0;
-                case SoftSwitchAddress.MIXCLR: State[SoftSwitch.MixedMode] = false; return 0;
-                case SoftSwitchAddress.MIXSET: State[SoftSwitch.MixedMode] = true; return 0;
-                case SoftSwitchAddress.TXTPAGE1: State[SoftSwitch.Page2] = false; return 0;
+                case SoftSwitchAddress.RDALTCHR:
+                    if (softSwitches.State[SoftSwitch.VerticalBlank])
+                    {
+                        return 0x00;
+                    }
 
-                // handle IIe case where 80STORE is set
-                case SoftSwitchAddress.TXTPAGE2: State[SoftSwitch.Page2] = true; return 0;
-                case SoftSwitchAddress.LORES: State[SoftSwitch.HiRes] = false; return 0;
-                case SoftSwitchAddress.HIRES: State[SoftSwitch.HiRes] = true; return 0;
+                    bool altCharSet = softSwitches.State[SoftSwitch.AltCharSet];
+
+                    if (softSwitches.State[SoftSwitch.Store80] && softSwitches.State[SoftSwitch.TextMode])
+                    {
+                        altCharSet = false;
+                    }
+
+                    // again: live sampling
+                    return (byte)((altCharSet ^ phase) ? 0x80 : 0x00);
+
+                case SoftSwitchAddress.RD80VID:
+                    if (softSwitches.State[SoftSwitch.VerticalBlank])
+                    {
+                        return 0x00;
+                    }
+
+                    bool video80 = softSwitches.State[SoftSwitch.EightyColumnMode]
+                                && (!softSwitches.State[SoftSwitch.TextMode] || !softSwitches.State[SoftSwitch.MixedMode]);
+
+                    // real hardware: this is sampled from the video generator
+                    return (byte)((video80 ^ phase) ? 0x80 : 0x00);
+
+                case SoftSwitchAddress.RD80STORE: return (byte)(softSwitches.State[SoftSwitch.Store80] ? 0x80 : 0x00);
+
+                case SoftSwitchAddress.TXTPAGE1: softSwitches.State[SoftSwitch.Page2] = false; return 0;
+                case SoftSwitchAddress.TXTPAGE2: softSwitches.State[SoftSwitch.Page2] = true; return 0;
+                case SoftSwitchAddress.RDPAGE2: return (byte)(softSwitches.State[SoftSwitch.Page2] ? 0x80 : 0x00);
+
+                case SoftSwitchAddress.TXTCLR: softSwitches.State[SoftSwitch.TextMode] = false; return 0;
+                case SoftSwitchAddress.TXTSET: softSwitches.State[SoftSwitch.TextMode] = true; return 0;
+                case SoftSwitchAddress.RDTEXT: return (byte)(softSwitches.State[SoftSwitch.TextMode] ? 0x80 : 0x00);
+
+                case SoftSwitchAddress.MIXCLR: softSwitches.State[SoftSwitch.MixedMode] = false; return 0;
+                case SoftSwitchAddress.MIXSET: softSwitches.State[SoftSwitch.MixedMode] = true; return 0;
+                case SoftSwitchAddress.RDMIXED: return (byte)(softSwitches.State[SoftSwitch.MixedMode] ? 0x80 : 0x00);
+
+                case SoftSwitchAddress.LORES: softSwitches.State[SoftSwitch.HiRes] = false; return 0;
+                case SoftSwitchAddress.HIRES: softSwitches.State[SoftSwitch.HiRes] = true; return 0;
+                case SoftSwitchAddress.RDHIRES: return (byte)(softSwitches.State[SoftSwitch.HiRes] ? 0x80 : 0x00);
+
+                case SoftSwitchAddress.RDIOUDIS: return (byte)(softSwitches.State[SoftSwitch.IOUDisabled] ? 0x80 : 0x00);
+
+                case SoftSwitchAddress.DHIRESON:
+                    if (softSwitches.State[SoftSwitch.IOUDisabled] == true)
+                    {
+                        softSwitches.State[SoftSwitch.DoubleHiRes] = true;
+                    }
+                    return 0;
+                case SoftSwitchAddress.DHIRESOFF:
+                    if (softSwitches.State[SoftSwitch.IOUDisabled] == true)
+                    {
+                        softSwitches.State[SoftSwitch.DoubleHiRes] = false;
+                    }
+                    return 0;
+                case SoftSwitchAddress.RDDHIRES: return (byte)(softSwitches.State[SoftSwitch.DoubleHiRes] ? 0x80 : 0x00);
+
+                case SoftSwitchAddress.RDVBL: return (byte)(softSwitches.State[SoftSwitch.VerticalBlank] ? 0x80 : 0x00);
             }
 
             return 0x00;
@@ -78,43 +161,86 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"HandleDisplay({address:X4}, {value:X2})\n");
+            SimDebugger.Info($"Write Display({address:X4}, {value:X2})\n");
 
             switch (address)
             {
-                case SoftSwitchAddress.CLR80VID: State[SoftSwitch.EightyColumnFirmware] = false; break;
-                case SoftSwitchAddress.SET80VID: State[SoftSwitch.EightyColumnFirmware] = true; break;
+                case SoftSwitchAddress.CLRALTCHAR: softSwitches.State[SoftSwitch.AltCharSet] = false; break;
+                case SoftSwitchAddress.SETALTCHAR: softSwitches.State[SoftSwitch.AltCharSet] = true; break;
 
-                case SoftSwitchAddress.CLRALTCHAR: State[SoftSwitch.AltCharSet] = false; break;
-                case SoftSwitchAddress.SETALTCHAR: State[SoftSwitch.AltCharSet] = true; break;
+                case SoftSwitchAddress.CLR80VID: softSwitches.State[SoftSwitch.EightyColumnMode] = false; break;
+                case SoftSwitchAddress.SET80VID: softSwitches.State[SoftSwitch.EightyColumnMode] = true; break;
 
-                case SoftSwitchAddress.TXTCLR: State[SoftSwitch.TextMode] = false; break;
-                case SoftSwitchAddress.TXTSET: State[SoftSwitch.TextMode] = true; break;
-                case SoftSwitchAddress.MIXCLR: State[SoftSwitch.MixedMode] = false; break;
-                case SoftSwitchAddress.MIXSET: State[SoftSwitch.MixedMode] = true; break;
-                case SoftSwitchAddress.TXTPAGE1: State[SoftSwitch.Page2] = false; break;
+                case SoftSwitchAddress.CLR80STORE: softSwitches.State[SoftSwitch.Store80] = false; break;
+                case SoftSwitchAddress.SET80STORE: softSwitches.State[SoftSwitch.Store80] = true; break;
 
-                // handle IIe case where 80STORE is set
-                case SoftSwitchAddress.TXTPAGE2: State[SoftSwitch.Page2] = true; break;
-                case SoftSwitchAddress.LORES: State[SoftSwitch.HiRes] = false; break;
-                case SoftSwitchAddress.HIRES: State[SoftSwitch.HiRes] = true; break;
+                case SoftSwitchAddress.TXTPAGE1: softSwitches.State[SoftSwitch.Page2] = false; break;
+                case SoftSwitchAddress.TXTPAGE2: softSwitches.State[SoftSwitch.Page2] = true; break;
+
+                case SoftSwitchAddress.TXTCLR: softSwitches.State[SoftSwitch.TextMode] = false; break;
+                case SoftSwitchAddress.TXTSET: softSwitches.State[SoftSwitch.TextMode] = true; break;
+
+                case SoftSwitchAddress.MIXCLR: softSwitches.State[SoftSwitch.MixedMode] = false; break;
+                case SoftSwitchAddress.MIXSET: softSwitches.State[SoftSwitch.MixedMode] = true; break;
+
+                case SoftSwitchAddress.LORES: softSwitches.State[SoftSwitch.HiRes] = false; break;
+                case SoftSwitchAddress.HIRES: softSwitches.State[SoftSwitch.HiRes] = true; break;
+
+                case SoftSwitchAddress.IOUDISON: softSwitches.State[SoftSwitch.IOUDisabled] = true; return;
+                case SoftSwitchAddress.IOUDISOFF: softSwitches.State[SoftSwitch.IOUDisabled] = false; return;
+
+                case SoftSwitchAddress.DHIRESON:
+                    if (softSwitches.State[SoftSwitch.IOUDisabled] == true)
+                    {
+                        softSwitches.State[SoftSwitch.DoubleHiRes] = true;
+                    }
+                    return;
+                case SoftSwitchAddress.DHIRESOFF:
+                    if (softSwitches.State[SoftSwitch.IOUDisabled] == true)
+                    {
+                        softSwitches.State[SoftSwitch.DoubleHiRes] = false;
+                    }
+                    return;
+            }
+        }
+
+        public void Tick(int cycles)
+        {
+            for (var i = 0; i < cycles; i++)
+            {
+                hCycle++;
+
+                phase = !phase;
+
+                if (hCycle == CyclesPerLine)
+                {
+                    hCycle = 0;
+                    vLine++;
+
+                    if (vLine == VBlankStart)
+                    {
+                        softSwitches.State[SoftSwitch.VerticalBlank] = true;
+                    }
+
+                    if (vLine == LinesPerFrame)
+                    {
+                        vLine = 0;
+                        softSwitches.State[SoftSwitch.VerticalBlank] = false;
+                    }
+                }
             }
         }
 
         public void Reset()
         {
-            foreach (SoftSwitch sw in Enum.GetValues<SoftSwitch>().OrderBy(v => v))
-            {
-                State[sw] = false;
-            }
-
             // basic setup
-            State[SoftSwitch.TextMode] = true;
+            softSwitches.State[SoftSwitch.TextMode] = true;
+            softSwitches.State[SoftSwitch.IOUDisabled] = true;
         }
 
         public void Render()
         {
-            bool page2 = State[SoftSwitch.Page2];
+            bool page2 = softSwitches.State[SoftSwitch.Page2];
             Span<char> line = stackalloc char[40];
 
             Console.SetCursorPosition(0, 0);

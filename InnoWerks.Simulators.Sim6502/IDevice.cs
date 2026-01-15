@@ -9,7 +9,6 @@ namespace InnoWerks.Simulators
         Slot = 2
     }
 
-
 #pragma warning disable CA1716
     public interface IDevice
     {
@@ -24,6 +23,8 @@ namespace InnoWerks.Simulators
         byte Read(ushort address);
 
         void Write(ushort address, byte value);
+
+        void Tick(int cycles);
 
         void Reset();
     }

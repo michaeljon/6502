@@ -13,9 +13,6 @@ namespace InnoWerks.Emulators.Apple
     {
         private readonly List<ushort> handles =
         [
-            SoftSwitchAddress.CLR80STORE,
-            SoftSwitchAddress.SET80STORE,
-
             SoftSwitchAddress.RDMAINRAM,
             SoftSwitchAddress.RDCARDRAM,
 
@@ -30,7 +27,6 @@ namespace InnoWerks.Emulators.Apple
 
             SoftSwitchAddress.RDALTZP,
 
-            SoftSwitchAddress.RD80STORE,
             SoftSwitchAddress.RDLCBNK2,
             SoftSwitchAddress.RDLCRAM,
 
@@ -46,7 +42,7 @@ namespace InnoWerks.Emulators.Apple
 
         private readonly AppleConfiguration configuration;
 
-        private ICpu cpu;
+        private readonly SoftSwitches softSwitches;
 
         // main and auxiliary ram
         private readonly byte[] mainRam;
@@ -66,19 +62,19 @@ namespace InnoWerks.Emulators.Apple
 
         private int preWrite;
 
-        public Dictionary<SoftSwitch, bool> State { get; } = [];
-
         public DevicePriority Priority => DevicePriority.SoftSwitch;
 
         public int Slot => -1;
 
         public string Name => "Memory IIe";
 
-        public MemoryIIe(AppleConfiguration configuration)
+        public MemoryIIe(AppleConfiguration configuration, SoftSwitches softSwitches)
         {
             ArgumentNullException.ThrowIfNull(configuration);
+            ArgumentNullException.ThrowIfNull(softSwitches);
 
             this.configuration = configuration;
+            this.softSwitches = softSwitches;
 
             Reset();
 
@@ -108,25 +104,25 @@ namespace InnoWerks.Emulators.Apple
         {
             if (address < 0x0200)
             {
-                return State[SoftSwitch.ZpAux] ? auxRam[address] : mainRam[address];
+                return softSwitches.State[SoftSwitch.ZpAux] ? auxRam[address] : mainRam[address];
             }
             else if (address < 0xC000)
             {
-                return State[SoftSwitch.AuxRead] ? auxRam[address] : mainRam[address];
+                return softSwitches.State[SoftSwitch.AuxRead] ? auxRam[address] : mainRam[address];
             }
             else if (0xC000 <= address && address <= 0xC0FF)
             {
+                SimDebugger.Info($"Read Memory({address:X4})\n");
+
                 switch (address)
                 {
-                    case SoftSwitchAddress.RDLCBNK2: return (byte)(State[SoftSwitch.LcBank1] ? 0x80 : 0x00);
-                    case SoftSwitchAddress.RDLCRAM: return (byte)(State[SoftSwitch.LcReadEnabled] ? 0x80 : 0x00);
+                    case SoftSwitchAddress.RDLCBNK2: return (byte)(softSwitches.State[SoftSwitch.LcBank1] ? 0x80 : 0x00);
+                    case SoftSwitchAddress.RDLCRAM: return (byte)(softSwitches.State[SoftSwitch.LcReadEnabled] ? 0x80 : 0x00);
 
-                    case SoftSwitchAddress.RDRAMRD: return (byte)(State[SoftSwitch.AuxRead] ? 0x80 : 0x00);
-                    case SoftSwitchAddress.RDRAMWRT: return (byte)(State[SoftSwitch.AuxWrite] ? 0x80 : 0x00);
+                    case SoftSwitchAddress.RDRAMRD: return (byte)(softSwitches.State[SoftSwitch.AuxRead] ? 0x80 : 0x00);
+                    case SoftSwitchAddress.RDRAMWRT: return (byte)(softSwitches.State[SoftSwitch.AuxWrite] ? 0x80 : 0x00);
 
-                    case SoftSwitchAddress.RDALTZP: return (byte)(State[SoftSwitch.ZpAux] ? 0x80 : 0x00);
-
-                    case SoftSwitchAddress.RD80STORE: return (byte)(State[SoftSwitch.Store80] ? 0x80 : 0x00);
+                    case SoftSwitchAddress.RDALTZP: return (byte)(softSwitches.State[SoftSwitch.ZpAux] ? 0x80 : 0x00);
                 }
 
                 if (address >= 0xC080 && address <= 0xC08F)
@@ -136,7 +132,7 @@ namespace InnoWerks.Emulators.Apple
             }
             else if (0xC100 <= address && address <= 0xCFFF)
             {
-                if (State[SoftSwitch.AuxRead] == true)
+                if (softSwitches.State[SoftSwitch.AuxRead] == true)
                 {
                     return auxRam[address];
                 }
@@ -147,17 +143,17 @@ namespace InnoWerks.Emulators.Apple
             else if (0xD000 <= address && address <= 0xDFFF)
             {
                 int offset = address - 0xD000;
-                if (State[SoftSwitch.LcReadEnabled] == true)
+                if (softSwitches.State[SoftSwitch.LcReadEnabled] == true)
                 {
-                    return lcRam[State[SoftSwitch.LcBank1] ? 1 : 0][offset];
+                    return lcRam[softSwitches.State[SoftSwitch.LcBank1] ? 1 : 0][offset];
                 }
 
-                if (State[SoftSwitch.AuxRead] == true)
+                if (softSwitches.State[SoftSwitch.AuxRead] == true)
                 {
                     return auxRam[address];
                 }
 
-                return loRom[State[SoftSwitch.LcBank1] ? 1 : 0][offset];
+                return loRom[softSwitches.State[SoftSwitch.LcBank1] ? 1 : 0][offset];
             }
             else if (0xE000 <= address && address <= 0xFFFF)
             {
@@ -172,7 +168,7 @@ namespace InnoWerks.Emulators.Apple
         {
             if (address < 0x0200)
             {
-                if (State[SoftSwitch.ZpAux] == true)
+                if (softSwitches.State[SoftSwitch.ZpAux] == true)
                 {
                     auxRam[address] = value;
                 }
@@ -183,7 +179,7 @@ namespace InnoWerks.Emulators.Apple
             }
             if (address < 0xC000)
             {
-                if (configuration.Model == AppleModel.AppleIIe && State[SoftSwitch.AuxWrite])
+                if (configuration.Model == AppleModel.AppleIIe && softSwitches.State[SoftSwitch.AuxWrite])
                 {
                     auxRam[address] = value;
                 }
@@ -194,19 +190,18 @@ namespace InnoWerks.Emulators.Apple
             }
             else if (0xC000 <= address && address <= 0xC0FF)
             {
+                SimDebugger.Info($"Write Memory({address:X4}, {value:X2})\n");
+
                 switch (address)
                 {
-                    case SoftSwitchAddress.CLR80STORE: State[SoftSwitch.Store80] = false; return;
-                    case SoftSwitchAddress.SET80STORE: State[SoftSwitch.Store80] = true; return;
+                    case SoftSwitchAddress.RDMAINRAM: softSwitches.State[SoftSwitch.AuxRead] = false; return;
+                    case SoftSwitchAddress.RDCARDRAM: softSwitches.State[SoftSwitch.AuxRead] = true; return;
 
-                    case SoftSwitchAddress.RDMAINRAM: State[SoftSwitch.AuxRead] = false; return;
-                    case SoftSwitchAddress.RDCARDRAM: State[SoftSwitch.AuxRead] = true; return;
+                    case SoftSwitchAddress.WRMAINRAM: softSwitches.State[SoftSwitch.AuxWrite] = false; return;
+                    case SoftSwitchAddress.WRCARDRAM: softSwitches.State[SoftSwitch.AuxWrite] = true; return;
 
-                    case SoftSwitchAddress.WRMAINRAM: State[SoftSwitch.AuxWrite] = false; return;
-                    case SoftSwitchAddress.WRCARDRAM: State[SoftSwitch.AuxWrite] = true; return;
-
-                    case SoftSwitchAddress.SETSTDZP: State[SoftSwitch.ZpAux] = false; return;
-                    case SoftSwitchAddress.SETALTZP: State[SoftSwitch.ZpAux] = true; return;
+                    case SoftSwitchAddress.SETSTDZP: softSwitches.State[SoftSwitch.ZpAux] = false; return;
+                    case SoftSwitchAddress.SETALTZP: softSwitches.State[SoftSwitch.ZpAux] = true; return;
                 }
 
                 if (0xC080 <= address && address <= 0xC08F)
@@ -218,25 +213,25 @@ namespace InnoWerks.Emulators.Apple
             }
             else if (0xC100 <= address && address <= 0xCFFF)
             {
-                if (State[SoftSwitch.AuxWrite] == true)
+                if (softSwitches.State[SoftSwitch.AuxWrite] == true)
                 {
                     auxRam[address] = value;
                 }
             }
             else if (0xD000 <= address && address <= 0xDFFF)
             {
-                if (State[SoftSwitch.LcWriteEnabled] == true)
+                if (softSwitches.State[SoftSwitch.LcWriteEnabled] == true)
                 {
-                    lcRam[State[SoftSwitch.LcBank1] ? 1 : 0][address - 0xD000] = value;
+                    lcRam[softSwitches.State[SoftSwitch.LcBank1] ? 1 : 0][address - 0xD000] = value;
                 }
-                else if (State[SoftSwitch.AuxWrite] == true)
+                else if (softSwitches.State[SoftSwitch.AuxWrite] == true)
                 {
                     auxRam[address] = value;
                 }
             }
             else if (0xE000 <= address && address <= 0xFFFF)
             {
-                if (State[SoftSwitch.AuxWrite] == true)
+                if (softSwitches.State[SoftSwitch.AuxWrite] == true)
                 {
                     auxRam[address] = value;
                 }
@@ -247,13 +242,9 @@ namespace InnoWerks.Emulators.Apple
             }
         }
 
-        public void Reset()
-        {
-            foreach (SoftSwitch sw in Enum.GetValues<SoftSwitch>().OrderBy(v => v))
-            {
-                State[sw] = false;
-            }
-        }
+        public void Tick(int cycles) {/* NO-OP */ }
+
+        public void Reset() { }
 
         public void LoadProgramToRom(byte[] objectCode)
         {
@@ -288,63 +279,56 @@ namespace InnoWerks.Emulators.Apple
             Array.Copy(objectCode, 0, mainRam, origin, objectCode.Length);
         }
 
-        public void SetCpu(ICpu cpu)
-        {
-            ArgumentNullException.ThrowIfNull(cpu, nameof(cpu));
-
-            this.cpu = cpu;
-        }
-
         private void HandleReadC08x(ushort address)
         {
-            SimDebugger.Info($"HandleReadC08x({address:X4})\n");
+            SimDebugger.Info($"Read Memory({address:X4})\n");
 
             // Bank select
-            State[SoftSwitch.LcBank1] = (address & LANG_A3) != 0;
+            softSwitches.State[SoftSwitch.LcBank1] = (address & LANG_A3) != 0;
 
             // Read enable
             int low = address & LANG_A0A1;
-            State[SoftSwitch.LcReadEnabled] = (low == 0 || low == 3);
+            softSwitches.State[SoftSwitch.LcReadEnabled] = (low == 0 || low == 3);
 
             // Write enable sequencing (critical)
             if ((address & LANG_A0) == 1)
             {
                 if (preWrite == 1)
-                    State[SoftSwitch.LcWriteEnabled] = true;
+                    softSwitches.State[SoftSwitch.LcWriteEnabled] = true;
                 else
                     preWrite = 1;
             }
             else
             {
                 preWrite = 0;
-                State[SoftSwitch.LcWriteEnabled] = false;
+                softSwitches.State[SoftSwitch.LcWriteEnabled] = false;
             }
         }
 
         private void HandleWriteC08x(ushort address, byte value)
         {
-            SimDebugger.Info($"HandleWriteC08x({address:X4}, {value:X2})\n");
+            SimDebugger.Info($"Write Memory({address:X4}, {value:X2})\n");
 
             preWrite = 0;
 
             // Writes to C08x do NOT affect LC state on real hardware
 
             // // If CPU is currently executing from LC RAM, ignore LC control changes
-            // if (cpu.Registers.ProgramCounter >= 0xD000 && cpu.Registers.ProgramCounter <= 0xFFFF && State[SoftSwitch.LcWriteEnabled])
+            // if (cpu.Registers.ProgramCounter >= 0xD000 && cpu.Registers.ProgramCounter <= 0xFFFF && softSwitches.State[SoftSwitch.LcWriteEnabled])
             // {
             //     return;
             // }
 
             // // Bank select
-            // State[SoftSwitch.LcBank1] = (address & LANG_A3) != 0;
+            // softSwitches.State[SoftSwitch.LcBank1] = (address & LANG_A3) != 0;
 
             // // Read enable
             // int low = address & LANG_A0A1;
-            // State[SoftSwitch.LcReadEnabled] = (low == 0 || low == 3);
+            // softSwitches.State[SoftSwitch.LcReadEnabled] = (low == 0 || low == 3);
 
             // // Any write clears write capability
             // preWrite = 0;
-            // State[SoftSwitch.LcWriteEnabled] = false;
+            // softSwitches.State[SoftSwitch.LcWriteEnabled] = false;
         }
     }
 }

@@ -73,8 +73,10 @@ namespace Emu6502
                 RamSize = 64
             };
 
+            var softSwitches = new SoftSwitches();
+
             // create the bus
-            var bus = new AppleBus(config);
+            var bus = new AppleBus(config, softSwitches);
 
             var cpu = new Cpu65C02(
                 bus,
@@ -89,23 +91,22 @@ namespace Emu6502
                 });
 
             // create the devices
-            var keyboard = new Keyboard();
-            var display = new Display(bus);
+            var keyboard = new Keyboard(softSwitches);
+            var display = new Display(bus, softSwitches);
 
             // add system the devices to the bus
             bus.AddDevice(keyboard);
             bus.AddDevice(display);
-            bus.AddDevice(new Annunciators());
-            bus.AddDevice(new Paddles());
-            bus.AddDevice(new Cassette());
-            bus.AddDevice(new Speaker());
-            bus.AddDevice(new Strobe());
+            bus.AddDevice(new Annunciators(softSwitches));
+            bus.AddDevice(new Paddles(softSwitches));
+            bus.AddDevice(new Cassette(softSwitches));
+            bus.AddDevice(new Speaker(softSwitches));
+            bus.AddDevice(new Strobe(softSwitches));
 
-            // add slotted devices
-            var diskDevice = new DiskIISlotDevice(diskIIRom);
-            DiskIINibble.LoadDisk(diskDevice.GetDrive(1), dos33);
-
-            bus.AddDevice(diskDevice);
+            // // add slotted devices
+            // var diskDevice = new DiskIISlotDevice(softSwitches, diskIIRom);
+            // DiskIINibble.LoadDisk(diskDevice.GetDrive(1), dos33);
+            // bus.AddDevice(diskDevice);
 
             Task.Run(() =>
             {

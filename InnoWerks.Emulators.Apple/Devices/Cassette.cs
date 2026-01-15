@@ -8,9 +8,7 @@ namespace InnoWerks.Emulators.Apple
 {
     public class Cassette : IDevice
     {
-        private bool tapeIn;
-
-        private bool tapeOut;
+        private readonly SoftSwitches softSwitches;
 
         public DevicePriority Priority => DevicePriority.SoftSwitch;
 
@@ -18,20 +16,27 @@ namespace InnoWerks.Emulators.Apple
 
         public string Name => "Cassette";
 
+        public Cassette(SoftSwitches softSwitches)
+        {
+            ArgumentNullException.ThrowIfNull(softSwitches, nameof(softSwitches));
+
+            this.softSwitches = softSwitches;
+        }
+
         public bool Handles(ushort address)
             => address == SoftSwitchAddress.TAPEOUT || address == SoftSwitchAddress.TAPEIN;
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"HandleCassette({address:X4})\n");
+            SimDebugger.Info($"Read Cassette({address:X4})\n");
 
             switch (address)
             {
                 case SoftSwitchAddress.TAPEOUT:
-                    tapeOut = !tapeOut;
-                    return 0;
+                    softSwitches.State[SoftSwitch.TapeOut] = !softSwitches.State[SoftSwitch.TapeOut];
+                    break;
 
-                case SoftSwitchAddress.TAPEIN: return (byte)(tapeIn ? 0x80 : 0x00);
+                case SoftSwitchAddress.TAPEIN: return (byte)(softSwitches.State[SoftSwitch.TapeIn] ? 0x80 : 0x00);
             }
 
             return 0x00;
@@ -39,20 +44,15 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"HandleCassette({address:X4}, {value:X2})\n");
-
-            switch (address)
-            {
-                case SoftSwitchAddress.TAPEOUT:
-                    tapeOut = !tapeOut;
-                    break;
-            }
+            SimDebugger.Info($"Write Cassette({address:X4}, {value:X2})\n");
         }
+
+        public void Tick(int cycles) {/* NO-OP */ }
 
         public void Reset()
         {
-            tapeIn = false;
-            tapeOut = false;
+            softSwitches.State[SoftSwitch.TapeIn] = false;
+            softSwitches.State[SoftSwitch.TapeOut] = false;
         }
     }
 }

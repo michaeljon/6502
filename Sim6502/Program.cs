@@ -27,9 +27,9 @@ namespace Sim6502
             HasLowercase = true
         };
 
-        private readonly AppleBus bus = new(configuration);
+        private readonly AppleBus bus = new(configuration, new SoftSwitches());
 
-        private readonly Dictionary<ushort, byte> breakpoints = new();
+        private readonly Dictionary<ushort, byte> breakpoints = [];
 
         private int stepSpeed = 1;
 

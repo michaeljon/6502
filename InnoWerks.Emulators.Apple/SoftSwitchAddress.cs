@@ -11,8 +11,6 @@ namespace InnoWerks.Emulators.Apple
 
         // MEMORY MANAGEMENT SOFT SWITCHES
 
-        public const ushort CLR80STORE = 0xC000;  // Allow page2 to switch video page1 page2
-        public const ushort SET80STORE = 0xC001;  // Allow page2 to switch main & aux video memory
         public const ushort RDMAINRAM = 0xC002;  // Read enable main memory from $0200-$BFFF
         public const ushort RDCARDRAM = 0xC003;  //  Read enable aux memory from $0200-$BFFF
         public const ushort WRMAINRAM = 0xC004;  // Write enable main memory from $0200-$BFFF
@@ -26,10 +24,43 @@ namespace InnoWerks.Emulators.Apple
 
         // VIDEO SOFT SWITCHES
 
-        public const ushort CLR80VID = 0xC00C;  // Turn off 80 column display
-        public const ushort SET80VID = 0xC00D;  //  Turn on 80 column display
         public const ushort CLRALTCHAR = 0xC00E;  // Turn off alternate characters
         public const ushort SETALTCHAR = 0xC00F;  // Turn on alternate characters
+        public const ushort RDALTCHR = 0xC01E;  // 1=alt character set on   0=alt char set off
+
+        public const ushort CLR80VID = 0xC00C;  // Turn off 80 column display
+        public const ushort SET80VID = 0xC00D;  //  Turn on 80 column display
+        public const ushort RD80VID = 0xC01F;  //  1=80 col display on 0=80 col display off
+
+        public const ushort CLR80STORE = 0xC000;  // Allow page2 to switch video page1 page2
+        public const ushort SET80STORE = 0xC001;  // Allow page2 to switch main & aux video memory
+        public const ushort RD80STORE = 0xC018;  //  1=page2 switches main/aux   0=page2 video
+
+        public const ushort TXTPAGE1 = 0xC054;  // Select panel display (or main video memory)
+        public const ushort TXTPAGE2 = 0xC055;  //  Select page2 display (or aux video memory)
+        public const ushort RDPAGE2 = 0xC01C;  //  1=video page2 selected or aux
+
+        public const ushort TXTCLR = 0xC050;  //  Select graphics mode
+        public const ushort TXTSET = 0xC051;  //  Select text mode
+        public const ushort RDTEXT = 0xC01A;  //  1=text mode is active 0=graphics mode active
+
+        public const ushort MIXCLR = 0xC052;  // Use full screen for graphics
+        public const ushort MIXSET = 0xC053;  //  Use graphics with 4 lines of text
+        public const ushort RDMIXED = 0xC01B;  //  1=mixed graphics & text    0=full screen
+
+        public const ushort LORES = 0xC056;  // Select low resolution graphics
+        public const ushort HIRES = 0xC057;  //  Select high resolution graphics
+        public const ushort RDHIRES = 0xC01D;  //  1=high resolution graphics   0=low resolution
+
+        public const ushort IOUDISON = 0xC07E;
+        public const ushort IOUDISOFF = 0xC07F;
+        public const ushort RDIOUDIS = 0xC07E;
+
+        public const ushort DHIRESON = 0xC05E;
+        public const ushort DHIRESOFF = 0xC05F;
+        public const ushort RDDHIRES = 0xC07F;
+
+        public const ushort RDVBL = 0xC019;  // 1=vertical retrace on 0=vertical retrace off
 
         // SOFT SWITCH STATUS FLAGS
 
@@ -41,29 +72,7 @@ namespace InnoWerks.Emulators.Apple
         public const ushort RDCXROM = 0xC015;  // 1=main $C100-$CFFF ROM active 0=slot active
         public const ushort RDALTZP = 0xC016;  //  1=aux $0000-$1FF+auxBSR    0=main available
         public const ushort RDC3ROM = 0xC017;  // 1=slot $C3 ROM active 0=main $C3 ROM active
-        public const ushort RD80STORE = 0xC018;  //  1=page2 switches main/aux   0=page2 video
-        public const ushort RDVBL = 0xC019;  // 1=vertical retrace on 0=vertical retrace off
-        public const ushort RDTEXT = 0xC01A;  //  1=text mode is active 0=graphics mode active
-        public const ushort RDMIXED = 0xC01B;  //  1=mixed graphics & text    0=full screen
-        public const ushort RDPAGE2 = 0xC01C;  //  1=video page2 selected or aux
-        public const ushort RDHIRES = 0xC01D;  //  1=high resolution graphics   0=low resolution
-        public const ushort RDALTCHR = 0xC01E;  // 1=alt character set on   0=alt char set off
-        public const ushort RD80VID = 0xC01F;  //  1=80 col display on 0=80 col display off
 
-        public const ushort TAPEOUT = 0xC020;
-        public const ushort SPKR = 0xC030;
-        public const ushort STROBE = 0xC040;
-
-        // VIDEO SOFT SWITCHES
-
-        public const ushort TXTCLR = 0xC050;  //  Select graphics mode
-        public const ushort TXTSET = 0xC051;  //  Select text mode
-        public const ushort MIXCLR = 0xC052;  // Use full screen for graphics
-        public const ushort MIXSET = 0xC053;  //  Use graphics with 4 lines of text
-        public const ushort TXTPAGE1 = 0xC054;  // Select panel display (or main video memory)
-        public const ushort TXTPAGE2 = 0xC055;  //  Select page2 display (or aux video memory)
-        public const ushort LORES = 0xC056;  // Select low resolution graphics
-        public const ushort HIRES = 0xC057;  //  Select high resolution graphics
 
         // Annunciator pairs
         public const ushort CLRAN0 = 0xC058;
@@ -76,25 +85,23 @@ namespace InnoWerks.Emulators.Apple
         public const ushort SETAN3 = 0xC05F;
 
         // Other hardware
+        public const ushort SPKR = 0xC030;
+        public const ushort TAPEOUT = 0xC020;
         public const ushort TAPEIN = 0xC060;
+        public const ushort STROBE = 0xC040;
+
         public const ushort BUTTON0 = 0xC061;
         public const ushort OPENAPPLE = 0xC061;
         public const ushort BUTTON1 = 0xC062;
         public const ushort SOLIDAPPLE = 0xC062;
         public const ushort BUTTON2 = 0xC063;
         public const ushort SHIFT = 0xC063;
+
         public const ushort PADDLE0 = 0xC064;
         public const ushort PADDLE1 = 0xC065;
         public const ushort PADDLE2 = 0xC066;
         public const ushort PADDLE3 = 0xC067;
-
         public const ushort PTRIG = 0xC070;
-
-        public const ushort RDIOUDIS = 0xC07E;
-        public const ushort RDDHIRES = 0xC07F;
-
-        public const ushort IOUDISON = 0xC07E;
-        public const ushort IOUDISOFF = 0xC07F;
     }
 #pragma warning restore CA1707
 }

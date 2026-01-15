@@ -31,7 +31,7 @@ namespace InnoWerks.Emulators.Apple
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"HandleLanguageCard({address:X4})\n");
+            SimDebugger.Info($"Read LanguageCard({address:X4})\n");
 
             if (address == 0xC011)
             {
@@ -51,10 +51,12 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"HandleLanguageCard({address:X4}, {value:X2})\n");
+            SimDebugger.Info($"Write LanguageCard({address:X4}, {value:X2})\n");
 
             HandleWriteC08x(address, value);
         }
+
+        public void Tick(int cycles) {/* NO-OP */ }
 
         public void Reset()
         {

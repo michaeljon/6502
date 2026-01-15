@@ -42,8 +42,8 @@ namespace InnoWerks.Emulators.Apple
         private DiskIIDrive CurrentDrive =>
             driveSelect ? drives[0] : drives[1];
 
-        public DiskIISlotDevice(byte[] romImage)
-            : base(6, "Disk II Controller", romImage)
+        public DiskIISlotDevice(SoftSwitches softSwitches, byte[] romImage)
+            : base(6, "Disk II Controller", softSwitches, romImage)
         {
             drives[0] = new DiskIIDrive();
             drives[1] = new DiskIIDrive();
@@ -64,15 +64,17 @@ namespace InnoWerks.Emulators.Apple
             {
                 case 0x0C:   // shift read
                     ShiftRead();
-                    return 0;
+                    break;
 
                 case 0x0E:   // data read
                     return shiftRegister;
 
                 default:
                     Handle(address);
-                    return 0;
+                    break;
             }
+
+            return 0x00;
         }
 
         public override void Write(ushort address, byte value)
@@ -88,6 +90,8 @@ namespace InnoWerks.Emulators.Apple
                     return;
             }
         }
+
+        public override void Tick(int cycles) {/* NO-OP */ }
 
         public override void Reset()
         {

@@ -31,14 +31,17 @@ namespace InnoWerks.Emulators.Apple
 
         public const ushort EXPANSION_ROM_BASE_ADDR = 0xC800;
 
+        protected SoftSwitches softSwitches { get; }
+
         private readonly byte[] rom = new byte[256];
 
         private readonly byte[] expansionRom = new byte[2048];
 
-        protected SlotRomDevice(int slot, string name, byte[] romImage)
+        protected SlotRomDevice(int slot, string name, SoftSwitches softSwitches, byte[] romImage)
         {
-            ArgumentNullException.ThrowIfNull(romImage, nameof(romImage));
             ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
+            ArgumentNullException.ThrowIfNull(softSwitches, nameof(softSwitches));
+            ArgumentNullException.ThrowIfNull(romImage, nameof(romImage));
 
             ArgumentOutOfRangeException.ThrowIfGreaterThan(slot, 7, nameof(slot));
             ArgumentOutOfRangeException.ThrowIfLessThan(slot, 0, nameof(slot));
@@ -50,6 +53,8 @@ namespace InnoWerks.Emulators.Apple
 
             Slot = slot;
             Name = name;
+
+            this.softSwitches = softSwitches;
 
             if (romImage.Length > 256)
             {
@@ -81,6 +86,8 @@ namespace InnoWerks.Emulators.Apple
         public abstract byte Read(ushort address);
 
         public abstract void Write(ushort address, byte value);
+
+        public abstract void Tick(int cycles);
 
         public abstract void Reset();
 

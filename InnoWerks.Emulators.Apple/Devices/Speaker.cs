@@ -8,7 +8,7 @@ namespace InnoWerks.Emulators.Apple
 {
     public class Speaker : IDevice
     {
-        private bool spkr;
+        private readonly SoftSwitches softSwitches;
 
         public DevicePriority Priority => DevicePriority.SoftSwitch;
 
@@ -16,18 +16,25 @@ namespace InnoWerks.Emulators.Apple
 
         public string Name => "Speaker";
 
+        public Speaker(SoftSwitches softSwitches)
+        {
+            ArgumentNullException.ThrowIfNull(softSwitches, nameof(softSwitches));
+
+            this.softSwitches = softSwitches;
+        }
+
         public bool Handles(ushort address)
             => address == SoftSwitchAddress.SPKR;
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"HandleSpeaker({address:X4})\n");
+            SimDebugger.Info($"Read Speaker({address:X4})\n");
 
             switch (address)
             {
                 case SoftSwitchAddress.SPKR:
-                    spkr = !spkr;
-                    return 0;
+                    softSwitches.State[SoftSwitch.Speaker] = !softSwitches.State[SoftSwitch.Speaker];
+                    break;
             }
 
             return 0x00;
@@ -35,19 +42,14 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"HandleSpeaker({address:X4}, {value:X2})\n");
-
-            switch (address)
-            {
-                case SoftSwitchAddress.SPKR:
-                    spkr = !spkr;
-                    break;
-            }
+            SimDebugger.Info($"Write Speaker({address:X4}, {value:X2})\n");
         }
+
+        public void Tick(int cycles) {/* NO-OP */ }
 
         public void Reset()
         {
-            spkr = false;
+            softSwitches.State[SoftSwitch.Speaker] = false;
         }
     }
 }

@@ -8,7 +8,7 @@ namespace InnoWerks.Emulators.Apple
 {
     public class Paddles : IDevice
     {
-        private readonly bool[] state = new bool[4];
+        private readonly SoftSwitches softSwitches;
 
         public DevicePriority Priority => DevicePriority.SoftSwitch;
 
@@ -16,34 +16,47 @@ namespace InnoWerks.Emulators.Apple
 
         public string Name => $"Paddles";
 
+        public Paddles(SoftSwitches softSwitches)
+        {
+            ArgumentNullException.ThrowIfNull(softSwitches, nameof(softSwitches));
+
+            this.softSwitches = softSwitches;
+        }
+
         public bool Handles(ushort address)
-            => address >= SoftSwitchAddress.PADDLE0 && address <= SoftSwitchAddress.PADDLE3;
+            => (address >= SoftSwitchAddress.PADDLE0 && address <= SoftSwitchAddress.PADDLE3) || address == SoftSwitchAddress.PTRIG;
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"HandlePaddle({address:X4})\n");
+            SimDebugger.Info($"Read Paddle({address:X4})\n");
 
             return address switch
             {
-                SoftSwitchAddress.PADDLE0 => (byte)(state[0] ? 0x80 : 0x00),
-                SoftSwitchAddress.PADDLE1 => (byte)(state[1] ? 0x80 : 0x00),
-                SoftSwitchAddress.PADDLE2 => (byte)(state[2] ? 0x80 : 0x00),
-                SoftSwitchAddress.PADDLE3 => (byte)(state[3] ? 0x80 : 0x00),
+                SoftSwitchAddress.PADDLE0 => (byte)(softSwitches.State[SoftSwitch.Paddle0] ? 0x80 : 0x00),
+                SoftSwitchAddress.PADDLE1 => (byte)(softSwitches.State[SoftSwitch.Paddle1] ? 0x80 : 0x00),
+                SoftSwitchAddress.PADDLE2 => (byte)(softSwitches.State[SoftSwitch.Paddle2] ? 0x80 : 0x00),
+                SoftSwitchAddress.PADDLE3 => (byte)(softSwitches.State[SoftSwitch.Paddle3] ? 0x80 : 0x00),
+
+                // this should start a timer, for now just ignore it
+                SoftSwitchAddress.PTRIG => 0x00,
+
                 _ => 0x00,
             };
         }
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"HandlePaddle({address:X4}, {value:X2})\n");
+            SimDebugger.Info($"Write Paddle({address:X4}, {value:X2})\n");
         }
+
+        public void Tick(int cycles) {/* NO-OP */ }
 
         public void Reset()
         {
-            for (var i = 0; i < state.Length; i++)
-            {
-                state[i] = false;
-            }
+            softSwitches.State[SoftSwitch.Paddle0] = false;
+            softSwitches.State[SoftSwitch.Paddle1] = false;
+            softSwitches.State[SoftSwitch.Paddle2] = false;
+            softSwitches.State[SoftSwitch.Paddle3] = false;
         }
     }
 }

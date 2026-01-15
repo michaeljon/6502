@@ -8,8 +8,7 @@ namespace InnoWerks.Emulators.Apple
 {
     public class Strobe : IDevice
     {
-#pragma warning disable CS0414
-        private bool strobe;
+        private readonly SoftSwitches softSwitches;
 
         public DevicePriority Priority => DevicePriority.SoftSwitch;
 
@@ -17,18 +16,25 @@ namespace InnoWerks.Emulators.Apple
 
         public string Name => "Strobe";
 
+        public Strobe(SoftSwitches softSwitches)
+        {
+            ArgumentNullException.ThrowIfNull(softSwitches, nameof(softSwitches));
+
+            this.softSwitches = softSwitches;
+        }
+
         public bool Handles(ushort address)
             => address == SoftSwitchAddress.STROBE;
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"HandleStrobe({address:X4})\n");
+            SimDebugger.Info($"Read Strobe({address:X4})\n");
 
             switch (address)
             {
                 case SoftSwitchAddress.STROBE:
-                    strobe = true;
-                    return 0;
+                    softSwitches.State[SoftSwitch.GameStrobe] = true;
+                    break;
             }
 
             return 0x00;
@@ -36,12 +42,14 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"HandleStrobe({address:X4}, {value:X2})\n");
+            SimDebugger.Info($"Write Strobe({address:X4}, {value:X2})\n");
         }
+
+        public void Tick(int cycles) {/* NO-OP */ }
 
         public void Reset()
         {
-            strobe = false;
+            softSwitches.State[SoftSwitch.GameStrobe] = false;
         }
     }
 }

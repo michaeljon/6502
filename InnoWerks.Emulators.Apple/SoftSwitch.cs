@@ -2,13 +2,41 @@ namespace InnoWerks.Emulators.Apple
 {
     public enum SoftSwitch
     {
+        // Keyboard & system
+        KeyboardData,
+        KeyboardStrobe,
+        Speaker,
+        TapeOut,
+        TapeIn,
+        GameStrobe,
+
+        Annunciator0,
+        Annunciator1,
+        Annunciator2,
+        Annunciator3,
+
+        Button0,
+        Button1,
+        Button2,
+
+        // for the IIe only, these are shared
+        OpenApple = Button0,
+        SolidApple = Button1,
+        ShiftKey = Button2,
+
+        Paddle0,
+        Paddle1,
+        Paddle2,
+        Paddle3,
+
+
         // Video
         TextMode,
         MixedMode,
         Page2,
         HiRes,
         DoubleHiRes,
-        IOU,
+        IOUDisabled,
 
         // 80 column / aux
         Store80,
@@ -16,7 +44,7 @@ namespace InnoWerks.Emulators.Apple
         AuxWrite,
         ZpAux,
         StackAux,
-        EightyColumnFirmware,
+        EightyColumnMode,
         AltCharSet,
 
         VerticalBlank,
