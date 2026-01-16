@@ -43,7 +43,6 @@ namespace InnoWerks.Emulators.Apple
         AuxRead,
         AuxWrite,
         ZpAux,
-        StackAux,
         EightyColumnMode,
         AltCharSet,
 

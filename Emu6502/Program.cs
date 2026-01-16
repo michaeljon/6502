@@ -97,6 +97,7 @@ namespace Emu6502
             // add system the devices to the bus
             bus.AddDevice(keyboard);
             bus.AddDevice(display);
+            bus.AddDevice(new SlotRomHandler(softSwitches));
             bus.AddDevice(new Annunciators(softSwitches));
             bus.AddDevice(new Paddles(softSwitches));
             bus.AddDevice(new Cassette(softSwitches));

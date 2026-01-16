@@ -82,26 +82,6 @@ namespace InnoWerks.Emulators.Apple
         {
             Tick(1);
 
-            // // Maybe toggle INTC8ROM
-            // if ((address & 0xFF00) == 0xC300 && softSwitches.State[SoftSwitch.Slot3RomEnabled] == false)
-            // {
-            //     softSwitches.State[SoftSwitch.IntC8RomEnabled] = false;
-            //     return 0x00;
-            // }
-
-            // if (address == 0xCFFF)
-            // {
-            //     softSwitches.State[SoftSwitch.IntC8RomEnabled] = true;
-            //     return 0x00;
-            // }
-
-            // RAM ($0000–$BFFF)
-            if (address < 0xC000)
-            {
-                floatingBus = memory.Read(address);
-                return floatingBus;
-            }
-
             if (0xC000 <= address && address <= 0xC07F)
             {
                 foreach (var device in systemDevices)
@@ -113,13 +93,6 @@ namespace InnoWerks.Emulators.Apple
                     }
                 }
 
-                // this block, if the address is handled, short-circuit returns
-                switch (address)
-                {
-                    case SoftSwitchAddress.RDCXROM: return (byte)(softSwitches.State[SoftSwitch.SlotRomEnabled] ? 0x80 : 0x00);
-                    case SoftSwitchAddress.RDC3ROM: return (byte)(softSwitches.State[SoftSwitch.Slot3RomEnabled] ? 0x80 : 0x00);
-                }
-
                 foreach (var softSwitchDevice in softSwitchDevices)
                 {
                     if (softSwitchDevice.Handles(address))
@@ -128,20 +101,6 @@ namespace InnoWerks.Emulators.Apple
                     }
                 }
             }
-
-            /*
-            if address in $C080–$C0FF:
-                slot = (address >> 4) & 7
-                route to slot[slot].io[address & $0F]
-
-            elif address in $C100–$C7FF:
-                slot = (address >> 8) & 7
-                route to slot[slot].rom[address & $FF]
-
-            elif address in $C800–$CFFF:
-                slot = (address >> 9) & 3   # slots 1–4 only
-                route to slot[slot].expansion_rom[address & $1FF]
-            */
 
             if (0xC080 <= address && address <= 0xC0FF)
             {
@@ -156,15 +115,13 @@ namespace InnoWerks.Emulators.Apple
 
                 if (device.Handles(address) == true)
                 {
-                    // SimDebugger.Info("Read slot {0} IO {1:X4}\n", slot, address);
                     return device.Read(address);
                 }
             }
 
-            bool lcActive = softSwitches.State[SoftSwitch.LcReadEnabled] || softSwitches.State[SoftSwitch.LcWriteEnabled];
-            if (lcActive == false)
+            if (softSwitches.LcActive == false)
             {
-                if (softSwitches.State[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
+                if (softSwitches.State[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC7FF)
                 {
                     var slot = (address >> 8) & 7;
 
@@ -217,53 +174,26 @@ namespace InnoWerks.Emulators.Apple
         {
             Tick(1);
 
-            if (address < 0xC000)
+            if (0xC000 <= address && address <= 0xC07F)
             {
-                memory.Write(address, value);
-                return;
-            }
-
-            foreach (var device in systemDevices)
-            {
-                if (device.Handles(address))
+                foreach (var device in systemDevices)
                 {
-                    device.Write(address, value);
-                    return;
+                    if (device.Handles(address))
+                    {
+                        device.Write(address, value);
+                        return;
+                    }
+                }
+
+                foreach (var softSwitchDevice in softSwitchDevices)
+                {
+                    if (softSwitchDevice.Handles(address))
+                    {
+                        softSwitchDevice.Write(address, value);
+                        return;
+                    }
                 }
             }
-
-            // this block, if the address is handle, short-circuit returns
-            switch (address)
-            {
-                case SoftSwitchAddress.SETSLOTCXROM: softSwitches.State[SoftSwitch.SlotRomEnabled] = true; return;
-                case SoftSwitchAddress.SETINTCXROM: softSwitches.State[SoftSwitch.SlotRomEnabled] = false; return;
-
-                case SoftSwitchAddress.SETINTC3ROM: softSwitches.State[SoftSwitch.Slot3RomEnabled] = false; return;
-                case SoftSwitchAddress.SETSLOTC3ROM: softSwitches.State[SoftSwitch.Slot3RomEnabled] = true; return;
-            }
-
-            foreach (var softSwitchDevice in softSwitchDevices)
-            {
-                if (softSwitchDevice.Handles(address))
-                {
-                    softSwitchDevice.Write(address, value);
-                    return;
-                }
-            }
-
-            /*
-            if address in $C080–$C0FF:
-                slot = (address >> 4) & 7
-                route to slot[slot].io[address & $0F]
-
-            elif address in $C100–$C7FF:
-                slot = (address >> 8) & 7
-                route to slot[slot].rom[address & $FF]
-
-            elif address in $C800–$CFFF:
-                slot = (address >> 9) & 3   # slots 1–4 only
-                route to slot[slot].expansion_rom[address & $1FF]
-            */
 
             if (0xC080 <= address && address <= 0xC0FF)
             {
@@ -278,8 +208,7 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            bool lcActive = softSwitches.State[SoftSwitch.LcReadEnabled] || softSwitches.State[SoftSwitch.LcWriteEnabled];
-            if (lcActive == false)
+            if (softSwitches.LcActive == false)
             {
                 if (softSwitches.State[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
                 {
