@@ -52,7 +52,7 @@ namespace InnoWerks.Emulators.Apple
         private readonly byte[][] lcRam;          // IIe only
 
         // swappable lo rom banks
-        private readonly byte[][] loRom;         // $D000–$DFFF
+        private readonly byte[] loRom;           // $D000–$DFFF
 
         // switch-selectable
         private readonly byte[] cxRom;           // $C000-$CFFF
@@ -89,11 +89,10 @@ namespace InnoWerks.Emulators.Apple
             }
 
             // todo: come back around and replace this per configuration
-            loRom = new byte[2][];
-            loRom[0] = new byte[4 * 1024];          // 4k ROM bank 1
-            loRom[1] = new byte[4 * 1024];          // 4k ROM bank 2
+            loRom = new byte[4 * 1024];             // 4k ROM bank
 
             cxRom = new byte[4 * 1024];             // 4k switch selectable
+
             hiRom = new byte[8 * 1024];             // 8k ROM
         }
 
@@ -153,7 +152,7 @@ namespace InnoWerks.Emulators.Apple
                     return auxRam[address];
                 }
 
-                return loRom[softSwitches.State[SoftSwitch.LcBank1] ? 1 : 0][offset];
+                return loRom[offset];
             }
             else if (0xE000 <= address && address <= 0xFFFF)
             {
@@ -265,8 +264,7 @@ namespace InnoWerks.Emulators.Apple
             Array.Copy(objectCode, 16 * 1024, cxRom, 0, 4 * 1024);
 
             // load the first 4k from the 16k block at the end into lo rom
-            Array.Copy(objectCode, 20 * 1024, loRom[0], 0, 4 * 1024);
-            Array.Copy(objectCode, 20 * 1024, loRom[1], 0, 4 * 1024);
+            Array.Copy(objectCode, 20 * 1024, loRom, 0, 4 * 1024);
 
             // load the remaining 12k from the 16k block into hi rom
             Array.Copy(objectCode, 24 * 1024, hiRom, 0, 8 * 1024);

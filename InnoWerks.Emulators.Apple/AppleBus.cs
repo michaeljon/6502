@@ -7,21 +7,6 @@ using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple
 {
-    // Memory maps
-    //
-    // 0000–00FF  Zero Page
-    // 0100–01FF  Stack
-    // 0200–03FF  Text page 1
-    // 0400–07FF  Text page 2
-    // 0800–1FFF  Graphics / BASIC workspace
-    // 2000–3FFF  Hi-res graphics page 1
-    // 4000–5FFF  Hi-res graphics page 2
-    // 6000–BFFF  RAM (48K max)
-    // C000–C0FF  I/O soft switches
-    // C100–C7FF  Slot ROMs
-    // C800–CFFF  Expansion ROM
-    // D000–FFFF  ROM (Integer BASIC or Applesoft BASIC + Monitor)
-
     public class AppleBus : IBus
     {
         private readonly AppleConfiguration configuration;
