@@ -49,7 +49,10 @@ namespace InnoWerks.Emulators.Apple
             drives[1] = new DiskIIDrive();
         }
 
-        public override bool Handles(ushort address) =>
+        public override bool HandlesRead(ushort address) =>
+            (address & 0xFFF0) == 0xC0E0 || (address & 0xFF00) == 0xC600;
+
+        public override bool HandlesWrite(ushort address) =>
             (address & 0xFFF0) == 0xC0E0 || (address & 0xFF00) == 0xC600;
 
         public override byte Read(ushort address)

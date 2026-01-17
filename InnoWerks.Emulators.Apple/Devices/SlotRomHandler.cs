@@ -34,7 +34,10 @@ namespace InnoWerks.Emulators.Apple
             this.softSwitches = softSwitches;
         }
 
-        public bool Handles(ushort address)
+        public bool HandlesRead(ushort address)
+            => handles.Contains(address);
+
+        public bool HandlesWrite(ushort address)
             => handles.Contains(address);
 
         public byte Read(ushort address)

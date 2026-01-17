@@ -11,7 +11,21 @@ namespace InnoWerks.Emulators.Apple
 {
     public class MemoryIIe : IDevice
     {
-        private readonly List<ushort> handles =
+        private readonly List<ushort> handlesRead =
+        [
+            SoftSwitchAddress.RDLCBNK2,
+            SoftSwitchAddress.RDLCRAM,
+
+            SoftSwitchAddress.RDRAMRD,
+            SoftSwitchAddress.RDRAMWRT,
+
+            SoftSwitchAddress.RDALTZP,
+
+            0xC080, 0xC081, 0xC082, 0xC083, 0xC084, 0xC085, 0xC086, 0xC087,
+            0xC088, 0xC089, 0xC08A, 0xC08B, 0xC08C, 0xC08D, 0xC08E, 0xC08F,
+        ];
+
+        private readonly List<ushort> handlesWrite =
         [
             SoftSwitchAddress.RDMAINRAM,
             SoftSwitchAddress.RDCARDRAM,
@@ -22,17 +36,10 @@ namespace InnoWerks.Emulators.Apple
             SoftSwitchAddress.SETSTDZP,
             SoftSwitchAddress.SETALTZP,
 
-            SoftSwitchAddress.RDRAMRD,
-            SoftSwitchAddress.RDRAMWRT,
-
-            SoftSwitchAddress.RDALTZP,
-
-            SoftSwitchAddress.RDLCBNK2,
-            SoftSwitchAddress.RDLCRAM,
-
             0xC080, 0xC081, 0xC082, 0xC083, 0xC084, 0xC085, 0xC086, 0xC087,
             0xC088, 0xC089, 0xC08A, 0xC08B, 0xC08C, 0xC08D, 0xC08E, 0xC08F,
         ];
+
 
         private const ushort LANG_A3 = 0b00001000;
 
@@ -96,8 +103,11 @@ namespace InnoWerks.Emulators.Apple
             hiRom = new byte[8 * 1024];             // 8k ROM
         }
 
-        public bool Handles(ushort address) =>
-            handles.Contains(address);
+        public bool HandlesRead(ushort address) =>
+            handlesRead.Contains(address);
+
+        public bool HandlesWrite(ushort address) =>
+            handlesWrite.Contains(address);
 
         public byte Read(ushort address)
         {

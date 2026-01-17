@@ -81,7 +81,9 @@ namespace InnoWerks.Emulators.Apple
 
         public string Name { get; }
 
-        public abstract bool Handles(ushort address);
+        public abstract bool HandlesRead(ushort address);
+
+        public abstract bool HandlesWrite(ushort address);
 
         public abstract byte Read(ushort address);
 

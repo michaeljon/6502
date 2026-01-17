@@ -22,6 +22,11 @@ namespace InnoWerks.Emulators.Apple
         public byte KeyLatch { get; set; }
 
         /// <summary>
+        /// Used to hold the most recent keyboard entry
+        /// </summary>
+        public bool KeyStrobe { get; set; }
+
+        /// <summary>
         /// Simple handler to tell whether the language card / bsr
         /// is current read or write enabled.
         /// </summary>

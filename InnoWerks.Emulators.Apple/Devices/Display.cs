@@ -20,38 +20,18 @@ namespace InnoWerks.Emulators.Apple
 
         public string Name => "Video Display";
 
-        private readonly List<ushort> handles =
+        private readonly List<ushort> handlesRead =
         [
-            SoftSwitchAddress.CLRALTCHAR,
-            SoftSwitchAddress.SETALTCHAR,
+            SoftSwitchAddress.KBD,
+
             SoftSwitchAddress.RDALTCHR,
-
-            SoftSwitchAddress.CLR80VID,
-            SoftSwitchAddress.SET80VID,
             SoftSwitchAddress.RD80VID,
-
-            SoftSwitchAddress.CLR80STORE,
-            SoftSwitchAddress.SET80STORE,
             SoftSwitchAddress.RD80STORE,
-
-            SoftSwitchAddress.TXTPAGE1,
-            SoftSwitchAddress.TXTPAGE2,
             SoftSwitchAddress.RDPAGE2,
-
-            SoftSwitchAddress.TXTCLR,
-            SoftSwitchAddress.TXTSET,
             SoftSwitchAddress.RDTEXT,
-
-            SoftSwitchAddress.MIXCLR,
-            SoftSwitchAddress.MIXSET,
             SoftSwitchAddress.RDMIXED,
-
-            SoftSwitchAddress.LORES,
-            SoftSwitchAddress.HIRES,
             SoftSwitchAddress.RDHIRES,
 
-            SoftSwitchAddress.IOUDISON,
-            SoftSwitchAddress.IOUDISOFF,
             SoftSwitchAddress.RDIOUDIS,
 
             SoftSwitchAddress.DHIRESON,
@@ -61,14 +41,47 @@ namespace InnoWerks.Emulators.Apple
             SoftSwitchAddress.RDVBL,
         ];
 
+        private readonly List<ushort> handlesWrite =
+        [
+            SoftSwitchAddress.CLRALTCHAR,
+            SoftSwitchAddress.SETALTCHAR,
+
+            SoftSwitchAddress.CLR80VID,
+            SoftSwitchAddress.SET80VID,
+
+            SoftSwitchAddress.CLR80STORE,
+            SoftSwitchAddress.SET80STORE,
+
+            SoftSwitchAddress.TXTPAGE1,
+            SoftSwitchAddress.TXTPAGE2,
+
+            SoftSwitchAddress.TXTCLR,
+            SoftSwitchAddress.TXTSET,
+
+            SoftSwitchAddress.MIXCLR,
+            SoftSwitchAddress.MIXSET,
+
+            SoftSwitchAddress.LORES,
+            SoftSwitchAddress.HIRES,
+
+            SoftSwitchAddress.IOUDISON,
+            SoftSwitchAddress.IOUDISOFF,
+
+            SoftSwitchAddress.DHIRESON,
+            SoftSwitchAddress.DHIRESOFF,
+        ];
+
         private readonly IBus bus;
 
         private ulong hCycle;
         private int vLine;
         private bool phase;
 
-        public bool Handles(ushort address)
-            => handles.Contains(address);
+        public bool HandlesRead(ushort address)
+            => handlesRead.Contains(address);
+
+        public bool HandlesWrite(ushort address)
+            => handlesWrite.Contains(address);
 
         public Display(IBus bus, SoftSwitches softSwitches)
         {

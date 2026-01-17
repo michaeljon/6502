@@ -1,11 +1,15 @@
+// #define REPORT_IO_ADDRESS_USAGE
+
 using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
 using InnoWerks.Emulators.Apple;
+using InnoWerks.Processors;
 using InnoWerks.Simulators;
 
 #pragma warning disable CA1859, CS0169, CA1823, IDE0005
@@ -66,7 +70,7 @@ namespace Emu6502
 
             var config = new AppleConfiguration(AppleModel.AppleIIe)
             {
-                CpuClass = InnoWerks.Processors.CpuClass.WDC65C02,
+                CpuClass = CpuClass.WDC65C02,
                 HasAuxMemory = true,
                 Has80Column = false,
                 HasLowercase = false,
@@ -108,6 +112,48 @@ namespace Emu6502
             // var diskDevice = new DiskIISlotDevice(softSwitches, diskIIRom);
             // DiskIINibble.LoadDisk(diskDevice.GetDrive(1), dos33);
             // bus.AddDevice(diskDevice);
+
+#if REPORT_IO_ADDRESS_USAGE == true
+            var readConfigured = new string[0xC080 - 0xC000];
+            foreach (var (address, name) in bus.ConfiguredAddresses(true).OrderBy(p => p.address))
+            {
+                readConfigured[address - 0xC000] = name;
+
+                SimDebugger.Info("[R] {0:X4} -- {1}\n", address, name);
+            }
+
+            var writeConfigured = new string[0xC080 - 0xC000];
+            foreach (var (address, name) in bus.ConfiguredAddresses(false).OrderBy(p => p.address))
+            {
+                writeConfigured[address - 0xC000] = name;
+
+                SimDebugger.Info("[W] {0:X4} -- {1}\n", address, name);
+            }
+
+            for (var address = 0xC000; address < 0xC080; address++)
+            {
+                if (string.IsNullOrEmpty(readConfigured[address - 0xC000]))
+                {
+                    SimDebugger.Info("Missing read: {0:X4}\n", address);
+                }
+            }
+
+            for (var address = 0xC000; address < 0xC080; address++)
+            {
+                if (string.IsNullOrEmpty(writeConfigured[address - 0xC000]))
+                {
+                    SimDebugger.Info("Missing write: {0:X4}\n", address);
+                }
+            }
+
+            for (var address = 0xC000; address < 0xC080; address++)
+            {
+                if (string.IsNullOrEmpty(readConfigured[address - 0xC000]) && string.IsNullOrEmpty(writeConfigured[address - 0xC000]))
+                {
+                    SimDebugger.Info("Missing combined: {0:X4}\n", address);
+                }
+            }
+#endif
 
             Task.Run(() =>
             {

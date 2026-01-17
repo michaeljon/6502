@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 using InnoWerks.Processors;
@@ -12,7 +13,7 @@ namespace InnoWerks.Emulators.Apple
         private readonly AppleConfiguration configuration;
 
 #pragma warning disable CA5394 // Do not use insecure randomness
-        private byte floatingBus = (byte)(new Random().Next() & 0xFF);
+        private readonly byte floatingBus = (byte)(new Random().Next() & 0xFF);
 #pragma warning restore CA5394 // Do not use insecure randomness
 
         private int transactionCycles;
@@ -27,6 +28,8 @@ namespace InnoWerks.Emulators.Apple
 
         private readonly SoftSwitches softSwitches;
 
+        private bool reportKeyboardLatchAll = true;
+
         public AppleBus(AppleConfiguration configuration, SoftSwitches softSwitches)
         {
             ArgumentNullException.ThrowIfNull(configuration);
@@ -36,6 +39,64 @@ namespace InnoWerks.Emulators.Apple
             this.softSwitches = softSwitches;
 
             memory = new MemoryIIe(configuration, softSwitches);
+        }
+
+        public IList<(ushort address, string name)> ConfiguredAddresses(bool forRead)
+        {
+            var configured = new List<(ushort address, string name)>();
+
+            foreach (var device in systemDevices)
+            {
+                for (ushort address = 0xC000; address < 0xC100; address++)
+                {
+                    if (forRead == true ? device.HandlesRead(address) : device.HandlesWrite(address))
+                    {
+                        configured.Add((address, device.Name));
+                    }
+                }
+            }
+
+            foreach (var device in softSwitchDevices)
+            {
+                for (ushort address = 0xC000; address < 0xC100; address++)
+                {
+                    if (forRead == true ? device.HandlesRead(address) : device.HandlesWrite(address))
+                    {
+                        configured.Add((address, device.Name));
+                    }
+                }
+            }
+
+            foreach (var (slot, device) in slotDevices)
+            {
+                for (ushort address = 0xC000; address < 0xC100; address++)
+                {
+                    if (forRead == true ? device.HandlesRead(address) : device.HandlesWrite(address))
+                    {
+                        configured.Add((address, $"[{slot}] {device.Name}"));
+                    }
+                }
+            }
+
+            // we only report out that we support the keyboard read bits here
+            if (forRead == true && reportKeyboardLatchAll == true)
+            {
+                for (ushort address = 0xC001; address < 0xC020; address++)
+                {
+                    configured.Add((address, "Keyboard latch handler KBD"));
+                }
+            }
+
+            // we only report out that we support the keyboard write bits here
+            if (forRead == false && reportKeyboardLatchAll == true)
+            {
+                for (ushort address = 0xC010; address < 0xC020; address++)
+                {
+                    configured.Add((address, "Keystrobe clear handler KBDSTRB"));
+                }
+            }
+
+            return configured;
         }
 
         public void AddDevice(IDevice device)
@@ -57,6 +118,12 @@ namespace InnoWerks.Emulators.Apple
 
                 case DevicePriority.Slot:
                     slotDevices.Add(device.Slot, device);
+
+                    if (device.Slot == 1)
+                    {
+                        reportKeyboardLatchAll = false;
+                    }
+
                     break;
             }
         }
@@ -86,18 +153,17 @@ namespace InnoWerks.Emulators.Apple
             {
                 foreach (var device in systemDevices)
                 {
-                    if (device.Handles(address))
+                    if (device.HandlesRead(address))
                     {
-                        floatingBus = device.Read(address);
-                        return floatingBus;
+                        return (byte)(device.Read(address) | CheckKeyboardLatch(address));
                     }
                 }
 
                 foreach (var softSwitchDevice in softSwitchDevices)
                 {
-                    if (softSwitchDevice.Handles(address))
+                    if (softSwitchDevice.HandlesRead(address))
                     {
-                        return softSwitchDevice.Read(address);
+                        return (byte)(softSwitchDevice.Read(address) | CheckKeyboardLatch(address));
                     }
                 }
             }
@@ -113,10 +179,12 @@ namespace InnoWerks.Emulators.Apple
                     return floatingBus;
                 }
 
-                if (device.Handles(address) == true)
+                if (device.HandlesRead(address) == true)
                 {
                     return device.Read(address);
                 }
+
+                SimDebugger.Info("Reached I/O read with device / with handler");
             }
 
             if (softSwitches.LcActive == false)
@@ -132,7 +200,7 @@ namespace InnoWerks.Emulators.Apple
                         return floatingBus;
                     }
 
-                    if (device.Handles(address) == true)
+                    if (device.HandlesRead(address) == true)
                     {
                         // SimDebugger.Info("Read slot {0} ROM {1:X4}\n", slot, address);
                         return device.Read(address);
@@ -157,7 +225,7 @@ namespace InnoWerks.Emulators.Apple
                             return floatingBus;
                         }
 
-                        if (device.Handles(address) == true)
+                        if (device.HandlesRead(address) == true)
                         {
                             SimDebugger.Info("Read slot {0} C8XX ROM {1:X4}\n", slot, address);
                             return device.Read(address);
@@ -166,8 +234,7 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            floatingBus = memory.Read(address);
-            return floatingBus;
+            return memory.Read(address);
         }
 
         public void Write(ushort address, byte value)
@@ -176,9 +243,11 @@ namespace InnoWerks.Emulators.Apple
 
             if (0xC000 <= address && address <= 0xC07F)
             {
+                CheckClearKeystrobe(address);
+
                 foreach (var device in systemDevices)
                 {
-                    if (device.Handles(address))
+                    if (device.HandlesWrite(address))
                     {
                         device.Write(address, value);
                         return;
@@ -187,7 +256,7 @@ namespace InnoWerks.Emulators.Apple
 
                 foreach (var softSwitchDevice in softSwitchDevices)
                 {
-                    if (softSwitchDevice.Handles(address))
+                    if (softSwitchDevice.HandlesWrite(address))
                     {
                         softSwitchDevice.Write(address, value);
                         return;
@@ -200,12 +269,14 @@ namespace InnoWerks.Emulators.Apple
                 var slot = (address >> 4) & 7;
 
                 slotDevices.TryGetValue(slot, out var device);
-                if (device?.Handles(address) == true)
+                if (device?.HandlesWrite(address) == true)
                 {
                     SimDebugger.Info("Write IO {0} {1:X4}\n", slot, address);
                     device.Write(address, value);
                     return;
                 }
+
+                SimDebugger.Info("Reached I/O write with device / with handler");
             }
 
             if (softSwitches.LcActive == false)
@@ -215,7 +286,7 @@ namespace InnoWerks.Emulators.Apple
                     var slot = (address >> 8) & 7;
 
                     slotDevices.TryGetValue(slot, out var device);
-                    if (device?.Handles(address) == true)
+                    if (device?.HandlesWrite(address) == true)
                     {
                         SimDebugger.Info("Write ROM {0} {1:X4}\n", slot, address);
                         device.Write(address, value);
@@ -227,7 +298,7 @@ namespace InnoWerks.Emulators.Apple
                     var slot = (address >> 9) & 3;
 
                     slotDevices.TryGetValue(slot, out var device);
-                    if (device?.Handles(address) == true)
+                    if (device?.HandlesWrite(address) == true)
                     {
                         SimDebugger.Info("Write ExROM {0} {1:X4}\n", slot, address);
                         device.Write(address, value);
@@ -286,6 +357,50 @@ namespace InnoWerks.Emulators.Apple
             memory.Tick(cycles);
 
             transactionCycles += cycles;
+        }
+
+        private byte CheckKeyboardLatch(ushort address)
+        {
+            if (reportKeyboardLatchAll == false)
+            {
+                return 0x00;
+            }
+
+            // all these addresses return the KSTRB and ASCII value
+            if (address >= 0xC001 && address <= 0xC00F)
+            {
+                return softSwitches.KeyStrobe ?
+                    softSwitches.KeyLatch |= 0x80 :
+                    softSwitches.KeyLatch;
+            }
+
+            // 0xC010 is handled directly by the keyboard as the "owning" device
+
+            // if the IOU is disabled then we only handle the MMU soft switch
+            if (softSwitches.State[SoftSwitch.IOUDisabled] == true)
+            {
+                return 0x00;
+            }
+
+            if (address >= 0xC001 && address <= 0xC01F)
+            {
+                return softSwitches.KeyLatch;
+            }
+
+            return 0x00;
+        }
+
+        private void CheckClearKeystrobe(ushort address)
+        {
+            if (reportKeyboardLatchAll == false)
+            {
+                return;
+            }
+
+            if (address >= 0xC010 && address <= 0xC01F)
+            {
+                softSwitches.KeyStrobe = false;
+            }
         }
     }
 }
