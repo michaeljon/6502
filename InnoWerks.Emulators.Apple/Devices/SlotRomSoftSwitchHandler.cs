@@ -6,7 +6,7 @@ using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple
 {
-    public class SlotRomHandler : IDevice
+    public class SlotRomSoftSwitchHandler : IDevice
     {
         private readonly List<ushort> handles =
         [
@@ -27,7 +27,7 @@ namespace InnoWerks.Emulators.Apple
 
         public string Name => $"Internal Slot Rom Handler";
 
-        public SlotRomHandler(SoftSwitches softSwitches)
+        public SlotRomSoftSwitchHandler(SoftSwitches softSwitches)
         {
             ArgumentNullException.ThrowIfNull(softSwitches, nameof(softSwitches));
 
@@ -42,7 +42,7 @@ namespace InnoWerks.Emulators.Apple
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"Read Internal Slot Rom({address:X4})\n");
+            SimDebugger.Info($"Read Internal Slot Rom SoftSwitch Handler({address:X4})\n");
 
             // this block, if the address is handled, short-circuit returns
             return address switch
@@ -55,7 +55,7 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"Write Internal Slot Rom({address:X4}, {value:X2})\n");
+            SimDebugger.Info($"Write Internal Slot Rom SoftSwitch Handler({address:X4}, {value:X2})\n");
 
             switch (address)
             {

@@ -320,23 +320,6 @@ namespace InnoWerks.Emulators.Apple
             preWrite = 0;
 
             // Writes to C08x do NOT affect LC state on real hardware
-
-            // // If CPU is currently executing from LC RAM, ignore LC control changes
-            // if (cpu.Registers.ProgramCounter >= 0xD000 && cpu.Registers.ProgramCounter <= 0xFFFF && softSwitches.State[SoftSwitch.LcWriteEnabled])
-            // {
-            //     return;
-            // }
-
-            // // Bank select
-            // softSwitches.State[SoftSwitch.LcBank1] = (address & LANG_A3) != 0;
-
-            // // Read enable
-            // int low = address & LANG_A0A1;
-            // softSwitches.State[SoftSwitch.LcReadEnabled] = (low == 0 || low == 3);
-
-            // // Any write clears write capability
-            // preWrite = 0;
-            // softSwitches.State[SoftSwitch.LcWriteEnabled] = false;
         }
     }
 }

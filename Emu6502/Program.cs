@@ -44,18 +44,9 @@ namespace Emu6502
         private static int RunEmulator(CliOptions options)
         {
             var mainRom = File.ReadAllBytes("roms/apple2e.rom");
-            byte[] diskIIRom = File.ReadAllBytes("roms/DiskII.rom");
+            var diskIIRom = File.ReadAllBytes("roms/DiskII.rom");
 
-            byte[] dos33 = File.ReadAllBytes("disks/dos33.dsk");
-
-            // Some ROMs are 256 bytes, some are larger.
-            // If larger, extract first 256 bytes.
-            if (diskIIRom.Length > 256)
-            {
-                var trimmed = new byte[256];
-                Array.Copy(diskIIRom, trimmed, 256);
-                diskIIRom = trimmed;
-            }
+            var dos33 = File.ReadAllBytes("disks/dos33.dsk");
 
             Console.CancelKeyPress += (sender, e) =>
             {
@@ -101,7 +92,7 @@ namespace Emu6502
             // add system the devices to the bus
             bus.AddDevice(keyboard);
             bus.AddDevice(display);
-            bus.AddDevice(new SlotRomHandler(softSwitches));
+            bus.AddDevice(new SlotRomSoftSwitchHandler(softSwitches));
             bus.AddDevice(new Annunciators(softSwitches));
             bus.AddDevice(new Paddles(softSwitches));
             bus.AddDevice(new Cassette(softSwitches));
