@@ -109,7 +109,7 @@ namespace InnoWerks.Emulators.Apple
                 softSwitches.State[SoftSwitch.IntC8RomEnabled] = false;
             }
 
-            if (0xC000 <= address && address <= 0xC07F)
+            if (0xC000 <= address && address <= 0xC08F)
             {
                 foreach (var device in systemDevices)
                 {
@@ -128,7 +128,7 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            if (0xC080 <= address && address <= 0xC0FF)
+            if (0xC090 <= address && address <= 0xC0FF)
             {
                 var slot = (address >> 4) & 7;
                 var device = slotDevices[slot];
@@ -209,7 +209,7 @@ namespace InnoWerks.Emulators.Apple
                 softSwitches.State[SoftSwitch.IntC8RomEnabled] = false;
             }
 
-            if (0xC000 <= address && address <= 0xC07F)
+            if (0xC000 <= address && address <= 0xC08F)
             {
                 CheckClearKeystrobe(address);
 
@@ -232,7 +232,7 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            if (0xC080 <= address && address <= 0xC0FF)
+            if (0xC090 <= address && address <= 0xC0FF)
             {
                 var slot = (address >> 4) & 7;
                 var device = slotDevices[slot];
