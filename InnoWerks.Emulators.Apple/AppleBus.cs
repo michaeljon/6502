@@ -20,6 +20,8 @@ namespace InnoWerks.Emulators.Apple
 
         private readonly MemoryIIe memory;
 
+        public MemoryIIe DirectMemory => memory;
+
         private readonly List<IDevice> systemDevices = [];
 
         // there are 8 slots, 0 - 7, most of the time, but slot 0 is not used
@@ -174,6 +176,15 @@ namespace InnoWerks.Emulators.Apple
                     }
                     else
                     {
+                        //
+                        // apple iie technical ref ch 6 page 133-134 talks about
+                        // the peripheral listening to $CFFF and that it needs to
+                        // write its slot # to $07F8 before its expansion rom
+                        // is enabled
+                        //
+                        // that means that the test and reset above (and probably
+                        // below in Write) are likely wrong wrong wrong
+                        //
                         var slot = (address >> 9) & 3;
                         var device = slotDevices[slot];
 
@@ -280,7 +291,7 @@ namespace InnoWerks.Emulators.Apple
 
         public byte Peek(ushort address)
         {
-            return memory.Read(address);
+            return memory.Peek(address);
         }
 
         public void Poke(ushort address, byte value)
@@ -300,6 +311,27 @@ namespace InnoWerks.Emulators.Apple
             ArgumentNullException.ThrowIfNull(objectCode);
 
             memory.LoadProgramToRam(objectCode, origin);
+        }
+
+        public void Reset()
+        {
+            foreach (var device in softSwitchDevices)
+            {
+                device.Reset();
+            }
+
+            foreach (var device in systemDevices)
+            {
+                device.Reset();
+            }
+
+            for (var slot = 0; slot < slotDevices.Length; slot++)
+            {
+                slotDevices[slot]?.Reset();
+            }
+
+            transactionCycles = 0;
+            CycleCount = 0;
         }
 
         private void Tick(int cycles)

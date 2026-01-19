@@ -35,7 +35,7 @@ namespace InnoWerks.Simulators.Tests
 
         public ulong CycleCount { get; private set; }
 
-        public void SetCpu(ICpu cpu) => throw new NotImplementedException();
+        public void SetCpu(ICpu cpu) { /* this is a no-op for the debug bus */ }
 
         public byte Peek(ushort address)
         {
@@ -109,6 +109,8 @@ namespace InnoWerks.Simulators.Tests
 
             Array.Copy(objectCode, 0, memory, origin, objectCode.Length);
         }
+
+        public void Reset() { /* no-op */ }
 
         public (bool matches, ushort differsAtAddr, byte expectedValue, byte actualValue) ValidateMemory(IEnumerable<JsonHarteRamEntry> mem)
         {

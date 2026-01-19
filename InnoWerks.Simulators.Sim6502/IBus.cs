@@ -1,5 +1,22 @@
 namespace InnoWerks.Simulators
 {
+    public enum PeekArea
+    {
+        Current,
+
+        MainRam,
+
+        AuxRam,
+
+        LanguageCardRam,
+
+        LowRom,
+
+        CxRom,
+
+        HighRom
+    }
+
     public interface IBus
     {
         void AddDevice(IDevice device);
@@ -83,5 +100,7 @@ namespace InnoWerks.Simulators
         /// <param name="objectCode"></param>
         /// <param name="origin"></param>
         void LoadProgramToRam(byte[] objectCode, ushort origin);
+
+        void Reset();
     }
 }

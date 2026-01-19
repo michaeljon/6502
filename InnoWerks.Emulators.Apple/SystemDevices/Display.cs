@@ -227,7 +227,6 @@ namespace InnoWerks.Emulators.Apple
             for (var i = 0; i < cycles; i++)
             {
                 hCycle++;
-
                 phase = !phase;
 
                 if (hCycle == CyclesPerLine)
@@ -258,8 +257,41 @@ namespace InnoWerks.Emulators.Apple
 
         public void Render()
         {
-            bool page2 = softSwitches.State[SoftSwitch.Page2];
+            if (softSwitches.State[SoftSwitch.EightyColumnMode] == false)
+            {
+                Render40Column();
+            }
+            else
+            {
+                Render80Column();
+            }
+        }
+
+        private void Render40Column()
+        {
             Span<char> line = stackalloc char[40];
+
+            Console.SetCursorPosition(0, 0);
+
+            for (int row = 0; row < 24; row++)
+            {
+                bool page2 = softSwitches.State[SoftSwitch.Page2];
+
+                for (int col = 0; col < 40; col++)
+                {
+                    ushort addr = GetTextAddress(row, col, page2);
+                    byte b = bus.Peek(addr);
+
+                    line[col] = DecodeAppleChar(b);
+                }
+
+                Console.WriteLine(line);
+            }
+        }
+
+        private void Render80Column()
+        {
+            Span<char> line = stackalloc char[80];
 
             Console.SetCursorPosition(0, 0);
 
@@ -267,10 +299,13 @@ namespace InnoWerks.Emulators.Apple
             {
                 for (int col = 0; col < 40; col++)
                 {
-                    ushort addr = GetTextAddress(row, col, page2);
+                    ushort addr = GetTextAddress(row, col, false);
                     byte b = bus.Peek(addr);
 
-                    line[col] = DecodeAppleChar(b);
+                    line[2 * col] = DecodeAppleChar(b);
+
+                    b = bus.Peek(addr);
+                    line[(2 * col) + 1] = DecodeAppleChar(b);
                 }
 
                 Console.WriteLine(line);

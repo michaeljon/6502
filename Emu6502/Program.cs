@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
+using InnoWerks.Assemblers;
 using InnoWerks.Emulators.Apple;
 using InnoWerks.Processors;
 using InnoWerks.Simulators;
@@ -47,17 +48,6 @@ namespace Emu6502
             var diskIIRom = File.ReadAllBytes("roms/DiskII.rom");
 
             var dos33 = File.ReadAllBytes("disks/dos33.dsk");
-
-            Console.CancelKeyPress += (sender, e) =>
-            {
-                e.Cancel = true;
-                keepRunning = false;
-
-                Console.WriteLine("Interrupt received.");
-
-                Console.CursorVisible = true;
-                Environment.Exit(0);
-            };
 
             var config = new AppleConfiguration(AppleModel.AppleIIe)
             {
@@ -146,7 +136,7 @@ namespace Emu6502
             }
 #endif
 
-            Task.Run(() =>
+            var keyListener = Task.Run(() =>
             {
                 while (keepRunning)
                 {
@@ -162,6 +152,48 @@ namespace Emu6502
                 }
             });
 
+            Console.CancelKeyPress += (sender, e) =>
+            {
+                e.Cancel = true;
+
+                Console.WriteLine("\nInterrupt received.");
+                Console.WriteLine(cpu.Registers);
+                Console.Write("[QINRST]> ");
+
+                var key = Console.ReadKey();
+
+                switch (key.KeyChar)
+                {
+                    case 'Q':
+                        keepRunning = false;
+
+                        keyListener.Wait();
+
+                        Console.CursorVisible = true;
+                        Environment.Exit(0);
+                        break;
+
+                    case 'I':
+                        cpu.IRQ();
+                        break;
+
+                    case 'N':
+                        cpu.NMI();
+                        break;
+
+                    case 'R':
+                        cpu.Reset();
+                        break;
+
+                    case 'S':
+                        options.SingleStep = !options.SingleStep;
+                        break;
+
+                    case 'T':
+                        options.Trace = !options.Trace;
+                        break;
+                }
+            };
 
             bus.LoadProgramToRom(mainRom);
 
@@ -212,6 +244,7 @@ namespace Emu6502
 #pragma warning restore CS0162 // Unreachable code detected
         }
 
+        // todo: use apple iie ref table 2-3 to construct full mapping
         static byte MapToAppleKey(ConsoleKeyInfo key)
         {
             if (key.Key == ConsoleKey.Enter)
@@ -222,6 +255,9 @@ namespace Emu6502
 
             if (key.Key == ConsoleKey.Escape)
                 return 0x9B;
+
+            if (key.Key == ConsoleKey.LeftArrow)
+                return 0x08;
 
             char c = char.ToUpperInvariant(key.KeyChar);
 

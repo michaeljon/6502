@@ -115,13 +115,26 @@ namespace InnoWerks.Emulators.Apple
             {
                 return softSwitches.State[SoftSwitch.ZpAux] ? auxRam[address] : mainRam[address];
             }
+
+            // todo - handle page1, page2, main/aux switching here
+            // for addresses $0400-$07FF and $0800-$0BFF
+            else if (0x0400 <= address && address <= 0x07FF)
+            {
+                // this is text page 1
+                if (softSwitches.State[SoftSwitch.Store80] == false)
+                {
+                    return softSwitches.State[SoftSwitch.Page2] ? auxRam[address] : mainRam[address];
+                }
+
+                return mainRam[address];
+            }
             else if (address < 0xC000)
             {
                 return softSwitches.State[SoftSwitch.AuxRead] ? auxRam[address] : mainRam[address];
             }
             else if (0xC000 <= address && address <= 0xC0FF)
             {
-                SimDebugger.Info($"Read Memory({address:X4})\n");
+                // SimDebugger.Info($"Read Memory({address:X4})\n");
 
                 switch (address)
                 {
@@ -186,6 +199,22 @@ namespace InnoWerks.Emulators.Apple
                     mainRam[address] = value;
                 }
             }
+
+            // todo - handle page1, page2, main/aux switching here
+            // for addresses $0400-$07FF and $0800-$0BFF
+            if (0x0400 <= address && address <= 0x07FF)
+            {
+                // this is text page 1
+                if (softSwitches.State[SoftSwitch.Store80] == false)
+                {
+                    mainRam[address] = value;
+                }
+                else
+                {
+                    auxRam[address] = value;
+                }
+            }
+
             if (address < 0xC000)
             {
                 if (configuration.Model == AppleModel.AppleIIe && softSwitches.State[SoftSwitch.AuxWrite])
@@ -199,7 +228,7 @@ namespace InnoWerks.Emulators.Apple
             }
             else if (0xC000 <= address && address <= 0xC0FF)
             {
-                SimDebugger.Info($"Write Memory({address:X4}, {value:X2})\n");
+                // SimDebugger.Info($"Write Memory({address:X4}, {value:X2})\n");
 
                 switch (address)
                 {
@@ -251,9 +280,15 @@ namespace InnoWerks.Emulators.Apple
             }
         }
 
-        public void Tick(int cycles) {/* NO-OP */ }
+        public byte Peek(ushort address)
+        {
+            // return a non-cycle counting read into "current" memory
+            return Read(address);
+        }
 
-        public void Reset() { }
+        public void Tick(int cycles) { /* NO-OP */ }
+
+        public void Reset() { /* NO-OP */ }
 
         public void LoadProgramToRom(byte[] objectCode)
         {
@@ -320,6 +355,70 @@ namespace InnoWerks.Emulators.Apple
             preWrite = 0;
 
             // Writes to C08x do NOT affect LC state on real hardware
+        }
+
+        internal void DumpPage(byte page, PeekArea peekArea)
+        {
+            if (peekArea == PeekArea.Current)
+            {
+                throw new NotImplementedException("Can't read 'current', specify an exact regions");
+            }
+
+            byte[] bytes = peekArea switch
+            {
+                PeekArea.MainRam => mainRam,
+                PeekArea.AuxRam => auxRam,
+                PeekArea.LanguageCardRam => softSwitches.State[SoftSwitch.LcBank1] ? lcRam[1] : lcRam[0],
+                PeekArea.LowRom => loRom,
+                PeekArea.CxRom => cxRom,
+                PeekArea.HighRom => hiRom,
+
+                _ => throw new ArgumentOutOfRangeException(nameof(peekArea)),
+            };
+
+            ushort baseAddr = peekArea switch
+            {
+                PeekArea.MainRam => (ushort)(page << 8),
+                PeekArea.AuxRam => (ushort)(page << 8),
+                PeekArea.LanguageCardRam => (ushort)((page << 8) - 0xD000),
+                PeekArea.LowRom => (ushort)((page << 8) - 0xD000),
+                PeekArea.CxRom => (ushort)((page << 8) - 0xC000),
+                PeekArea.HighRom => (ushort)((page << 8) - 0xE000),
+
+                _ => throw new ArgumentOutOfRangeException(nameof(peekArea)),
+            };
+
+            Console.Write("       ");
+            for (var b = 0; b < 32; b++)
+            {
+                if (b > 0x00 && b % 0x08 == 0)
+                {
+                    Console.Write("  ");
+                }
+
+                Console.Write("{0:X2} ", b);
+            }
+
+            Console.WriteLine();
+
+            for (var l = baseAddr; l < baseAddr + 0x100; l += 32)
+            {
+                Console.Write("{0:X4}:  ", l);
+
+                for (var b = 0; b < 32; b++)
+                {
+                    if (b > 0x00 && b % 0x08 == 0)
+                    {
+                        Console.Write("  ");
+                    }
+
+                    Console.Write("{0:X2} ", bytes[(ushort)(l + b)]);
+                }
+
+                Console.WriteLine();
+            }
+
+            Console.WriteLine();
         }
     }
 }
