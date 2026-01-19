@@ -20,38 +20,18 @@ namespace InnoWerks.Emulators.Apple
 
         public string Name => "Video Display";
 
-        private readonly List<ushort> handles =
+        private readonly List<ushort> handlesRead =
         [
-            SoftSwitchAddress.CLRALTCHAR,
-            SoftSwitchAddress.SETALTCHAR,
+            SoftSwitchAddress.KBD,
+
             SoftSwitchAddress.RDALTCHR,
-
-            SoftSwitchAddress.CLR80VID,
-            SoftSwitchAddress.SET80VID,
             SoftSwitchAddress.RD80VID,
-
-            SoftSwitchAddress.CLR80STORE,
-            SoftSwitchAddress.SET80STORE,
             SoftSwitchAddress.RD80STORE,
-
-            SoftSwitchAddress.TXTPAGE1,
-            SoftSwitchAddress.TXTPAGE2,
             SoftSwitchAddress.RDPAGE2,
-
-            SoftSwitchAddress.TXTCLR,
-            SoftSwitchAddress.TXTSET,
             SoftSwitchAddress.RDTEXT,
-
-            SoftSwitchAddress.MIXCLR,
-            SoftSwitchAddress.MIXSET,
             SoftSwitchAddress.RDMIXED,
-
-            SoftSwitchAddress.LORES,
-            SoftSwitchAddress.HIRES,
             SoftSwitchAddress.RDHIRES,
 
-            SoftSwitchAddress.IOUDISON,
-            SoftSwitchAddress.IOUDISOFF,
             SoftSwitchAddress.RDIOUDIS,
 
             SoftSwitchAddress.DHIRESON,
@@ -61,14 +41,47 @@ namespace InnoWerks.Emulators.Apple
             SoftSwitchAddress.RDVBL,
         ];
 
+        private readonly List<ushort> handlesWrite =
+        [
+            SoftSwitchAddress.CLRALTCHAR,
+            SoftSwitchAddress.SETALTCHAR,
+
+            SoftSwitchAddress.CLR80VID,
+            SoftSwitchAddress.SET80VID,
+
+            SoftSwitchAddress.CLR80STORE,
+            SoftSwitchAddress.SET80STORE,
+
+            SoftSwitchAddress.TXTPAGE1,
+            SoftSwitchAddress.TXTPAGE2,
+
+            SoftSwitchAddress.TXTCLR,
+            SoftSwitchAddress.TXTSET,
+
+            SoftSwitchAddress.MIXCLR,
+            SoftSwitchAddress.MIXSET,
+
+            SoftSwitchAddress.LORES,
+            SoftSwitchAddress.HIRES,
+
+            SoftSwitchAddress.IOUDISON,
+            SoftSwitchAddress.IOUDISOFF,
+
+            SoftSwitchAddress.DHIRESON,
+            SoftSwitchAddress.DHIRESOFF,
+        ];
+
         private readonly IBus bus;
 
         private ulong hCycle;
         private int vLine;
         private bool phase;
 
-        public bool Handles(ushort address)
-            => handles.Contains(address);
+        public bool HandlesRead(ushort address)
+            => handlesRead.Contains(address);
+
+        public bool HandlesWrite(ushort address)
+            => handlesWrite.Contains(address);
 
         public Display(IBus bus, SoftSwitches softSwitches)
         {
@@ -214,7 +227,6 @@ namespace InnoWerks.Emulators.Apple
             for (var i = 0; i < cycles; i++)
             {
                 hCycle++;
-
                 phase = !phase;
 
                 if (hCycle == CyclesPerLine)
@@ -245,8 +257,41 @@ namespace InnoWerks.Emulators.Apple
 
         public void Render()
         {
-            bool page2 = softSwitches.State[SoftSwitch.Page2];
+            if (softSwitches.State[SoftSwitch.EightyColumnMode] == false)
+            {
+                Render40Column();
+            }
+            else
+            {
+                Render80Column();
+            }
+        }
+
+        private void Render40Column()
+        {
             Span<char> line = stackalloc char[40];
+
+            Console.SetCursorPosition(0, 0);
+
+            for (int row = 0; row < 24; row++)
+            {
+                bool page2 = softSwitches.State[SoftSwitch.Page2];
+
+                for (int col = 0; col < 40; col++)
+                {
+                    ushort addr = GetTextAddress(row, col, page2);
+                    byte b = bus.Peek(addr);
+
+                    line[col] = DecodeAppleChar(b);
+                }
+
+                Console.WriteLine(line);
+            }
+        }
+
+        private void Render80Column()
+        {
+            Span<char> line = stackalloc char[80];
 
             Console.SetCursorPosition(0, 0);
 
@@ -254,10 +299,13 @@ namespace InnoWerks.Emulators.Apple
             {
                 for (int col = 0; col < 40; col++)
                 {
-                    ushort addr = GetTextAddress(row, col, page2);
+                    ushort addr = GetTextAddress(row, col, false);
                     byte b = bus.Peek(addr);
 
-                    line[col] = DecodeAppleChar(b);
+                    line[2 * col] = DecodeAppleChar(b);
+
+                    b = bus.Peek(addr);
+                    line[(2 * col) + 1] = DecodeAppleChar(b);
                 }
 
                 Console.WriteLine(line);

@@ -18,7 +18,9 @@ namespace InnoWerks.Simulators
 
         string Name { get; }
 
-        bool Handles(ushort address);
+        bool HandlesRead(ushort address);
+
+        bool HandlesWrite(ushort address);
 
         byte Read(ushort address);
 

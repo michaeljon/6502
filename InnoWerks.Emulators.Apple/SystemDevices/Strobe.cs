@@ -6,7 +6,7 @@ using InnoWerks.Simulators;
 
 namespace InnoWerks.Emulators.Apple
 {
-    public class Speaker : IDevice
+    public class Strobe : IDevice
     {
         private readonly SoftSwitches softSwitches;
 
@@ -14,26 +14,28 @@ namespace InnoWerks.Emulators.Apple
 
         public int Slot => -1;
 
-        public string Name => "Speaker";
+        public string Name => "Strobe";
 
-        public Speaker(SoftSwitches softSwitches)
+        public Strobe(SoftSwitches softSwitches)
         {
             ArgumentNullException.ThrowIfNull(softSwitches, nameof(softSwitches));
 
             this.softSwitches = softSwitches;
         }
 
-        public bool Handles(ushort address)
-            => address == SoftSwitchAddress.SPKR;
+        public bool HandlesRead(ushort address)
+            => address == SoftSwitchAddress.STROBE;
+
+        public bool HandlesWrite(ushort address) => false;
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"Read Speaker({address:X4})\n");
+            SimDebugger.Info($"Read Strobe({address:X4})\n");
 
             switch (address)
             {
-                case SoftSwitchAddress.SPKR:
-                    softSwitches.State[SoftSwitch.Speaker] = !softSwitches.State[SoftSwitch.Speaker];
+                case SoftSwitchAddress.STROBE:
+                    softSwitches.State[SoftSwitch.GameStrobe] = true;
                     break;
             }
 
@@ -42,14 +44,14 @@ namespace InnoWerks.Emulators.Apple
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"Write Speaker({address:X4}, {value:X2})\n");
+            SimDebugger.Info($"Write Strobe({address:X4}, {value:X2})\n");
         }
 
         public void Tick(int cycles) {/* NO-OP */ }
 
         public void Reset()
         {
-            softSwitches.State[SoftSwitch.Speaker] = false;
+            softSwitches.State[SoftSwitch.GameStrobe] = false;
         }
     }
 }

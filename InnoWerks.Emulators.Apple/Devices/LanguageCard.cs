@@ -26,8 +26,10 @@ namespace InnoWerks.Emulators.Apple
 
         public string Name => "II/II+ Language Card";
 
-        public bool Handles(ushort address)
+        public bool HandlesRead(ushort address)
             => address == 0xC011 || address == 0xC012 || (address >= 0xC080 && address <= 0xC08F);
+
+        public bool HandlesWrite(ushort address) => false;
 
         public byte Read(ushort address)
         {

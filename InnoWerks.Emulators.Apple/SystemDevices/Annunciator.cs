@@ -16,6 +16,34 @@ namespace InnoWerks.Emulators.Apple
 
         public string Name => $"Annunciators";
 
+        private readonly List<ushort> handlesRead =
+        [
+            SoftSwitchAddress.CLRAN0,
+            SoftSwitchAddress.SETAN0,
+            SoftSwitchAddress.CLRAN1,
+            SoftSwitchAddress.SETAN1,
+            SoftSwitchAddress.CLRAN2,
+            SoftSwitchAddress.SETAN2,
+
+            // II/II+ only, on IIe this is a video switch
+            // SoftSwitchAddress.CLRAN3,
+            // SoftSwitchAddress.SETAN3,
+        ];
+
+        private readonly List<ushort> handlesWrite =
+        [
+            SoftSwitchAddress.CLRAN0,
+            SoftSwitchAddress.SETAN0,
+            SoftSwitchAddress.CLRAN1,
+            SoftSwitchAddress.SETAN1,
+            SoftSwitchAddress.CLRAN2,
+            SoftSwitchAddress.SETAN2,
+
+            // II/II+ only, on IIe this is a video switch
+            // SoftSwitchAddress.CLRAN3,
+            // SoftSwitchAddress.SETAN3,
+        ];
+
         public Annunciators(SoftSwitches softSwitches)
         {
             ArgumentNullException.ThrowIfNull(softSwitches, nameof(softSwitches));
@@ -23,8 +51,11 @@ namespace InnoWerks.Emulators.Apple
             this.softSwitches = softSwitches;
         }
 
-        public bool Handles(ushort address)
-            => address >= SoftSwitchAddress.CLRAN0 && address <= SoftSwitchAddress.SETAN3;
+        public bool HandlesRead(ushort address)
+            => handlesRead.Contains(address);
+
+        public bool HandlesWrite(ushort address)
+            => handlesWrite.Contains(address);
 
         public byte Read(ushort address)
         {
@@ -70,7 +101,7 @@ namespace InnoWerks.Emulators.Apple
         {
             softSwitches.State[SoftSwitch.Annunciator0] = false;
             softSwitches.State[SoftSwitch.Annunciator1] = false;
-            softSwitches.State[SoftSwitch.Annunciator2] = false;
+            softSwitches.State[SoftSwitch.Annunciator2] = true;
             softSwitches.State[SoftSwitch.Annunciator3] = true;
         }
     }

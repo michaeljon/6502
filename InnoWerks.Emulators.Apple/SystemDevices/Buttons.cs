@@ -16,6 +16,19 @@ namespace InnoWerks.Emulators.Apple
 
         public string Name => $"Buttons";
 
+        private readonly List<ushort> handlesRead =
+        [
+            // II/II+ only, on IIe these are keyboard modifiers
+            // SoftSwitchAddress.BUTTON0,
+            // SoftSwitchAddress.BUTTON1,
+            
+            SoftSwitchAddress.BUTTON2,
+        ];
+
+        private readonly List<ushort> handlesWrite =
+        [
+        ];
+
         public Buttons(SoftSwitches softSwitches)
         {
             ArgumentNullException.ThrowIfNull(softSwitches, nameof(softSwitches));
@@ -23,8 +36,11 @@ namespace InnoWerks.Emulators.Apple
             this.softSwitches = softSwitches;
         }
 
-        public bool Handles(ushort address)
-            => address >= SoftSwitchAddress.BUTTON0 && address <= SoftSwitchAddress.BUTTON2;
+        public bool HandlesRead(ushort address)
+            => handlesRead.Contains(address);
+
+        public bool HandlesWrite(ushort address)
+            => handlesWrite.Contains(address);
 
         public byte Read(ushort address)
         {

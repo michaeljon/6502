@@ -65,6 +65,7 @@ namespace InnoWerks.Simulators
             Registers.Reset();
 
             // this needs to reset the soft switches via the bus
+            bus.Reset();
 
             // load PC from reset vector
             byte pcl = bus.Peek(RstVectorL);
@@ -99,6 +100,8 @@ namespace InnoWerks.Simulators
             {
                 NMI();
             }
+
+            // todo: finish this case to support apple iie ref p. 151
         }
 
         public void PrintStatus()

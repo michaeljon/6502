@@ -1,11 +1,16 @@
+// #define REPORT_IO_ADDRESS_USAGE
+
 using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
+using InnoWerks.Assemblers;
 using InnoWerks.Emulators.Apple;
+using InnoWerks.Processors;
 using InnoWerks.Simulators;
 
 #pragma warning disable CA1859, CS0169, CA1823, IDE0005
@@ -40,33 +45,13 @@ namespace Emu6502
         private static int RunEmulator(CliOptions options)
         {
             var mainRom = File.ReadAllBytes("roms/apple2e.rom");
-            byte[] diskIIRom = File.ReadAllBytes("roms/DiskII.rom");
+            var diskIIRom = File.ReadAllBytes("roms/DiskII.rom");
 
-            byte[] dos33 = File.ReadAllBytes("disks/dos33.dsk");
-
-            // Some ROMs are 256 bytes, some are larger.
-            // If larger, extract first 256 bytes.
-            if (diskIIRom.Length > 256)
-            {
-                var trimmed = new byte[256];
-                Array.Copy(diskIIRom, trimmed, 256);
-                diskIIRom = trimmed;
-            }
-
-            Console.CancelKeyPress += (sender, e) =>
-            {
-                e.Cancel = true;
-                keepRunning = false;
-
-                Console.WriteLine("Interrupt received.");
-
-                Console.CursorVisible = true;
-                Environment.Exit(0);
-            };
+            var dos33 = File.ReadAllBytes("disks/dos33.dsk");
 
             var config = new AppleConfiguration(AppleModel.AppleIIe)
             {
-                CpuClass = InnoWerks.Processors.CpuClass.WDC65C02,
+                CpuClass = CpuClass.WDC65C02,
                 HasAuxMemory = true,
                 Has80Column = false,
                 HasLowercase = false,
@@ -97,6 +82,7 @@ namespace Emu6502
             // add system the devices to the bus
             bus.AddDevice(keyboard);
             bus.AddDevice(display);
+            bus.AddDevice(new SlotRomSoftSwitchHandler(softSwitches));
             bus.AddDevice(new Annunciators(softSwitches));
             bus.AddDevice(new Paddles(softSwitches));
             bus.AddDevice(new Cassette(softSwitches));
@@ -108,7 +94,49 @@ namespace Emu6502
             // DiskIINibble.LoadDisk(diskDevice.GetDrive(1), dos33);
             // bus.AddDevice(diskDevice);
 
-            Task.Run(() =>
+#if REPORT_IO_ADDRESS_USAGE == true
+            var readConfigured = new string[0xC080 - 0xC000];
+            foreach (var (address, name) in bus.ConfiguredAddresses(true).OrderBy(p => p.address))
+            {
+                readConfigured[address - 0xC000] = name;
+
+                SimDebugger.Info("[R] {0:X4} -- {1}\n", address, name);
+            }
+
+            var writeConfigured = new string[0xC080 - 0xC000];
+            foreach (var (address, name) in bus.ConfiguredAddresses(false).OrderBy(p => p.address))
+            {
+                writeConfigured[address - 0xC000] = name;
+
+                SimDebugger.Info("[W] {0:X4} -- {1}\n", address, name);
+            }
+
+            for (var address = 0xC000; address < 0xC080; address++)
+            {
+                if (string.IsNullOrEmpty(readConfigured[address - 0xC000]))
+                {
+                    SimDebugger.Info("Missing read: {0:X4}\n", address);
+                }
+            }
+
+            for (var address = 0xC000; address < 0xC080; address++)
+            {
+                if (string.IsNullOrEmpty(writeConfigured[address - 0xC000]))
+                {
+                    SimDebugger.Info("Missing write: {0:X4}\n", address);
+                }
+            }
+
+            for (var address = 0xC000; address < 0xC080; address++)
+            {
+                if (string.IsNullOrEmpty(readConfigured[address - 0xC000]) && string.IsNullOrEmpty(writeConfigured[address - 0xC000]))
+                {
+                    SimDebugger.Info("Missing combined: {0:X4}\n", address);
+                }
+            }
+#endif
+
+            var keyListener = Task.Run(() =>
             {
                 while (keepRunning)
                 {
@@ -124,6 +152,48 @@ namespace Emu6502
                 }
             });
 
+            Console.CancelKeyPress += (sender, e) =>
+            {
+                e.Cancel = true;
+
+                Console.WriteLine("\nInterrupt received.");
+                Console.WriteLine(cpu.Registers);
+                Console.Write("[QINRST]> ");
+
+                var key = Console.ReadKey();
+
+                switch (key.KeyChar)
+                {
+                    case 'Q':
+                        keepRunning = false;
+
+                        keyListener.Wait();
+
+                        Console.CursorVisible = true;
+                        Environment.Exit(0);
+                        break;
+
+                    case 'I':
+                        cpu.IRQ();
+                        break;
+
+                    case 'N':
+                        cpu.NMI();
+                        break;
+
+                    case 'R':
+                        cpu.Reset();
+                        break;
+
+                    case 'S':
+                        options.SingleStep = !options.SingleStep;
+                        break;
+
+                    case 'T':
+                        options.Trace = !options.Trace;
+                        break;
+                }
+            };
 
             bus.LoadProgramToRom(mainRom);
 
@@ -174,6 +244,7 @@ namespace Emu6502
 #pragma warning restore CS0162 // Unreachable code detected
         }
 
+        // todo: use apple iie ref table 2-3 to construct full mapping
         static byte MapToAppleKey(ConsoleKeyInfo key)
         {
             if (key.Key == ConsoleKey.Enter)
@@ -184,6 +255,9 @@ namespace Emu6502
 
             if (key.Key == ConsoleKey.Escape)
                 return 0x9B;
+
+            if (key.Key == ConsoleKey.LeftArrow)
+                return 0x08;
 
             char c = char.ToUpperInvariant(key.KeyChar);
 

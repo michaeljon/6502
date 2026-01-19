@@ -9,7 +9,7 @@ namespace InnoWerks.Emulators.Apple
     {
         private readonly SoftSwitches softSwitches;
 
-        private readonly List<ushort> handles =
+        private readonly List<ushort> handlesRead =
         [
             // read
             SoftSwitchAddress.KBD,
@@ -17,6 +17,12 @@ namespace InnoWerks.Emulators.Apple
             SoftSwitchAddress.SOLIDAPPLE,
             SoftSwitchAddress.SHIFT,
 
+            // read/write
+            SoftSwitchAddress.KBDSTRB,
+        ];
+
+        private readonly List<ushort> handlesWrite =
+        [
             // read/write
             SoftSwitchAddress.KBDSTRB,
         ];
@@ -34,8 +40,11 @@ namespace InnoWerks.Emulators.Apple
             this.softSwitches = softSwitches;
         }
 
-        public bool Handles(ushort address)
-            => handles.Contains(address);
+        public bool HandlesRead(ushort address)
+            => handlesRead.Contains(address);
+
+        public bool HandlesWrite(ushort address)
+            => handlesWrite.Contains(address);
 
         public byte Read(ushort address)
         {
@@ -44,12 +53,12 @@ namespace InnoWerks.Emulators.Apple
             switch (address)
             {
                 case SoftSwitchAddress.KBD:
-                    return softSwitches.State[SoftSwitch.KeyboardStrobe]
+                    return softSwitches.KeyStrobe
                         ? (byte)(softSwitches.KeyLatch | 0x80)
                         : softSwitches.KeyLatch;
 
                 case SoftSwitchAddress.KBDSTRB:
-                    softSwitches.State[SoftSwitch.KeyboardStrobe] = false;
+                    softSwitches.KeyStrobe = false;
                     break;
 
                 case SoftSwitchAddress.OPENAPPLE: return (byte)(softSwitches.State[SoftSwitch.OpenApple] ? 0x80 : 0x00);
@@ -66,8 +75,8 @@ namespace InnoWerks.Emulators.Apple
 
             if (address == SoftSwitchAddress.KBDSTRB)
             {
-                softSwitches.State[SoftSwitch.KeyboardStrobe] = false;
-                softSwitches.KeyLatch &= 0x7f;
+                softSwitches.KeyStrobe = false;
+                softSwitches.KeyLatch &= 0x7f;  // leave the value, clear the high bit
             }
         }
 
@@ -75,8 +84,8 @@ namespace InnoWerks.Emulators.Apple
 
         public void Reset()
         {
+            softSwitches.KeyStrobe = false;
             softSwitches.KeyLatch = 0x00;
-            softSwitches.State[SoftSwitch.KeyboardStrobe] = false;
         }
 
         /// <summary>
@@ -84,26 +93,23 @@ namespace InnoWerks.Emulators.Apple
         /// </summary>
         public void InjectKey(byte ascii)
         {
+            softSwitches.KeyStrobe = true;
             softSwitches.KeyLatch = ascii;
-            softSwitches.State[SoftSwitch.KeyboardStrobe] = true;
         }
 
         public void OpenApple()
         {
             softSwitches.State[SoftSwitch.OpenApple] = true;
-            softSwitches.State[SoftSwitch.KeyboardStrobe] = true;
         }
 
         public void SolidApple()
         {
             softSwitches.State[SoftSwitch.SolidApple] = true;
-            softSwitches.State[SoftSwitch.KeyboardStrobe] = true;
         }
 
         public void ShiftKey()
         {
             softSwitches.State[SoftSwitch.ShiftKey] = true;
-            softSwitches.State[SoftSwitch.KeyboardStrobe] = true;
         }
     }
 }

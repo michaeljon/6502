@@ -23,8 +23,10 @@ namespace InnoWerks.Emulators.Apple
             this.softSwitches = softSwitches;
         }
 
-        public bool Handles(ushort address)
+        public bool HandlesRead(ushort address)
             => (address >= SoftSwitchAddress.PADDLE0 && address <= SoftSwitchAddress.PADDLE3) || address == SoftSwitchAddress.PTRIG;
+
+        public bool HandlesWrite(ushort address) => false;
 
         public byte Read(ushort address)
         {

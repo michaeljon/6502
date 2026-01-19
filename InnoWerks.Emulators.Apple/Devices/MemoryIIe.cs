@@ -11,7 +11,21 @@ namespace InnoWerks.Emulators.Apple
 {
     public class MemoryIIe : IDevice
     {
-        private readonly List<ushort> handles =
+        private readonly List<ushort> handlesRead =
+        [
+            SoftSwitchAddress.RDLCBNK2,
+            SoftSwitchAddress.RDLCRAM,
+
+            SoftSwitchAddress.RDRAMRD,
+            SoftSwitchAddress.RDRAMWRT,
+
+            SoftSwitchAddress.RDALTZP,
+
+            0xC080, 0xC081, 0xC082, 0xC083, 0xC084, 0xC085, 0xC086, 0xC087,
+            0xC088, 0xC089, 0xC08A, 0xC08B, 0xC08C, 0xC08D, 0xC08E, 0xC08F,
+        ];
+
+        private readonly List<ushort> handlesWrite =
         [
             SoftSwitchAddress.RDMAINRAM,
             SoftSwitchAddress.RDCARDRAM,
@@ -22,17 +36,10 @@ namespace InnoWerks.Emulators.Apple
             SoftSwitchAddress.SETSTDZP,
             SoftSwitchAddress.SETALTZP,
 
-            SoftSwitchAddress.RDRAMRD,
-            SoftSwitchAddress.RDRAMWRT,
-
-            SoftSwitchAddress.RDALTZP,
-
-            SoftSwitchAddress.RDLCBNK2,
-            SoftSwitchAddress.RDLCRAM,
-
             0xC080, 0xC081, 0xC082, 0xC083, 0xC084, 0xC085, 0xC086, 0xC087,
             0xC088, 0xC089, 0xC08A, 0xC08B, 0xC08C, 0xC08D, 0xC08E, 0xC08F,
         ];
+
 
         private const ushort LANG_A3 = 0b00001000;
 
@@ -52,7 +59,7 @@ namespace InnoWerks.Emulators.Apple
         private readonly byte[][] lcRam;          // IIe only
 
         // swappable lo rom banks
-        private readonly byte[][] loRom;         // $D000–$DFFF
+        private readonly byte[] loRom;           // $D000–$DFFF
 
         // switch-selectable
         private readonly byte[] cxRom;           // $C000-$CFFF
@@ -89,16 +96,18 @@ namespace InnoWerks.Emulators.Apple
             }
 
             // todo: come back around and replace this per configuration
-            loRom = new byte[2][];
-            loRom[0] = new byte[4 * 1024];          // 4k ROM bank 1
-            loRom[1] = new byte[4 * 1024];          // 4k ROM bank 2
+            loRom = new byte[4 * 1024];             // 4k ROM bank
 
             cxRom = new byte[4 * 1024];             // 4k switch selectable
+
             hiRom = new byte[8 * 1024];             // 8k ROM
         }
 
-        public bool Handles(ushort address) =>
-            handles.Contains(address);
+        public bool HandlesRead(ushort address) =>
+            handlesRead.Contains(address);
+
+        public bool HandlesWrite(ushort address) =>
+            handlesWrite.Contains(address);
 
         public byte Read(ushort address)
         {
@@ -106,13 +115,26 @@ namespace InnoWerks.Emulators.Apple
             {
                 return softSwitches.State[SoftSwitch.ZpAux] ? auxRam[address] : mainRam[address];
             }
+
+            // todo - handle page1, page2, main/aux switching here
+            // for addresses $0400-$07FF and $0800-$0BFF
+            else if (0x0400 <= address && address <= 0x07FF)
+            {
+                // this is text page 1
+                if (softSwitches.State[SoftSwitch.Store80] == false)
+                {
+                    return softSwitches.State[SoftSwitch.Page2] ? auxRam[address] : mainRam[address];
+                }
+
+                return mainRam[address];
+            }
             else if (address < 0xC000)
             {
                 return softSwitches.State[SoftSwitch.AuxRead] ? auxRam[address] : mainRam[address];
             }
             else if (0xC000 <= address && address <= 0xC0FF)
             {
-                SimDebugger.Info($"Read Memory({address:X4})\n");
+                // SimDebugger.Info($"Read Memory({address:X4})\n");
 
                 switch (address)
                 {
@@ -153,7 +175,7 @@ namespace InnoWerks.Emulators.Apple
                     return auxRam[address];
                 }
 
-                return loRom[softSwitches.State[SoftSwitch.LcBank1] ? 1 : 0][offset];
+                return loRom[offset];
             }
             else if (0xE000 <= address && address <= 0xFFFF)
             {
@@ -177,6 +199,22 @@ namespace InnoWerks.Emulators.Apple
                     mainRam[address] = value;
                 }
             }
+
+            // todo - handle page1, page2, main/aux switching here
+            // for addresses $0400-$07FF and $0800-$0BFF
+            if (0x0400 <= address && address <= 0x07FF)
+            {
+                // this is text page 1
+                if (softSwitches.State[SoftSwitch.Store80] == false)
+                {
+                    mainRam[address] = value;
+                }
+                else
+                {
+                    auxRam[address] = value;
+                }
+            }
+
             if (address < 0xC000)
             {
                 if (configuration.Model == AppleModel.AppleIIe && softSwitches.State[SoftSwitch.AuxWrite])
@@ -190,7 +228,7 @@ namespace InnoWerks.Emulators.Apple
             }
             else if (0xC000 <= address && address <= 0xC0FF)
             {
-                SimDebugger.Info($"Write Memory({address:X4}, {value:X2})\n");
+                // SimDebugger.Info($"Write Memory({address:X4}, {value:X2})\n");
 
                 switch (address)
                 {
@@ -242,9 +280,15 @@ namespace InnoWerks.Emulators.Apple
             }
         }
 
-        public void Tick(int cycles) {/* NO-OP */ }
+        public byte Peek(ushort address)
+        {
+            // return a non-cycle counting read into "current" memory
+            return Read(address);
+        }
 
-        public void Reset() { }
+        public void Tick(int cycles) { /* NO-OP */ }
+
+        public void Reset() { /* NO-OP */ }
 
         public void LoadProgramToRom(byte[] objectCode)
         {
@@ -265,8 +309,7 @@ namespace InnoWerks.Emulators.Apple
             Array.Copy(objectCode, 16 * 1024, cxRom, 0, 4 * 1024);
 
             // load the first 4k from the 16k block at the end into lo rom
-            Array.Copy(objectCode, 20 * 1024, loRom[0], 0, 4 * 1024);
-            Array.Copy(objectCode, 20 * 1024, loRom[1], 0, 4 * 1024);
+            Array.Copy(objectCode, 20 * 1024, loRom, 0, 4 * 1024);
 
             // load the remaining 12k from the 16k block into hi rom
             Array.Copy(objectCode, 24 * 1024, hiRom, 0, 8 * 1024);
@@ -312,23 +355,70 @@ namespace InnoWerks.Emulators.Apple
             preWrite = 0;
 
             // Writes to C08x do NOT affect LC state on real hardware
+        }
 
-            // // If CPU is currently executing from LC RAM, ignore LC control changes
-            // if (cpu.Registers.ProgramCounter >= 0xD000 && cpu.Registers.ProgramCounter <= 0xFFFF && softSwitches.State[SoftSwitch.LcWriteEnabled])
-            // {
-            //     return;
-            // }
+        internal void DumpPage(byte page, PeekArea peekArea)
+        {
+            if (peekArea == PeekArea.Current)
+            {
+                throw new NotImplementedException("Can't read 'current', specify an exact regions");
+            }
 
-            // // Bank select
-            // softSwitches.State[SoftSwitch.LcBank1] = (address & LANG_A3) != 0;
+            byte[] bytes = peekArea switch
+            {
+                PeekArea.MainRam => mainRam,
+                PeekArea.AuxRam => auxRam,
+                PeekArea.LanguageCardRam => softSwitches.State[SoftSwitch.LcBank1] ? lcRam[1] : lcRam[0],
+                PeekArea.LowRom => loRom,
+                PeekArea.CxRom => cxRom,
+                PeekArea.HighRom => hiRom,
 
-            // // Read enable
-            // int low = address & LANG_A0A1;
-            // softSwitches.State[SoftSwitch.LcReadEnabled] = (low == 0 || low == 3);
+                _ => throw new ArgumentOutOfRangeException(nameof(peekArea)),
+            };
 
-            // // Any write clears write capability
-            // preWrite = 0;
-            // softSwitches.State[SoftSwitch.LcWriteEnabled] = false;
+            ushort baseAddr = peekArea switch
+            {
+                PeekArea.MainRam => (ushort)(page << 8),
+                PeekArea.AuxRam => (ushort)(page << 8),
+                PeekArea.LanguageCardRam => (ushort)((page << 8) - 0xD000),
+                PeekArea.LowRom => (ushort)((page << 8) - 0xD000),
+                PeekArea.CxRom => (ushort)((page << 8) - 0xC000),
+                PeekArea.HighRom => (ushort)((page << 8) - 0xE000),
+
+                _ => throw new ArgumentOutOfRangeException(nameof(peekArea)),
+            };
+
+            Console.Write("       ");
+            for (var b = 0; b < 32; b++)
+            {
+                if (b > 0x00 && b % 0x08 == 0)
+                {
+                    Console.Write("  ");
+                }
+
+                Console.Write("{0:X2} ", b);
+            }
+
+            Console.WriteLine();
+
+            for (var l = baseAddr; l < baseAddr + 0x100; l += 32)
+            {
+                Console.Write("{0:X4}:  ", l);
+
+                for (var b = 0; b < 32; b++)
+                {
+                    if (b > 0x00 && b % 0x08 == 0)
+                    {
+                        Console.Write("  ");
+                    }
+
+                    Console.Write("{0:X2} ", bytes[(ushort)(l + b)]);
+                }
+
+                Console.WriteLine();
+            }
+
+            Console.WriteLine();
         }
     }
 }

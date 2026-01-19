@@ -75,13 +75,44 @@ namespace InnoWerks.Emulators.Apple
             Array.Copy(romImage, 0, rom, 0, 256);
         }
 
+        protected SlotRomDevice(int slot, string name, SoftSwitches softSwitches, byte[] cxRom, byte[] c8Rom)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
+            ArgumentNullException.ThrowIfNull(softSwitches, nameof(softSwitches));
+            ArgumentNullException.ThrowIfNull(cxRom, nameof(cxRom));
+            ArgumentNullException.ThrowIfNull(c8Rom, nameof(c8Rom));
+
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(slot, 7, nameof(slot));
+            ArgumentOutOfRangeException.ThrowIfLessThan(slot, 0, nameof(slot));
+
+            if (slot < 1 || slot > 4)
+            {
+                throw new ArgumentException("Only devices in slots 1-4 can use extra ROM space $C800-$CFFF");
+            }
+
+            ArgumentOutOfRangeException.ThrowIfNotEqual(cxRom.Length, 256, nameof(cxRom));
+            ArgumentOutOfRangeException.ThrowIfNotEqual(c8Rom.Length, 2048, nameof(c8Rom));
+
+            Slot = slot;
+            Name = name;
+
+            this.softSwitches = softSwitches;
+
+            Array.Copy(cxRom, 0, rom, 0, 256);
+
+            HasAuxRom = true;
+            Array.Copy(c8Rom, 0, expansionRom, 0, 2048);
+        }
+
         public DevicePriority Priority => DevicePriority.Slot;
 
         public int Slot { get; }
 
         public string Name { get; }
 
-        public abstract bool Handles(ushort address);
+        public abstract bool HandlesRead(ushort address);
+
+        public abstract bool HandlesWrite(ushort address);
 
         public abstract byte Read(ushort address);
 
