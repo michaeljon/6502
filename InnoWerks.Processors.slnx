@@ -13,6 +13,7 @@
   <Project Path="InnoWerks.Assemblers.Asm6502/InnoWerks.Assemblers.Asm6502.csproj" />
   <Project Path="InnoWerks.Assemblers.Tests/InnoWerks.Assemblers.Tests.csproj" />
   <Project Path="InnoWerks.Disassemblers.Dasm6502/InnoWerks.Disassemblers.Dasm6502.csproj" />
+  <Project Path="InnoWerks.Emulators.Apple.Tests/InnoWerks.Emulators.Apple.Tests.csproj" />
   <Project Path="InnoWerks.Emulators.Apple/InnoWerks.Emulators.Apple.csproj" />
   <Project Path="InnoWerks.Processors.Tests/InnoWerks.Processors.Tests.csproj" />
   <Project Path="InnoWerks.Processors/InnoWerks.Processors.csproj" />

@@ -21,7 +21,7 @@ namespace InnoWerks.Emulators.Apple
             // II/II+ only, on IIe these are keyboard modifiers
             // SoftSwitchAddress.BUTTON0,
             // SoftSwitchAddress.BUTTON1,
-            
+
             SoftSwitchAddress.BUTTON2,
         ];
 
@@ -44,20 +44,24 @@ namespace InnoWerks.Emulators.Apple
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"Read Button({address:X4})\n");
+            SimDebugger.Info($"Read Button({address:X4}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
 
             return address switch
             {
                 SoftSwitchAddress.BUTTON0 => (byte)(softSwitches.State[SoftSwitch.Button0] ? 0x80 : 0x00),
                 SoftSwitchAddress.BUTTON1 => (byte)(softSwitches.State[SoftSwitch.Button1] ? 0x80 : 0x00),
                 SoftSwitchAddress.BUTTON2 => (byte)(softSwitches.State[SoftSwitch.Button2] ? 0x80 : 0x00),
-                _ => 0x00,
+
+                _ =>
+                    throw new ArgumentOutOfRangeException(nameof(address), $"Read {address:X4} is not supported in this device")
             };
         }
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"Write Button({address:X4}, {value:X2})\n");
+            SimDebugger.Info($"Write Button({address:X4}, {value:X2}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
+
+            throw new ArgumentOutOfRangeException(nameof(address), $"Write {address:X4} is not supported in this device");
         }
 
         public void Tick(int cycles) {/* NO-OP */ }

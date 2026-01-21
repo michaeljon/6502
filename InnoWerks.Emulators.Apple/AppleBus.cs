@@ -20,7 +20,7 @@ namespace InnoWerks.Emulators.Apple
 
         private readonly MemoryIIe memory;
 
-        public MemoryIIe DirectMemory => memory;
+        private readonly MemoryBlocks memoryBlocks;
 
         private readonly List<IDevice> systemDevices = [];
 
@@ -43,6 +43,8 @@ namespace InnoWerks.Emulators.Apple
             this.softSwitches = softSwitches;
 
             memory = new MemoryIIe(configuration, softSwitches);
+            memoryBlocks = new MemoryBlocks(softSwitches);
+            memoryBlocks.Remap();
         }
 
         public void AddDevice(IDevice device)
@@ -104,11 +106,13 @@ namespace InnoWerks.Emulators.Apple
             if (softSwitches.State[SoftSwitch.Slot3RomEnabled] == false && (address & 0xC300) == 0xC300)
             {
                 softSwitches.State[SoftSwitch.IntC8RomEnabled] = true;
+                memoryBlocks.Remap();
             }
 
             if (softSwitches.State[SoftSwitch.Slot3RomEnabled] == true && address == 0xCFFF)
             {
                 softSwitches.State[SoftSwitch.IntC8RomEnabled] = false;
+                memoryBlocks.Remap();
             }
 
             if (0xC000 <= address && address <= 0xC08F)
@@ -125,12 +129,14 @@ namespace InnoWerks.Emulators.Apple
                 {
                     if (softSwitchDevice.HandlesRead(address))
                     {
-                        return (byte)(softSwitchDevice.Read(address) | CheckKeyboardLatch(address));
+                        var result = (byte)(softSwitchDevice.Read(address) | CheckKeyboardLatch(address));
+                        memoryBlocks.Remap();
+                        return result;
                     }
                 }
             }
 
-            if (0xC090 <= address && address <= 0xC0FF)
+            else if (0xC090 <= address && address <= 0xC0FF)
             {
                 var slot = (address >> 4) & 7;
                 var device = slotDevices[slot];
@@ -148,7 +154,7 @@ namespace InnoWerks.Emulators.Apple
                 SimDebugger.Info("Reached I/O read from {0:X4} with device in {1} that doesn't handle", address, slot);
             }
 
-            if (softSwitches.LcActive == false)
+            else if (softSwitches.LcActive == false)
             {
                 if (softSwitches.State[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC7FF)
                 {
@@ -202,7 +208,21 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            return memory.Read(address);
+            var real = memory.Read(address);
+
+            //if (memoryBlocks.ResolveRead(address) != null)
+            {
+                var fake = memoryBlocks.Read(address);
+
+                if (fake != real)
+                {
+#pragma warning disable CA2201 // Do not raise reserved exception types
+                    throw new Exception($"Reads do not match fake={fake:X2} real={real:X2}");
+#pragma warning restore CA2201 // Do not raise reserved exception types
+                }
+            }
+
+            return real;
         }
 
         public void Write(ushort address, byte value)
@@ -238,12 +258,13 @@ namespace InnoWerks.Emulators.Apple
                     if (softSwitchDevice.HandlesWrite(address))
                     {
                         softSwitchDevice.Write(address, value);
+                        memoryBlocks.Remap();
                         return;
                     }
                 }
             }
 
-            if (0xC090 <= address && address <= 0xC0FF)
+            else if (0xC090 <= address && address <= 0xC0FF)
             {
                 var slot = (address >> 4) & 7;
                 var device = slotDevices[slot];
@@ -258,7 +279,7 @@ namespace InnoWerks.Emulators.Apple
                 SimDebugger.Info("Reached I/O write to {0:X4} with device in {1} that doesn't handle", address, slot);
             }
 
-            if (softSwitches.LcActive == false)
+            else if (softSwitches.LcActive == false)
             {
                 if (softSwitches.State[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
                 {
@@ -286,6 +307,9 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
+            var target = memoryBlocks.ResolveWrite(address);
+
+            memoryBlocks.Write(address, value);
             memory.Write(address, value);
         }
 
@@ -304,6 +328,7 @@ namespace InnoWerks.Emulators.Apple
             ArgumentNullException.ThrowIfNull(objectCode);
 
             memory.LoadProgramToRom(objectCode);
+            memoryBlocks.LoadProgramToRom(objectCode);
         }
 
         public void LoadProgramToRam(byte[] objectCode, ushort origin)
@@ -311,6 +336,7 @@ namespace InnoWerks.Emulators.Apple
             ArgumentNullException.ThrowIfNull(objectCode);
 
             memory.LoadProgramToRam(objectCode, origin);
+            memoryBlocks.LoadProgramToRam(objectCode, origin);
         }
 
         public void Reset()
@@ -329,6 +355,8 @@ namespace InnoWerks.Emulators.Apple
             {
                 slotDevices[slot]?.Reset();
             }
+
+            memoryBlocks.Remap();
 
             transactionCycles = 0;
             CycleCount = 0;
@@ -353,8 +381,6 @@ namespace InnoWerks.Emulators.Apple
             {
                 slotDevices[slot]?.Tick(cycles);
             }
-
-            memory.Tick(cycles);
 
             transactionCycles += cycles;
         }

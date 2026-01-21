@@ -64,6 +64,9 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitchAddress.OPENAPPLE: return (byte)(softSwitches.State[SoftSwitch.OpenApple] ? 0x80 : 0x00);
                 case SoftSwitchAddress.SOLIDAPPLE: return (byte)(softSwitches.State[SoftSwitch.SolidApple] ? 0x80 : 0x00);
                 case SoftSwitchAddress.SHIFT: return (byte)(softSwitches.State[SoftSwitch.ShiftKey] ? 0x80 : 0x00);
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(address), $"Read {address:X4} is not supported in this device");
             }
 
             return 0x00;
@@ -77,7 +80,11 @@ namespace InnoWerks.Emulators.Apple
             {
                 softSwitches.KeyStrobe = false;
                 softSwitches.KeyLatch &= 0x7f;  // leave the value, clear the high bit
+
+                return;
             }
+
+            throw new ArgumentOutOfRangeException(nameof(address), $"Write {address:X4} is not supported in this device");
         }
 
         public void Tick(int cycles) {/* NO-OP */ }

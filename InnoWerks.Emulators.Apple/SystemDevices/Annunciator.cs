@@ -59,7 +59,7 @@ namespace InnoWerks.Emulators.Apple
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"Read Annunciator({address:X4})\n");
+            SimDebugger.Info($"Read Annunciator({address:X4}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
 
             switch (address)
             {
@@ -72,14 +72,15 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitchAddress.SETAN2: softSwitches.State[SoftSwitch.Annunciator2] = true; return 0;
                 case SoftSwitchAddress.CLRAN3: softSwitches.State[SoftSwitch.Annunciator3] = false; return 0;
                 case SoftSwitchAddress.SETAN3: softSwitches.State[SoftSwitch.Annunciator3] = true; return 0;
-            }
 
-            return 0x00;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(address), $"Read {address:X4} is not supported in this device");
+            }
         }
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"Write Annunciator({address:X4}, {value:X2})\n");
+            SimDebugger.Info($"Write Annunciator({address:X4}, {value:X2}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
 
             switch (address)
             {
@@ -92,6 +93,9 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitchAddress.SETAN2: softSwitches.State[SoftSwitch.Annunciator2] = true; break;
                 case SoftSwitchAddress.CLRAN3: softSwitches.State[SoftSwitch.Annunciator3] = false; break;
                 case SoftSwitchAddress.SETAN3: softSwitches.State[SoftSwitch.Annunciator3] = true; break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(address), $"Write {address:X4} is not supported in this device");
             }
         }
 
@@ -102,7 +106,7 @@ namespace InnoWerks.Emulators.Apple
             softSwitches.State[SoftSwitch.Annunciator0] = false;
             softSwitches.State[SoftSwitch.Annunciator1] = false;
             softSwitches.State[SoftSwitch.Annunciator2] = true;
-            softSwitches.State[SoftSwitch.Annunciator3] = true;
+            // softSwitches.State[SoftSwitch.Annunciator3] = true;
         }
     }
 }

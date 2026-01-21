@@ -30,7 +30,7 @@ namespace InnoWerks.Emulators.Apple
 
         public byte Read(ushort address)
         {
-            SimDebugger.Info($"Read Paddle({address:X4})\n");
+            SimDebugger.Info($"Read Paddle({address:X4}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
 
             return address switch
             {
@@ -42,13 +42,16 @@ namespace InnoWerks.Emulators.Apple
                 // this should start a timer, for now just ignore it
                 SoftSwitchAddress.PTRIG => 0x00,
 
-                _ => 0x00,
+                _ =>
+                    throw new ArgumentOutOfRangeException(nameof(address), $"Read {address:X4} is not supported in this device")
             };
         }
 
         public void Write(ushort address, byte value)
         {
-            SimDebugger.Info($"Write Paddle({address:X4}, {value:X2})\n");
+            SimDebugger.Info($"Write Paddle({address:X4}, {value:X2}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
+
+            throw new ArgumentOutOfRangeException(nameof(address), $"Write {address:X4} is not supported in this device");
         }
 
         public void Tick(int cycles) {/* NO-OP */ }

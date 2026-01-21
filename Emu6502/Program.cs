@@ -88,6 +88,7 @@ namespace Emu6502
             bus.AddDevice(new Cassette(softSwitches));
             bus.AddDevice(new Speaker(softSwitches));
             bus.AddDevice(new Strobe(softSwitches));
+            bus.AddDevice(new Memory(softSwitches));
 
             // // add slotted devices
             // var diskDevice = new DiskIISlotDevice(softSwitches, diskIIRom);
@@ -165,31 +166,35 @@ namespace Emu6502
                 switch (key.KeyChar)
                 {
                     case 'Q':
+                    case 'q':
                         keepRunning = false;
-
-                        keyListener.Wait();
 
                         Console.CursorVisible = true;
                         Environment.Exit(0);
                         break;
 
                     case 'I':
+                    case 'i':
                         cpu.IRQ();
                         break;
 
                     case 'N':
+                    case 'n':
                         cpu.NMI();
                         break;
 
                     case 'R':
+                    case 'r':
                         cpu.Reset();
                         break;
 
                     case 'S':
+                    case 's':
                         options.SingleStep = !options.SingleStep;
                         break;
 
                     case 'T':
+                    case 't':
                         options.Trace = !options.Trace;
                         break;
                 }

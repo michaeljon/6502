@@ -27,9 +27,21 @@ namespace InnoWerks.Emulators.Apple
             SoftSwitchAddress.RDALTCHR,
             SoftSwitchAddress.RD80VID,
             SoftSwitchAddress.RD80STORE,
+
+            SoftSwitchAddress.TXTPAGE1,
+            SoftSwitchAddress.TXTPAGE2,
             SoftSwitchAddress.RDPAGE2,
+
+            SoftSwitchAddress.TXTCLR,
+            SoftSwitchAddress.TXTSET,
             SoftSwitchAddress.RDTEXT,
+
+            SoftSwitchAddress.MIXCLR,
+            SoftSwitchAddress.MIXSET,
             SoftSwitchAddress.RDMIXED,
+
+            SoftSwitchAddress.LORES,
+            SoftSwitchAddress.HIRES,
             SoftSwitchAddress.RDHIRES,
 
             SoftSwitchAddress.RDIOUDIS,
@@ -94,7 +106,7 @@ namespace InnoWerks.Emulators.Apple
 
         public byte Read(ushort address)
         {
-            // SimDebugger.Info($"Read Display({address:X4})\n");
+            SimDebugger.Info($"Read Display({address:X4}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
 
             switch (address)
             {
@@ -172,14 +184,15 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitchAddress.RDDHIRES: return (byte)(softSwitches.State[SoftSwitch.DoubleHiRes] ? 0x80 : 0x00);
 
                 case SoftSwitchAddress.RDVBL: return (byte)(softSwitches.State[SoftSwitch.VerticalBlank] ? 0x80 : 0x00);
-            }
 
-            return 0x00;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(address), $"Read {address:X4} is not supported in this device");
+            }
         }
 
         public void Write(ushort address, byte value)
         {
-            // SimDebugger.Info($"Write Display({address:X4}, {value:X2})\n");
+            SimDebugger.Info($"Write Display({address:X4}, {value:X2}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
 
             switch (address)
             {
@@ -219,6 +232,9 @@ namespace InnoWerks.Emulators.Apple
                         softSwitches.State[SoftSwitch.DoubleHiRes] = false;
                     }
                     return;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(address), $"Write {address:X4} is not supported in this device");
             }
         }
 
@@ -253,6 +269,8 @@ namespace InnoWerks.Emulators.Apple
             // basic setup
             softSwitches.State[SoftSwitch.TextMode] = true;
             softSwitches.State[SoftSwitch.IOUDisabled] = true;
+
+            softSwitches.State[SoftSwitch.DoubleHiRes] = false;
         }
 
         public void Render()
