@@ -101,6 +101,8 @@ namespace InnoWerks.Emulators.Apple
                     hiSlotRom[slot][page] = MemoryPage.Zeros;
                 }
             }
+
+            Remap();
         }
 
         /// <summary>
@@ -337,7 +339,7 @@ namespace InnoWerks.Emulators.Apple
                 activeMemory[loop] = (r, w);
             }
 
-            DumpActiveMemory();
+            // DumpActiveMemory();
         }
 
         public byte Read(ushort address)
@@ -446,6 +448,22 @@ namespace InnoWerks.Emulators.Apple
             return activeMemory[page].WriteTo;
         }
 
+        public byte GetMain(ushort address)
+        {
+            var page = GetPage(address);
+            var offset = GetOffset(address);
+
+            return mainMemory[page].Block[offset];
+        }
+
+        public byte GetAux(ushort address)
+        {
+            var page = GetPage(address);
+            var offset = GetOffset(address);
+
+            return auxMemory[page].Block[offset];
+        }
+
         internal void DumpPage(MemoryPage memoryPage)
         {
             Debug.WriteLine("MemoryPage {0}", memoryPage);
@@ -488,13 +506,16 @@ namespace InnoWerks.Emulators.Apple
             Debug.WriteLine("");
         }
 
-        internal void DumpActiveMemory()
+        internal void DumpActiveMemory(byte startPage = 0x00, byte endPage = 0xff)
         {
             int page = 0x00;
 
             foreach (var (r, w) in activeMemory)
             {
-                Debug.WriteLine($"[${page++:X2}] -- R: {r}    W: {w}");
+                if (startPage <= page && page <= endPage)
+                {
+                    Debug.WriteLine($"[${page++:X2}] -- R: {r}    W: {w}");
+                }
             }
         }
 

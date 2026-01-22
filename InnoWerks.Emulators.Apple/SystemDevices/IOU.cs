@@ -384,6 +384,8 @@ namespace InnoWerks.Emulators.Apple
 
         private void Render40Column()
         {
+            var backingStore = ((AppleBus)bus).BackingStore;
+
             Span<char> line = stackalloc char[40];
 
             Console.SetCursorPosition(0, 0);
@@ -395,7 +397,7 @@ namespace InnoWerks.Emulators.Apple
                 for (int col = 0; col < 40; col++)
                 {
                     ushort addr = GetTextAddress(row, col, page2);
-                    byte b = bus.Peek(addr);
+                    byte b = backingStore.GetMain(addr);
 
                     line[col] = DecodeAppleChar(b);
                 }
@@ -406,6 +408,8 @@ namespace InnoWerks.Emulators.Apple
 
         private void Render80Column()
         {
+            var backingStore = ((AppleBus)bus).BackingStore;
+
             Span<char> line = stackalloc char[80];
 
             Console.SetCursorPosition(0, 0);
@@ -415,11 +419,11 @@ namespace InnoWerks.Emulators.Apple
                 for (int col = 0; col < 40; col++)
                 {
                     ushort addr = GetTextAddress(row, col, false);
-                    byte b = bus.Peek(addr);
+                    byte b = backingStore.GetAux(addr);
 
                     line[2 * col] = DecodeAppleChar(b);
 
-                    b = bus.Peek(addr);
+                    b = b = backingStore.GetMain(addr);
                     line[(2 * col) + 1] = DecodeAppleChar(b);
                 }
 
