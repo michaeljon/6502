@@ -143,12 +143,16 @@ namespace InnoWerks.Emulators.Apple
 
         private readonly IBus bus;
 
-        public IOU(MachineState machineState, IBus bus)
+        private readonly MemoryBlocks memoryBlocks;
+
+        public IOU(MemoryBlocks memoryBlocks, MachineState machineState, IBus bus)
         {
             ArgumentNullException.ThrowIfNull(machineState, nameof(machineState));
+            ArgumentNullException.ThrowIfNull(memoryBlocks, nameof(memoryBlocks));
             ArgumentNullException.ThrowIfNull(bus, nameof(bus));
 
             this.machineState = machineState;
+            this.memoryBlocks = memoryBlocks;
             this.bus = bus;
 
             bus.AddDevice(this);
@@ -384,8 +388,6 @@ namespace InnoWerks.Emulators.Apple
 
         private void Render40Column()
         {
-            var backingStore = ((AppleBus)bus).BackingStore;
-
             Span<char> line = stackalloc char[40];
 
             Console.SetCursorPosition(0, 0);
@@ -397,7 +399,7 @@ namespace InnoWerks.Emulators.Apple
                 for (int col = 0; col < 40; col++)
                 {
                     ushort addr = GetTextAddress(row, col, page2);
-                    byte b = backingStore.GetMain(addr);
+                    byte b = memoryBlocks.GetMain(addr);
 
                     line[col] = DecodeAppleChar(b);
                 }
@@ -408,8 +410,6 @@ namespace InnoWerks.Emulators.Apple
 
         private void Render80Column()
         {
-            var backingStore = ((AppleBus)bus).BackingStore;
-
             Span<char> line = stackalloc char[80];
 
             Console.SetCursorPosition(0, 0);
@@ -419,11 +419,11 @@ namespace InnoWerks.Emulators.Apple
                 for (int col = 0; col < 40; col++)
                 {
                     ushort addr = GetTextAddress(row, col, false);
-                    byte b = backingStore.GetAux(addr);
+                    byte b = memoryBlocks.GetAux(addr);
 
                     line[2 * col] = DecodeAppleChar(b);
 
-                    b = b = backingStore.GetMain(addr);
+                    b = b = memoryBlocks.GetMain(addr);
                     line[(2 * col) + 1] = DecodeAppleChar(b);
                 }
 

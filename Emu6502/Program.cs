@@ -57,9 +57,10 @@ namespace Emu6502
             };
 
             var machineState = new MachineState();
+            var memoryBlocks = new MemoryBlocks(machineState);
 
-            var bus = new AppleBus(config, machineState);
-            var iou = new IOU(machineState, bus);
+            var bus = new AppleBus(config, memoryBlocks, machineState);
+            var iou = new IOU(memoryBlocks, machineState, bus);
             var mmu = new MMU(machineState, bus);
 
             var cpu = new Cpu65C02(

@@ -14,7 +14,7 @@ namespace InnoWerks.Emulators.Apple
 
         private int transactionCycles;
 
-        public MemoryBlocks BackingStore { get; init; }
+        private readonly MemoryBlocks memoryBlocks;
 
         // there are 8 slots, 0 - 7, most of the time, but slot 0 is not used
         // we keep the numbering for convenience
@@ -26,15 +26,15 @@ namespace InnoWerks.Emulators.Apple
 
         private bool reportKeyboardLatchAll = true;
 
-        public AppleBus(AppleConfiguration configuration, MachineState machineState)
+        public AppleBus(AppleConfiguration configuration, MemoryBlocks memoryBlocks, MachineState machineState)
         {
             ArgumentNullException.ThrowIfNull(configuration);
+            ArgumentNullException.ThrowIfNull(memoryBlocks);
             ArgumentNullException.ThrowIfNull(machineState);
 
             this.configuration = configuration;
+            this.memoryBlocks = memoryBlocks;
             this.machineState = machineState;
-
-            BackingStore = new MemoryBlocks(machineState);
         }
 
         public void AddDevice(IDevice device)
@@ -59,10 +59,10 @@ namespace InnoWerks.Emulators.Apple
                     var slotDevice = (SlotRomDevice)device;
                     slotDevices[device.Slot] = slotDevice;
 
-                    BackingStore.LoadSlotCxRom(device.Slot, slotDevice.Rom);
+                    memoryBlocks.LoadSlotCxRom(device.Slot, slotDevice.Rom);
                     if (slotDevice.ExpansionRom != null)
                     {
-                        BackingStore.LoadSlotC8Rom(device.Slot, slotDevice.ExpansionRom);
+                        memoryBlocks.LoadSlotC8Rom(device.Slot, slotDevice.ExpansionRom);
                     }
 
                     if (device.Slot == 1)
@@ -99,7 +99,7 @@ namespace InnoWerks.Emulators.Apple
 
             if (address < 0xC000)
             {
-                return BackingStore.Read(address);
+                return memoryBlocks.Read(address);
             }
             else if (address < 0xC08F)
             {
@@ -112,7 +112,7 @@ namespace InnoWerks.Emulators.Apple
 
                         if (remapNeeded)
                         {
-                            BackingStore.Remap();
+                            memoryBlocks.Remap();
                         }
 
                         return value;
@@ -152,7 +152,7 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            return BackingStore.Read(address);
+            return memoryBlocks.Read(address);
         }
 
         public void Write(ushort address, byte value)
@@ -163,7 +163,7 @@ namespace InnoWerks.Emulators.Apple
 
             if (address < 0xC000)
             {
-                BackingStore.Write(address, value);
+                memoryBlocks.Write(address, value);
             }
             else if (address < 0xC08F)
             {
@@ -173,7 +173,7 @@ namespace InnoWerks.Emulators.Apple
                 {
                     if (softSwitchDevice.HandlesWrite(address) && softSwitchDevice.Write(address, value))
                     {
-                        BackingStore.Remap();
+                        memoryBlocks.Remap();
                     }
                 }
             }
@@ -209,30 +209,30 @@ namespace InnoWerks.Emulators.Apple
             }
             else
             {
-                BackingStore.Write(address, value);
+                memoryBlocks.Write(address, value);
             }
         }
 
         public byte Peek(ushort address)
         {
-            return BackingStore.Read(address);
+            return memoryBlocks.Read(address);
         }
 
         public void Poke(ushort address, byte value)
         {
-            BackingStore.Write(address, value);
+            memoryBlocks.Write(address, value);
         }
 
         public void LoadProgramToRom(byte[] objectCode)
         {
             ArgumentNullException.ThrowIfNull(objectCode);
-            BackingStore.LoadProgramToRom(objectCode);
+            memoryBlocks.LoadProgramToRom(objectCode);
         }
 
         public void LoadProgramToRam(byte[] objectCode, ushort origin)
         {
             ArgumentNullException.ThrowIfNull(objectCode);
-            BackingStore.LoadProgramToRam(objectCode, origin);
+            memoryBlocks.LoadProgramToRam(objectCode, origin);
         }
 
         public void Reset()
@@ -247,7 +247,7 @@ namespace InnoWerks.Emulators.Apple
                 slotDevices[slot]?.Reset();
             }
 
-            BackingStore.Remap();
+            memoryBlocks.Remap();
 
             transactionCycles = 0;
             CycleCount = 0;
@@ -326,7 +326,7 @@ namespace InnoWerks.Emulators.Apple
 
             if (remapNeeded)
             {
-                BackingStore.Remap();
+                memoryBlocks.Remap();
             }
         }
 
