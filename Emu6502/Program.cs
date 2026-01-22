@@ -1,5 +1,3 @@
-// #define REPORT_IO_ADDRESS_USAGE
-
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -58,10 +56,11 @@ namespace Emu6502
                 RamSize = 64
             };
 
-            var softSwitches = new SoftSwitches();
+            var machineState = new MachineState();
 
-            // create the bus
-            var bus = new AppleBus(config, softSwitches);
+            var bus = new AppleBus(config, machineState);
+            var iou = new IOU(machineState, bus);
+            var mmu = new MMU(machineState, bus);
 
             var cpu = new Cpu65C02(
                 bus,
@@ -75,67 +74,14 @@ namespace Emu6502
                     }
                 });
 
-            // create the devices
-            var keyboard = new Keyboard(softSwitches);
-            var display = new Display(bus, softSwitches);
-
-            // add system the devices to the bus
-            bus.AddDevice(keyboard);
-            bus.AddDevice(display);
-            bus.AddDevice(new SlotRomSoftSwitchHandler(softSwitches));
-            bus.AddDevice(new Annunciators(softSwitches));
-            bus.AddDevice(new Paddles(softSwitches));
-            bus.AddDevice(new Cassette(softSwitches));
-            bus.AddDevice(new Speaker(softSwitches));
-            bus.AddDevice(new Strobe(softSwitches));
-            bus.AddDevice(new Memory(softSwitches));
-
-            // // add slotted devices
-            // var diskDevice = new DiskIISlotDevice(softSwitches, diskIIRom);
-            // DiskIINibble.LoadDisk(diskDevice.GetDrive(1), dos33);
-            // bus.AddDevice(diskDevice);
-
-#if REPORT_IO_ADDRESS_USAGE == true
-            var readConfigured = new string[0xC080 - 0xC000];
-            foreach (var (address, name) in bus.ConfiguredAddresses(true).OrderBy(p => p.address))
+            foreach (var (address, name) in SoftSwitchAddress.Lookup.OrderBy(a => a.Key))
             {
-                readConfigured[address - 0xC000] = name;
-
-                SimDebugger.Info("[R] {0:X4} -- {1}\n", address, name);
-            }
-
-            var writeConfigured = new string[0xC080 - 0xC000];
-            foreach (var (address, name) in bus.ConfiguredAddresses(false).OrderBy(p => p.address))
-            {
-                writeConfigured[address - 0xC000] = name;
-
-                SimDebugger.Info("[W] {0:X4} -- {1}\n", address, name);
-            }
-
-            for (var address = 0xC000; address < 0xC080; address++)
-            {
-                if (string.IsNullOrEmpty(readConfigured[address - 0xC000]))
+                bool assigned = iou.HandlesRead(address) || iou.HandlesWrite(address) || mmu.HandlesRead(address) || mmu.HandlesWrite(address);
+                if (assigned == false)
                 {
-                    SimDebugger.Info("Missing read: {0:X4}\n", address);
+                    SimDebugger.Info("Address {0:X4} ({1}) is not assigned to any device", address, name);
                 }
             }
-
-            for (var address = 0xC000; address < 0xC080; address++)
-            {
-                if (string.IsNullOrEmpty(writeConfigured[address - 0xC000]))
-                {
-                    SimDebugger.Info("Missing write: {0:X4}\n", address);
-                }
-            }
-
-            for (var address = 0xC000; address < 0xC080; address++)
-            {
-                if (string.IsNullOrEmpty(readConfigured[address - 0xC000]) && string.IsNullOrEmpty(writeConfigured[address - 0xC000]))
-                {
-                    SimDebugger.Info("Missing combined: {0:X4}\n", address);
-                }
-            }
-#endif
 
             var keyListener = Task.Run(() =>
             {
@@ -149,7 +95,7 @@ namespace Emu6502
 
                     var key = Console.ReadKey(intercept: true);
 
-                    keyboard.InjectKey(MapToAppleKey(key));
+                    iou.InjectKey(MapToAppleKey(key));
                 }
             });
 
@@ -235,7 +181,7 @@ namespace Emu6502
                     }
                 }
 
-                if (options.SingleStep == false) { display.Render(); }
+                if (options.SingleStep == false) { iou.Render(); }
 
                 Thread.Sleep(16);
             }

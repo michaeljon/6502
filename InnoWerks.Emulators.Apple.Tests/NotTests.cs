@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -16,18 +17,24 @@ namespace InnoWerks.Emulators.Apple
         [TestMethod]
         public void WriteSoftSwitchListByAddress()
         {
-            foreach (var (key, value) in SoftSwitchAddress.Lookup.OrderBy(p => p.Key))
+            using (var f = File.CreateText("SoftSwitchListByAddress.tsv"))
             {
-                TestContext.WriteLine($"{value,-22} ${key:X4}");
+                foreach (var (key, value) in SoftSwitchAddress.Lookup.OrderBy(p => p.Key))
+                {
+                    f.WriteLine($"{value,-22} ${key:X4}");
+                }
             }
         }
 
         [TestMethod]
         public void WriteSoftSwitchListByName()
         {
-            foreach (var (key, value) in SoftSwitchAddress.Lookup.OrderBy(p => p.Value))
+            using (var f = File.CreateText("SoftSwitchListByName.tsv"))
             {
-                TestContext.WriteLine($"{value,-22} ${key:X4}");
+                foreach (var (key, value) in SoftSwitchAddress.Lookup.OrderBy(p => p.Value))
+                {
+                    f.WriteLine($"{value,-22} ${key:X4}");
+                }
             }
         }
     }

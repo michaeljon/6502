@@ -43,9 +43,9 @@ namespace InnoWerks.Emulators.Apple
         public const ushort SETALTCHAR = 0xC00F;  // Turn on alternate characters
         public const ushort RDALTCHR = 0xC01E;  // 1=alt character set on   0=alt char set off
 
-        public const ushort CLR80VID = 0xC00C;  // Turn off 80 column display
-        public const ushort SET80VID = 0xC00D;  //  Turn on 80 column display
-        public const ushort RD80VID = 0xC01F;  //  1=80 col display on 0=80 col display off
+        public const ushort CLR80COL = 0xC00C;  // Turn off 80 column display
+        public const ushort SET80COL = 0xC00D;  //  Turn on 80 column display
+        public const ushort RD80COL = 0xC01F;  //  1=80 col display on 0=80 col display off
 
         public const ushort CLR80STORE = 0xC000;  // Allow page2 to switch video page1 page2
         public const ushort SET80STORE = 0xC001;  // Allow page2 to switch main & aux video memory
@@ -143,9 +143,9 @@ namespace InnoWerks.Emulators.Apple
             { 0xC00F, "SETALTCHAR" },
             { 0xC01E, "RDALTCHR" },
 
-            { CLR80VID, "CLR80VID" },
-            { SET80VID, "SET80VID" },
-            { RD80VID, "RD80VID" },
+            { CLR80COL, "CLR80COL" },
+            { SET80COL, "SET80COL" },
+            { RD80COL, "RD80COL" },
 
             // CLR80STORE see above
             { SET80STORE, "SET80STORE" },

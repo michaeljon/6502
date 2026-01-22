@@ -2,11 +2,9 @@ namespace InnoWerks.Simulators
 {
     public enum DevicePriority
     {
-        System = 0,
+        SoftSwitch = 0,
 
-        SoftSwitch = 1,
-
-        Slot = 2
+        Slot = 1
     }
 
 #pragma warning disable CA1716
@@ -22,9 +20,9 @@ namespace InnoWerks.Simulators
 
         bool HandlesWrite(ushort address);
 
-        byte Read(ushort address);
+        (byte value, bool remapNeeded) Read(ushort address);
 
-        void Write(ushort address, byte value);
+        bool Write(ushort address, byte value);
 
         void Tick(int cycles);
 

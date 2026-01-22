@@ -31,16 +31,18 @@ namespace InnoWerks.Emulators.Apple
 
         public const ushort EXPANSION_ROM_BASE_ADDR = 0xC800;
 
-        protected SoftSwitches softSwitches { get; }
+        protected MachineState machineState { get; }
 
-        private readonly byte[] rom = new byte[256];
+#pragma warning disable CA1819 // Properties should not return arrays
+        public byte[] Rom { get; init; }
+        public byte[] ExpansionRom { get; init; }
 
-        private readonly byte[] expansionRom = new byte[2048];
+#pragma warning restore CA1819 // Properties should not return arrays
 
-        protected SlotRomDevice(int slot, string name, SoftSwitches softSwitches, byte[] romImage)
+        protected SlotRomDevice(int slot, string name, MachineState machineState, byte[] romImage)
         {
             ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
-            ArgumentNullException.ThrowIfNull(softSwitches, nameof(softSwitches));
+            ArgumentNullException.ThrowIfNull(machineState, nameof(machineState));
             ArgumentNullException.ThrowIfNull(romImage, nameof(romImage));
 
             ArgumentOutOfRangeException.ThrowIfGreaterThan(slot, 7, nameof(slot));
@@ -54,7 +56,7 @@ namespace InnoWerks.Emulators.Apple
             Slot = slot;
             Name = name;
 
-            this.softSwitches = softSwitches;
+            this.machineState = machineState;
 
             if (romImage.Length > 256)
             {
@@ -63,22 +65,19 @@ namespace InnoWerks.Emulators.Apple
                     throw new ArgumentException("Only devices in slots 1-4 can use extra ROM space $C800-$CFFF");
                 }
 
-                if (romImage.Length - 256 > 2048)
+                if (romImage.Length > 256)
                 {
-                    throw new ArgumentException("Device ROM can be no longer than 256 bytes + 2k");
+                    throw new ArgumentException("Device ROM can be no longer than 256 bytes");
                 }
-
-                HasAuxRom = true;
-                Array.Copy(romImage, 256, expansionRom, 0, romImage.Length - 256);
             }
 
-            Array.Copy(romImage, 0, rom, 0, 256);
+            Rom = romImage;
         }
 
-        protected SlotRomDevice(int slot, string name, SoftSwitches softSwitches, byte[] cxRom, byte[] c8Rom)
+        protected SlotRomDevice(int slot, string name, MachineState machineState, byte[] cxRom, byte[] c8Rom)
         {
             ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
-            ArgumentNullException.ThrowIfNull(softSwitches, nameof(softSwitches));
+            ArgumentNullException.ThrowIfNull(machineState, nameof(machineState));
             ArgumentNullException.ThrowIfNull(cxRom, nameof(cxRom));
             ArgumentNullException.ThrowIfNull(c8Rom, nameof(c8Rom));
 
@@ -96,12 +95,12 @@ namespace InnoWerks.Emulators.Apple
             Slot = slot;
             Name = name;
 
-            this.softSwitches = softSwitches;
-
-            Array.Copy(cxRom, 0, rom, 0, 256);
+            this.machineState = machineState;
 
             HasAuxRom = true;
-            Array.Copy(c8Rom, 0, expansionRom, 0, 2048);
+
+            Rom = cxRom;
+            ExpansionRom = c8Rom;
         }
 
         public DevicePriority Priority => DevicePriority.Slot;
@@ -114,9 +113,9 @@ namespace InnoWerks.Emulators.Apple
 
         public abstract bool HandlesWrite(ushort address);
 
-        public abstract byte Read(ushort address);
+        public abstract (byte value, bool remapNeeded) Read(ushort address);
 
-        public abstract void Write(ushort address, byte value);
+        public abstract bool Write(ushort address, byte value);
 
         public abstract void Tick(int cycles);
 
@@ -160,27 +159,6 @@ namespace InnoWerks.Emulators.Apple
                 // this is just a regular rom read
                 return RomBaseAddressLo <= address && address <= RomBaseAddressHi;
             }
-        }
-
-        protected virtual byte ReadSlotRom(ushort address)
-        {
-            // SimDebugger.Info("Slot {0} ReadSlotRom({1:X4})\n", Slot, address);
-
-            if (ExpansionBaseAddressLo <= address && address <= ExpansionBaseAddressHi)
-            {
-                ushort baseAddr = (ushort)(EXPANSION_ROM_BASE_ADDR + ((Slot - 1) * 0x200));
-                return expansionRom[address - baseAddr];
-            }
-            else
-            {
-                ushort baseAddr = (ushort)(ROM_BASE_ADDR + ((Slot - 1) * 0x100));
-                return rom[address - baseAddr];
-            }
-        }
-
-        protected void WriteSlotRom(ushort address, byte value)
-        {
-            // Most slot ROMs ignore writes
         }
     }
 #pragma warning restore CA1716, CA1707, CA1822

@@ -14,7 +14,7 @@ namespace InnoWerks.Emulators.Apple
     {
         private readonly AppleConfiguration configuration;
 
-        private readonly SoftSwitches softSwitches;
+        private readonly MachineState machineState;
 
         // main and auxiliary ram
         private readonly byte[] mainRam;
@@ -32,13 +32,13 @@ namespace InnoWerks.Emulators.Apple
         // single hi rom bank
         private readonly byte[] hiRom;           // $E000–$FFFF
 
-        public MemoryIIe(AppleConfiguration configuration, SoftSwitches softSwitches)
+        public MemoryIIe(AppleConfiguration configuration, MachineState machineState)
         {
             ArgumentNullException.ThrowIfNull(configuration);
-            ArgumentNullException.ThrowIfNull(softSwitches);
+            ArgumentNullException.ThrowIfNull(machineState);
 
             this.configuration = configuration;
-            this.softSwitches = softSwitches;
+            this.machineState = machineState;
 
             mainRam = new byte[64 * 1024];
 
@@ -60,7 +60,7 @@ namespace InnoWerks.Emulators.Apple
         {
             if (address < 0x0200)
             {
-                return softSwitches.State[SoftSwitch.ZpAux] ? auxRam[address] : mainRam[address];
+                return machineState.State[SoftSwitch.ZpAux] ? auxRam[address] : mainRam[address];
             }
 
             // todo - handle page1, page2, main/aux switching here
@@ -68,16 +68,16 @@ namespace InnoWerks.Emulators.Apple
             else if (0x0400 <= address && address <= 0x07FF)
             {
                 // this is text page 1
-                if (softSwitches.State[SoftSwitch.Store80] == false)
+                if (machineState.State[SoftSwitch.Store80] == false)
                 {
-                    return softSwitches.State[SoftSwitch.Page2] ? auxRam[address] : mainRam[address];
+                    return machineState.State[SoftSwitch.Page2] ? auxRam[address] : mainRam[address];
                 }
 
                 return mainRam[address];
             }
             else if (address < 0xC000)
             {
-                return softSwitches.State[SoftSwitch.AuxRead] ? auxRam[address] : mainRam[address];
+                return machineState.State[SoftSwitch.AuxRead] ? auxRam[address] : mainRam[address];
             }
             else if (0xC000 <= address && address <= 0xC0FF)
             {
@@ -86,7 +86,7 @@ namespace InnoWerks.Emulators.Apple
             }
             else if (0xC100 <= address && address <= 0xCFFF)
             {
-                if (softSwitches.State[SoftSwitch.AuxRead] == true)
+                if (machineState.State[SoftSwitch.AuxRead] == true)
                 {
                     return auxRam[address];
                 }
@@ -97,12 +97,12 @@ namespace InnoWerks.Emulators.Apple
             else if (0xD000 <= address && address <= 0xDFFF)
             {
                 int offset = address - 0xD000;
-                if (softSwitches.State[SoftSwitch.LcReadEnabled] == true)
+                if (machineState.State[SoftSwitch.LcReadEnabled] == true)
                 {
-                    return lcRam[softSwitches.State[SoftSwitch.LcBank1] ? 1 : 0][offset];
+                    return lcRam[machineState.State[SoftSwitch.LcBank1] ? 1 : 0][offset];
                 }
 
-                if (softSwitches.State[SoftSwitch.AuxRead] == true)
+                if (machineState.State[SoftSwitch.AuxRead] == true)
                 {
                     return auxRam[address];
                 }
@@ -122,7 +122,7 @@ namespace InnoWerks.Emulators.Apple
         {
             if (address < 0x0200)
             {
-                if (softSwitches.State[SoftSwitch.ZpAux] == true)
+                if (machineState.State[SoftSwitch.ZpAux] == true)
                 {
                     auxRam[address] = value;
                 }
@@ -137,7 +137,7 @@ namespace InnoWerks.Emulators.Apple
             else if (0x0400 <= address && address <= 0x07FF)
             {
                 // this is text page 1
-                if (softSwitches.State[SoftSwitch.Store80] == false)
+                if (machineState.State[SoftSwitch.Store80] == false)
                 {
                     mainRam[address] = value;
                 }
@@ -149,7 +149,7 @@ namespace InnoWerks.Emulators.Apple
 
             else if (address < 0xC000)
             {
-                if (configuration.Model == AppleModel.AppleIIe && softSwitches.State[SoftSwitch.AuxWrite])
+                if (configuration.Model == AppleModel.AppleIIe && machineState.State[SoftSwitch.AuxWrite])
                 {
                     auxRam[address] = value;
                 }
@@ -164,25 +164,25 @@ namespace InnoWerks.Emulators.Apple
             }
             else if (0xC100 <= address && address <= 0xCFFF)
             {
-                if (softSwitches.State[SoftSwitch.AuxWrite] == true)
+                if (machineState.State[SoftSwitch.AuxWrite] == true)
                 {
                     auxRam[address] = value;
                 }
             }
             else if (0xD000 <= address && address <= 0xDFFF)
             {
-                if (softSwitches.State[SoftSwitch.LcWriteEnabled] == true)
+                if (machineState.State[SoftSwitch.LcWriteEnabled] == true)
                 {
-                    lcRam[softSwitches.State[SoftSwitch.LcBank1] ? 1 : 0][address - 0xD000] = value;
+                    lcRam[machineState.State[SoftSwitch.LcBank1] ? 1 : 0][address - 0xD000] = value;
                 }
-                else if (softSwitches.State[SoftSwitch.AuxWrite] == true)
+                else if (machineState.State[SoftSwitch.AuxWrite] == true)
                 {
                     auxRam[address] = value;
                 }
             }
             else if (0xE000 <= address && address <= 0xFFFF)
             {
-                if (softSwitches.State[SoftSwitch.AuxWrite] == true)
+                if (machineState.State[SoftSwitch.AuxWrite] == true)
                 {
                     auxRam[address] = value;
                 }
@@ -242,7 +242,7 @@ namespace InnoWerks.Emulators.Apple
             {
                 PeekArea.MainRam => mainRam,
                 PeekArea.AuxRam => auxRam,
-                PeekArea.LanguageCardRam => softSwitches.State[SoftSwitch.LcBank1] ? lcRam[1] : lcRam[0],
+                PeekArea.LanguageCardRam => machineState.State[SoftSwitch.LcBank1] ? lcRam[1] : lcRam[0],
                 PeekArea.LowRom => loRom,
                 PeekArea.CxRom => cxRom,
                 PeekArea.HighRom => hiRom,
