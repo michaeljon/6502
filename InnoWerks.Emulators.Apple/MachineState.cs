@@ -1,0 +1,96 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace InnoWerks.Emulators.Apple
+{
+    public class MachineState
+    {
+        public Dictionary<SoftSwitch, bool> State { get; } = [];
+
+        public MachineState()
+        {
+            foreach (SoftSwitch sw in Enum.GetValues<SoftSwitch>().OrderBy(v => v.ToString()))
+            {
+                State[sw] = false;
+            }
+        }
+
+        /// <summary>
+        /// Used to hold the most recent keyboard entry
+        /// </summary>
+        public byte KeyLatch { get; set; }
+
+        /// <summary>
+        /// Used to hold the most recent keyboard entry
+        /// </summary>
+        public bool KeyStrobe
+        {
+            get
+            {
+                return State[SoftSwitch.KeyboardStrobe];
+            }
+
+            set
+            {
+                State[SoftSwitch.KeyboardStrobe] = value;
+            }
+        }
+
+        /// <summary>
+        /// Simple handler to tell whether the language card / bsr
+        /// is current read or write enabled.
+        /// </summary>
+        public bool LcActive =>
+            State[SoftSwitch.LcReadEnabled] || State[SoftSwitch.LcWriteEnabled];
+
+        // todo: get rid of this, it's not helping
+        public AuxReadAuxWriteBitmaskType AuxReadAuxWriteBitmask
+        {
+            get
+            {
+                if (State[SoftSwitch.AuxRead] == false && State[SoftSwitch.AuxWrite] == false)
+                {
+                    return AuxReadAuxWriteBitmaskType.NotReadNotWrite;
+                }
+                if (State[SoftSwitch.AuxRead] == false && State[SoftSwitch.AuxWrite] == true)
+                {
+                    return AuxReadAuxWriteBitmaskType.NotReadOkWrite;
+                }
+                if (State[SoftSwitch.AuxRead] == true && State[SoftSwitch.AuxWrite] == false)
+                {
+                    return AuxReadAuxWriteBitmaskType.OkReadNotWrite;
+                }
+                if (State[SoftSwitch.AuxRead] == true && State[SoftSwitch.AuxWrite] == true)
+                {
+                    return AuxReadAuxWriteBitmaskType.OkReadOkWrite;
+                }
+
+                // this is really a bad case, the compiler can't tell we are unreachable
+                return AuxReadAuxWriteBitmaskType.Undefined;
+            }
+        }
+
+        public (byte value, bool remapNeeded) HandleReadStateToggle(SoftSwitch softSwitch, bool toState)
+        {
+            if (State[softSwitch] == toState)
+            {
+                return (0x00, false);
+            }
+
+            State[softSwitch] = toState;
+            return (0x00, true);
+        }
+
+        public bool HandleWriteStateToggle(SoftSwitch softSwitch, bool toState)
+        {
+            if (State[softSwitch] == toState)
+            {
+                return false;
+            }
+
+            State[softSwitch] = toState;
+            return true;
+        }
+    }
+}
