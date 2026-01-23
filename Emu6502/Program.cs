@@ -107,15 +107,14 @@ namespace Emu6502
             {
                 e.Cancel = true;
 
-                Console.SetCursorPosition(0, 25);
+                Console.CursorVisible = true;
 
-                Console.WriteLine("\nInterrupt received.");
+                Console.SetCursorPosition(0, 25);
+                Console.WriteLine("Interrupt received.");
                 Console.WriteLine(cpu.Registers);
                 Console.Write("[QINRST]> ");
 
-                Console.CursorVisible = true;
                 var key = Console.ReadKey();
-                Console.CursorVisible = false;
 
                 switch (key.KeyChar)
                 {
@@ -152,6 +151,8 @@ namespace Emu6502
                         options.Trace = !options.Trace;
                         break;
                 }
+
+                Console.CursorVisible = false;
             };
 
             bus.LoadProgramToRom(mainRom);
@@ -223,7 +224,7 @@ namespace Emu6502
             if (c >= 0x20 && c <= 0x7E)
                 return (byte)c;
 
-            return 0;
+            return (byte)key.KeyChar;
         }
     }
 }

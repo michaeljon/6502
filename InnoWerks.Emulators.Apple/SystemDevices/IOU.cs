@@ -164,7 +164,10 @@ namespace InnoWerks.Emulators.Apple
 
         public (byte value, bool remapNeeded) Read(ushort address)
         {
-            // SimDebugger.Info($"Read IOU({address:X4}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
+            if (address != SoftSwitchAddress.KBD && address != SoftSwitchAddress.KBDSTRB && address != SoftSwitchAddress.SPKR)
+            {
+                SimDebugger.Info($"Read IOU({address:X4}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
+            }
 
             switch (address)
             {
@@ -296,7 +299,10 @@ namespace InnoWerks.Emulators.Apple
 
         public bool Write(ushort address, byte value)
         {
-            // SimDebugger.Info($"Write IOU({address:X4}, {value:X2}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
+            if (address != SoftSwitchAddress.KBD && address != SoftSwitchAddress.KBDSTRB && address != SoftSwitchAddress.SPKR)
+            {
+                SimDebugger.Info($"Write IOU({address:X4}, {value:X2}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
+            }
 
             switch (address)
             {
@@ -390,6 +396,7 @@ namespace InnoWerks.Emulators.Apple
         {
             Span<char> line = stackalloc char[40];
 
+            Console.CursorVisible = false;
             Console.SetCursorPosition(0, 0);
 
             for (int row = 0; row < 24; row++)
@@ -399,7 +406,7 @@ namespace InnoWerks.Emulators.Apple
                 for (int col = 0; col < 40; col++)
                 {
                     ushort addr = GetTextAddress(row, col, page2);
-                    byte b = memoryBlocks.GetMain(addr);
+                    byte b = memoryBlocks.Read(addr);
 
                     line[col] = DecodeAppleChar(b);
                 }
@@ -412,18 +419,19 @@ namespace InnoWerks.Emulators.Apple
         {
             Span<char> line = stackalloc char[80];
 
+            Console.CursorVisible = false;
             Console.SetCursorPosition(0, 0);
 
             for (int row = 0; row < 24; row++)
             {
                 for (int col = 0; col < 40; col++)
                 {
-                    ushort addr = GetTextAddress(row, col, false);
-                    byte b = memoryBlocks.GetAux(addr);
-
+                    ushort addr = GetTextAddress(row, col, true);
+                    byte b = memoryBlocks.Read(addr);
                     line[2 * col] = DecodeAppleChar(b);
 
-                    b = b = memoryBlocks.GetMain(addr);
+                    addr = GetTextAddress(row, col, false);
+                    b = memoryBlocks.Read(addr);
                     line[(2 * col) + 1] = DecodeAppleChar(b);
                 }
 

@@ -32,16 +32,6 @@ namespace InnoWerks.Emulators.Apple
             SoftSwitchAddress.RDDHIRES,
 
             //
-            // DISPLAY
-            //
-            SoftSwitchAddress.TXTPAGE1,
-            SoftSwitchAddress.TXTPAGE2,
-            SoftSwitchAddress.LORES,
-            SoftSwitchAddress.HIRES,
-            SoftSwitchAddress.DHIRESON,
-            SoftSwitchAddress.DHIRESOFF,
-
-            //
             // I/O BANKING
             //
             SoftSwitchAddress.RDCXROM,
@@ -64,16 +54,6 @@ namespace InnoWerks.Emulators.Apple
             SoftSwitchAddress.WRCARDRAM,
             SoftSwitchAddress.CLRALSTKZP,
             SoftSwitchAddress.SETALTSTKZP,
-
-            //
-            // DISPLAY
-            //
-            SoftSwitchAddress.TXTPAGE1,
-            SoftSwitchAddress.TXTPAGE2,
-            SoftSwitchAddress.LORES,
-            SoftSwitchAddress.HIRES,
-            SoftSwitchAddress.DHIRESON,
-            SoftSwitchAddress.DHIRESOFF,
 
             //
             // I/O BANKING
@@ -137,27 +117,6 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitchAddress.RDHIRES: return ((byte)(machineState.State[SoftSwitch.HiRes] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDDHIRES: return ((byte)(machineState.State[SoftSwitch.DoubleHiRes] ? 0x80 : 0x00), false);
 
-                //
-                // DISPLAY
-                //
-                case SoftSwitchAddress.TXTPAGE1: return machineState.HandleReadStateToggle(SoftSwitch.Page2, false);
-                case SoftSwitchAddress.TXTPAGE2: return machineState.HandleReadStateToggle(SoftSwitch.Page2, true);
-                case SoftSwitchAddress.LORES: return machineState.HandleReadStateToggle(SoftSwitch.HiRes, false);
-                case SoftSwitchAddress.HIRES: return machineState.HandleReadStateToggle(SoftSwitch.HiRes, true);
-
-                case SoftSwitchAddress.DHIRESON:
-                    if (machineState.State[SoftSwitch.IOUDisabled] == true)
-                    {
-                        return machineState.HandleReadStateToggle(SoftSwitch.DoubleHiRes, true);
-                    }
-                    return (0x00, false);
-                case SoftSwitchAddress.DHIRESOFF:
-                    if (machineState.State[SoftSwitch.IOUDisabled] == true)
-                    {
-                        return machineState.HandleReadStateToggle(SoftSwitch.DoubleHiRes, false);
-                    }
-                    return (0x00, false);
-
                 case SoftSwitchAddress.RDCXROM: return ((byte)(machineState.State[SoftSwitch.SlotRomEnabled] ? 0x00 : 0x80), false);
                 case SoftSwitchAddress.RDC3ROM: return ((byte)(machineState.State[SoftSwitch.Slot3RomEnabled] ? 0x80 : 0x00), false);
             }
@@ -187,27 +146,6 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitchAddress.WRCARDRAM: return machineState.HandleWriteStateToggle(SoftSwitch.AuxWrite, true);
                 case SoftSwitchAddress.CLRALSTKZP: return machineState.HandleWriteStateToggle(SoftSwitch.ZpAux, false);
                 case SoftSwitchAddress.SETALTSTKZP: return machineState.HandleWriteStateToggle(SoftSwitch.ZpAux, true);
-
-                //
-                // DISPLAY
-                //
-                case SoftSwitchAddress.TXTPAGE1: return machineState.HandleWriteStateToggle(SoftSwitch.Page2, false);
-                case SoftSwitchAddress.TXTPAGE2: return machineState.HandleWriteStateToggle(SoftSwitch.Page2, true);
-                case SoftSwitchAddress.LORES: return machineState.HandleWriteStateToggle(SoftSwitch.HiRes, false);
-                case SoftSwitchAddress.HIRES: return machineState.HandleWriteStateToggle(SoftSwitch.HiRes, true);
-
-                case SoftSwitchAddress.DHIRESON:
-                    if (machineState.State[SoftSwitch.IOUDisabled] == true)
-                    {
-                        return machineState.HandleWriteStateToggle(SoftSwitch.DoubleHiRes, true);
-                    }
-                    return false;
-                case SoftSwitchAddress.DHIRESOFF:
-                    if (machineState.State[SoftSwitch.IOUDisabled] == true)
-                    {
-                        return machineState.HandleWriteStateToggle(SoftSwitch.DoubleHiRes, false);
-                    }
-                    return false;
 
                 //
                 // I/O BANKING

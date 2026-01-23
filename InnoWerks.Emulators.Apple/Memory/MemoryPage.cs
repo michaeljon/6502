@@ -13,25 +13,25 @@ namespace InnoWerks.Emulators.Apple
 
         public string Type { get; init; }
 
-        public int Index { get; init; }
+        public int PageNumber { get; init; }
 
-        public MemoryPage(byte[] block, string type, int index)
+        public MemoryPage(byte[] block, string type, int pageNumber)
         {
             Block = block;
             Type = type;
-            Index = index;
+            PageNumber = pageNumber;
         }
 
-        public MemoryPage(string type, int index)
+        public MemoryPage(string type, int pageNumber)
         {
             Block = new byte[PageSize];
             Type = type;
-            Index = index;
+            PageNumber = pageNumber;
         }
 
         public override string ToString()
         {
-            return $"{Type} at ${Index:X2}";
+            return $"{Type} at ${PageNumber:X2}";
         }
 
         private static MemoryPage zeros;
@@ -50,6 +50,25 @@ namespace InnoWerks.Emulators.Apple
                 }
 
                 return zeros;
+            }
+        }
+
+        private static MemoryPage ffs;
+
+        public static MemoryPage FFs
+        {
+            get
+            {
+                if (ffs == null)
+                {
+                    ffs = new MemoryPage("ff", 0x00);
+                    for (var i = 0; i < PageSize; i++)
+                    {
+                        ffs.Block[i] = 0x00;
+                    }
+                }
+
+                return ffs;
             }
         }
 
