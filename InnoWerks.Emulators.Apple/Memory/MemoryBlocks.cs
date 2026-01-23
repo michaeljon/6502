@@ -10,10 +10,11 @@ namespace InnoWerks.Emulators.Apple
     {
         private const int NumberOfPages = 64 * 1024 / MemoryPage.PageSize;
 
-        private readonly MemoryPage[] mainMemory = new MemoryPage[NumberOfPages];
-        private readonly MemoryPage[] auxMemory = new MemoryPage[NumberOfPages];
+        // primary bank with 12k RAM
+        private const int LcBank2 = 0;
 
-        private readonly List<(MemoryPage ReadFrom, MemoryPage WriteTo)> activeMemory = [];
+        // secondary bank with 4k RAM
+        private const int LcBank1 = 1;
 
         private readonly MachineState machineState;
 
@@ -22,6 +23,15 @@ namespace InnoWerks.Emulators.Apple
         private byte GetOffset(ushort address) => (byte)(address & 0x00FF);
 
         private readonly MemoryPage[][] lcRam = new MemoryPage[2][];                                    // $D000-$DFFF
+
+        // the full 64k (256 pages $00-$FF)
+        private readonly MemoryPage[] mainMemory = new MemoryPage[NumberOfPages];
+
+        // the full 64k (256 pages $00-$FF)
+        private readonly MemoryPage[] auxMemory = new MemoryPage[NumberOfPages];
+
+        // active r/w memory, 64k (256 pages $00-$FF)
+        private readonly List<(MemoryPage ReadFrom, MemoryPage WriteTo)> activeMemory = [];
 
         // switch-selectable
         private readonly MemoryPage[] intCxRom = new MemoryPage[4 * 1024 / MemoryPage.PageSize];           // $C000-$CFFF
@@ -51,20 +61,20 @@ namespace InnoWerks.Emulators.Apple
             }
 
             // language card ram
-            lcRam[0] = new MemoryPage[12 * 1024 / MemoryPage.PageSize];
-            lcRam[1] = new MemoryPage[4 * 1024 / MemoryPage.PageSize];
+            lcRam[LcBank2] = new MemoryPage[12 * 1024 / MemoryPage.PageSize];
+            lcRam[LcBank1] = new MemoryPage[4 * 1024 / MemoryPage.PageSize];
 
             // 4k for the 2 banks which are only from $D000-DFFF
             for (var p = 0; p < 4 * 1024 / MemoryPage.PageSize; p++)
             {
-                lcRam[0][p] = new MemoryPage("lcRam[0]", 0xD0 + p);
-                lcRam[1][p] = new MemoryPage("lcRam[1]", 0xD0 + p);
+                lcRam[LcBank2][p] = new MemoryPage("lcRam[BANK2]", 0xD0 + p);
+                lcRam[LcBank1][p] = new MemoryPage("lcRam[BANK1]", 0xD0 + p);
             }
 
             // 8k for the the remaining RAM at $E000-$FFFF
             for (var p = 4 * 1024 / MemoryPage.PageSize; p < 12 * 1024 / MemoryPage.PageSize; p++)
             {
-                lcRam[0][p] = new MemoryPage("lcRam[0]", 0xE0 + p);
+                lcRam[LcBank2][p] = new MemoryPage("lcRam[BANK2]", 0xE0 + p);
             }
 
             // 4k switch selectable $C000-$CFFF
@@ -126,20 +136,24 @@ namespace InnoWerks.Emulators.Apple
         {
             ArgumentNullException.ThrowIfNull(machineState, nameof(machineState));
 
-            // reset the aux/main selector
+            //
+            // reset the aux/main selector, i.e. set to baseline
+            //
             for (var loop = 0x00; loop < 0xD0; loop++)
             {
                 activeMemory[loop] = (mainMemory[loop], mainMemory[loop]);
             }
 
+            //
             // reset the I/O page
+            //
             activeMemory[0xC0] = (null, null);
 
+            //
             // zero page and stack      $00 - $01
+            //
             for (var loop = 0x00; loop < 0x02; loop++)
             {
-                // memshadow[loop] = SW_ALTZP ? memaux + (loop << 8) : memmain + (loop << 8);
-
                 if (machineState.State[SoftSwitch.ZpAux] == false)
                 {
                     activeMemory[loop] = (mainMemory[loop], mainMemory[loop]);
@@ -150,38 +164,20 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
+            //
             // primary working memory   $02 - $C0
+            //
             for (var loop = 0x02; loop < 0xC0; loop++)
             {
-                // memshadow[loop] = SW_AUXREAD ? memaux+(loop << 8)
-                // 	: memmain+(loop << 8);
+                MemoryPage r = machineState.State[SoftSwitch.AuxRead] == false ? mainMemory[loop] : auxMemory[loop];
+                MemoryPage w = machineState.State[SoftSwitch.AuxWrite] == false ? mainMemory[loop] : auxMemory[loop];
 
-                // memwrite[loop]  = ((SW_AUXREAD != 0) == (SW_AUXWRITE != 0))
-                // 	? mem+(loop << 8)
-                // 	: SW_AUXWRITE	? memaux+(loop << 8)
-                // 					: memmain+(loop << 8);
-
-                switch (machineState.AuxReadAuxWriteBitmask)
-                {
-                    case AuxReadAuxWriteBitmaskType.NotReadNotWrite:
-                        activeMemory[loop] = (mainMemory[loop], mainMemory[loop]);
-                        break;
-
-                    case AuxReadAuxWriteBitmaskType.NotReadOkWrite:
-                        activeMemory[loop] = (mainMemory[loop], auxMemory[loop]);
-                        break;
-
-                    case AuxReadAuxWriteBitmaskType.OkReadNotWrite:
-                        activeMemory[loop] = (auxMemory[loop], mainMemory[loop]);
-                        break;
-
-                    case AuxReadAuxWriteBitmaskType.OkReadOkWrite:
-                        activeMemory[loop] = (auxMemory[loop], auxMemory[loop]);
-                        break;
-                }
+                activeMemory[loop] = (r, w);
             }
 
-            // display pages TXT and HIRES
+            //
+            // display pages TXT page 1 and HIRES page 1
+            //
             if (machineState.State[SoftSwitch.Store80] == true)
             {
                 for (var loop = 0x04; loop < 0x08; loop++)
@@ -202,82 +198,69 @@ namespace InnoWerks.Emulators.Apple
                 }
             }
 
-            if (machineState.LcActive == true)
+            // INT ROM                  $C0 - $CF   intCxRom
+            for (var loop = 0xC0; loop < 0xC8; loop++)
             {
-                for (var loop = 0xC0; loop < 0xD0; loop++)
-                {
-                    var r = machineState.State[SoftSwitch.AuxRead] == true ? auxMemory[loop] : intCxRom[loop - 0xC0];
-                    var w = machineState.State[SoftSwitch.AuxWrite] == true ? auxMemory[loop] : null;
+                MemoryPage r;
 
-                    activeMemory[loop] = (r, w);
+                if (machineState.State[SoftSwitch.SlotRomEnabled] == true)
+                {
+                    r = machineState.State[SoftSwitch.Slot3RomEnabled] == false ?
+                        intCxRom[loop - 0xC0] :
+                        loSlotRom[loop - 0xC0];
                 }
-            }
-            else
-            {
-                // INT ROM                  $C0 - $CF   intCxRom
-                for (var loop = 0xC0; loop < 0xC8; loop++)
+                else
                 {
-                    MemoryPage r;
+                    r = intCxRom[loop - 0xC0];
+                }
 
-                    if (machineState.State[SoftSwitch.SlotRomEnabled] == true)
+                activeMemory[loop] = (r, null);
+            }
+
+            for (var loop = 0xC8; loop < 0xD0; loop++)
+            {
+                if (machineState.State[SoftSwitch.SlotRomEnabled] == true)
+                {
+                    // we can only read from one of two places: the internal ROM or the device ROM
+                    if (machineState.State[SoftSwitch.IntC8RomEnabled] == true)
                     {
-                        r = machineState.State[SoftSwitch.Slot3RomEnabled] == false ?
-                            intCxRom[loop - 0xC0] :
-                            loSlotRom[loop - 0xC0];
+                        // this is the internal ROM, and it's read-only
+                        activeMemory[loop] = (intCxRom[loop - 0xC0], null);
                     }
                     else
                     {
-                        r = intCxRom[loop - 0xC0];
-                    }
-
-                    activeMemory[loop] = (r, null);
-                }
-
-                for (var loop = 0xC8; loop < 0xD0; loop++)
-                {
-                    if (machineState.State[SoftSwitch.SlotRomEnabled] == true)
-                    {
-                        // we can only read from one of two places: the internal ROM or the device ROM
-                        if (machineState.State[SoftSwitch.IntC8RomEnabled] == true)
+                        // this indicates to the bus that it's slot ROM and it's read-only
+                        var slot = loop - 0xC8 + 1;
+                        if (hiSlotRom[slot] != null)
                         {
-                            // this is the internal ROM, and it's read-only
-                            activeMemory[loop] = (intCxRom[loop - 0xC0], null);
+                            activeMemory[loop] = (hiSlotRom[slot][loop - 0xC8], null);
                         }
                         else
                         {
-                            // this indicates to the bus that it's slot ROM and it's read-only
-                            var slot = loop - 0xC8 + 1;
-                            if (hiSlotRom[slot] != null)
-                            {
-                                activeMemory[loop] = (hiSlotRom[slot][loop - 0xC8], null);
-                            }
-                            else
-                            {
-                                activeMemory[loop] = (null, null);
-                            }
+                            activeMemory[loop] = (null, null);
                         }
                     }
-                    else
+                }
+                else
+                {
+                    // in this case we're not using the C8 as ROM
+                    switch (machineState.AuxReadAuxWriteBitmask)
                     {
-                        // in this case we're not using the C8 as ROM
-                        switch (machineState.AuxReadAuxWriteBitmask)
-                        {
-                            case AuxReadAuxWriteBitmaskType.NotReadNotWrite:
-                                activeMemory[loop] = (intCxRom[loop - 0xC0], null);
-                                break;
+                        case AuxReadAuxWriteBitmaskType.NotReadNotWrite:
+                            activeMemory[loop] = (intCxRom[loop - 0xC0], null);
+                            break;
 
-                            case AuxReadAuxWriteBitmaskType.NotReadOkWrite:
-                                activeMemory[loop] = (mainMemory[loop], auxMemory[loop]);
-                                break;
+                        case AuxReadAuxWriteBitmaskType.NotReadOkWrite:
+                            activeMemory[loop] = (mainMemory[loop], auxMemory[loop]);
+                            break;
 
-                            case AuxReadAuxWriteBitmaskType.OkReadNotWrite:
-                                activeMemory[loop] = (auxMemory[loop], mainMemory[loop]);
-                                break;
+                        case AuxReadAuxWriteBitmaskType.OkReadNotWrite:
+                            activeMemory[loop] = (auxMemory[loop], mainMemory[loop]);
+                            break;
 
-                            case AuxReadAuxWriteBitmaskType.OkReadOkWrite:
-                                activeMemory[loop] = (auxMemory[loop], auxMemory[loop]);
-                                break;
-                        }
+                        case AuxReadAuxWriteBitmaskType.OkReadOkWrite:
+                            activeMemory[loop] = (auxMemory[loop], auxMemory[loop]);
+                            break;
                     }
                 }
             }
@@ -288,7 +271,7 @@ namespace InnoWerks.Emulators.Apple
             //    1  ROM from intDxRom
             //    2  RAM from language card bank 1 or bank 2
             //    3  RAM from the second 64k / aux memory
-            var bank = (ushort)(machineState.State[SoftSwitch.LcBank1] ? 1 : 0);
+            var bank = (ushort)(machineState.State[SoftSwitch.LcBank1] ? LcBank1 : LcBank2);
             for (var loop = 0xD0; loop < 0xE0; loop++)
             {
                 MemoryPage r = intDxRom[loop - 0xD0];
@@ -326,14 +309,14 @@ namespace InnoWerks.Emulators.Apple
                 {
                     r = machineState.State[SoftSwitch.ZpAux] ?
                         auxMemory[loop] :
-                        lcRam[0][loop - 0xE0];
+                        lcRam[LcBank2][loop - 0xE0];
                 }
 
                 if (machineState.State[SoftSwitch.AuxWrite])
                 {
                     w = machineState.LcActive ?
                         mainMemory[loop] :
-                        lcRam[0][loop - 0xE0];
+                        lcRam[LcBank2][loop - 0xE0];
                 }
 
                 activeMemory[loop] = (r, w);
@@ -417,7 +400,7 @@ namespace InnoWerks.Emulators.Apple
         {
             // slots load themselves starting at 1, so 0xC6 would map to
             // a Disk II in slot 6
-            var memoryPage = new MemoryPage("Slot Cx ROM", 0xC0 + slot);
+            var memoryPage = new MemoryPage($"Slot $C{slot} ROM", 0xC0 + slot);
             Array.Copy(objectCode, 0, loSlotRom[slot].Block, 0, 256);
             loSlotRom[slot] = memoryPage;
         }
@@ -428,7 +411,7 @@ namespace InnoWerks.Emulators.Apple
 
             for (var page = 0; page < 2048 / MemoryPage.PageSize; page++)
             {
-                var memoryPage = new MemoryPage("Slot C8 ROM", 0xC8 + page);
+                var memoryPage = new MemoryPage("Slot $C8 ROM", 0xC8 + page);
                 Array.Copy(objectCode, 0, memoryPage.Block, 0, 256);
                 hiSlotRom[slot][page] = memoryPage;
             }
@@ -525,6 +508,137 @@ namespace InnoWerks.Emulators.Apple
             {
                 Debug.WriteLine($"[{p}]: {memoryPages[p]}");
             }
+        }
+
+        public string ReadConfiguration()
+        {
+            string rstate = "";
+            if (machineState.State[SoftSwitch.AuxRead])
+            {
+                rstate += "Ra_";
+            }
+            else
+            {
+                rstate += "R0_";
+            }
+
+            string LCR = "L0R";
+            if (machineState.State[SoftSwitch.LcReadEnabled] == true || machineState.State[SoftSwitch.LcWriteEnabled] == true)
+            {
+                if (machineState.State[SoftSwitch.ZpAux] == false)
+                {
+                    LCR = "L1R";
+                    if (machineState.State[SoftSwitch.LcBank1] == false)
+                    {
+                        LCR = "L2R";
+                    }
+                }
+                else
+                {
+                    LCR = "L1aR";
+                    if (machineState.State[SoftSwitch.LcBank1] == false)
+                    {
+                        LCR = "L2aR";
+                    }
+                }
+            }
+
+            rstate += LCR;
+            if (machineState.State[SoftSwitch.SlotRomEnabled])
+            {
+                rstate += "_CX";
+            }
+            else
+            {
+                rstate += "_!CX";
+                if (machineState.State[SoftSwitch.Slot3RomEnabled] == false)
+                {
+                    rstate += "_C3";
+                }
+                if (machineState.State[SoftSwitch.IntC8RomEnabled] == true)
+                {
+                    rstate += "_C8";
+                }
+                else
+                {
+                    rstate += "_C8" + "_slot?"; //+ getActiveSlot();
+                }
+            }
+
+            return rstate;
+        }
+
+        public string WriteConfiguration()
+        {
+            string wstate = "";
+            if (machineState.State[SoftSwitch.AuxWrite])
+            {
+                wstate += "Wa_";
+            }
+            else
+            {
+                wstate += "W0_";
+            }
+
+            string LCW = "L0W";
+            if (machineState.State[SoftSwitch.LcWriteEnabled] == true)
+            {
+                if (machineState.State[SoftSwitch.ZpAux] == false)
+                {
+                    LCW = "L1W";
+                    if (machineState.State[SoftSwitch.LcBank1] == false)
+                    {
+                        LCW = "L2W";
+                    }
+                }
+                else
+                {
+                    LCW = "L1aW";
+                    if (machineState.State[SoftSwitch.LcBank1] == false)
+                    {
+                        LCW = "L2aW";
+                    }
+                }
+            }
+
+            wstate += LCW;
+            return wstate;
+        }
+
+        public string AuxZPConfiguration()
+        {
+            string astate = "__";
+            if (machineState.State[SoftSwitch.Store80] == true)
+            {
+                astate += "80S_";
+                if (machineState.State[SoftSwitch.Page2] == true)
+                {
+                    astate += "P2_";
+                }
+                else
+                {
+                    astate += "P1_";
+                }
+                if (machineState.State[SoftSwitch.HiRes] == true)
+                {
+                    astate += "H1_";
+                }
+                else
+                {
+                    astate += "H0_";
+                }
+            }
+
+            // Handle zero-page bankswitching
+            if (machineState.State[SoftSwitch.ZpAux])
+            {
+                astate += "Za_";
+            }
+            else
+            {
+                astate += "Z0_";
+            }
+            return astate;
         }
     }
 }

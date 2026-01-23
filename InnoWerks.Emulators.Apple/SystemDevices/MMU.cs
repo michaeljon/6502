@@ -9,13 +9,11 @@ namespace InnoWerks.Emulators.Apple
 {
     public class MMU : IDevice
     {
+        private int preWrite;
+
+        private readonly IBus bus;
+
         private readonly MachineState machineState;
-
-        public DevicePriority Priority => DevicePriority.SoftSwitch;
-
-        public int Slot => -1;
-
-        public string Name => $"MMU";
 
         private readonly List<ushort> handlesRead =
         [
@@ -85,8 +83,8 @@ namespace InnoWerks.Emulators.Apple
             SoftSwitchAddress.SETINTC3ROM,
             SoftSwitchAddress.SETSLOTC3ROM,
 
-            0xC080, 0xC081, 0xC082, 0xC083, 0xC084, 0xC085, 0xC086, 0xC087,
-            0xC088, 0xC089, 0xC08A, 0xC08B, 0xC08C, 0xC08D, 0xC08E, 0xC08F,
+            // 0xC080, 0xC081, 0xC082, 0xC083, 0xC084, 0xC085, 0xC086, 0xC087,
+            // 0xC088, 0xC089, 0xC08A, 0xC08B, 0xC08C, 0xC08D, 0xC08E, 0xC08F,
         ];
 
         private const ushort LANG_A3 = 0b00001000;
@@ -95,9 +93,11 @@ namespace InnoWerks.Emulators.Apple
 
         private const ushort LANG_A0 = 0b00000001;
 
-        private int preWrite;
+        public DevicePriority Priority => DevicePriority.SoftSwitch;
 
-        private readonly IBus bus;
+        public int Slot => -1;
+
+        public string Name => $"MMU";
 
         public MMU(MachineState machineState, IBus bus)
         {
@@ -230,6 +230,8 @@ namespace InnoWerks.Emulators.Apple
 
         public void Reset()
         {
+            // bank 2 is the primary bank
+            machineState.State[SoftSwitch.LcBank1] = false;
         }
 
         private bool HandleReadC08x(ushort address)
@@ -243,7 +245,7 @@ namespace InnoWerks.Emulators.Apple
 
             // Read enable
             int low = address & LANG_A0A1;
-            machineState.State[SoftSwitch.LcReadEnabled] = (low == 0 || low == 3);
+            machineState.State[SoftSwitch.LcReadEnabled] = low == 0 || low == 3;
 
             // Write enable sequencing (critical)
             if ((address & LANG_A0) == 1)

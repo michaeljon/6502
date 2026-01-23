@@ -75,7 +75,7 @@ namespace InnoWerks.Emulators.Apple
         public const ushort DHIRESOFF = 0xC05F;
         public const ushort RDDHIRES = 0xC07F;
 
-        public const ushort RDVBL = 0xC019;  // 1=vertical retrace on 0=vertical retrace off
+        public const ushort RDVBLBAR = 0xC019;  // 1=vertical retrace on 0=vertical retrace off
 
         // Annunciator pairs
         public const ushort CLRAN0 = 0xC058;
@@ -174,7 +174,7 @@ namespace InnoWerks.Emulators.Apple
             { DHIRESOFF, "DHIRESOFF / SETAN3" },
             // RDDHIRES see above
 
-            { RDVBL, "RDVBL" },
+            { RDVBLBAR, "RDVBLBAR" },
 
             { CLRAN0, "CLRAN0" },
             { SETAN0, "SETAN0" },

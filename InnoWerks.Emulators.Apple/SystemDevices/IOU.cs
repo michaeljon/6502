@@ -9,13 +9,11 @@ namespace InnoWerks.Emulators.Apple
 {
     public class IOU : IDevice
     {
+        private readonly IBus bus;
+
+        private readonly MemoryBlocks memoryBlocks;
+
         private readonly MachineState machineState;
-
-        public DevicePriority Priority => DevicePriority.SoftSwitch;
-
-        public int Slot => -1;
-
-        public string Name => $"IOU";
 
         private readonly List<ushort> handlesRead = [
             //
@@ -64,7 +62,7 @@ namespace InnoWerks.Emulators.Apple
             //
             // VBL
             //
-            SoftSwitchAddress.RDVBL,
+            SoftSwitchAddress.RDVBLBAR,
 
             //
             // CASSETTE
@@ -141,9 +139,11 @@ namespace InnoWerks.Emulators.Apple
             SoftSwitchAddress.IOUDISOFF,
         ];
 
-        private readonly IBus bus;
+        public DevicePriority Priority => DevicePriority.SoftSwitch;
 
-        private readonly MemoryBlocks memoryBlocks;
+        public int Slot => -1;
+
+        public string Name => $"IOU";
 
         public IOU(MemoryBlocks memoryBlocks, MachineState machineState, IBus bus)
         {
@@ -198,7 +198,7 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitchAddress.RDPAGE2: return ((byte)(machineState.State[SoftSwitch.Page2] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDHIRES: return ((byte)(machineState.State[SoftSwitch.HiRes] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDALTCHR:
-                    if (machineState.State[SoftSwitch.VerticalBlank])
+                    if (machineState.State[SoftSwitch.NotVerticalBlank] == false)
                     {
                         return (0x00, false);
                     }
@@ -206,7 +206,7 @@ namespace InnoWerks.Emulators.Apple
                     return ((byte)(machineState.State[SoftSwitch.AltCharSet] ? 0x80 : 0x00), false);
 
                 case SoftSwitchAddress.RD80COL:
-                    if (machineState.State[SoftSwitch.VerticalBlank])
+                    if (machineState.State[SoftSwitch.NotVerticalBlank] == false)
                     {
                         return (0x00, false);
                     }
@@ -250,7 +250,7 @@ namespace InnoWerks.Emulators.Apple
                 //
                 // VBL
                 //
-                case SoftSwitchAddress.RDVBL: return ((byte)(machineState.State[SoftSwitch.VerticalBlank] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.RDVBLBAR: return ((byte)(machineState.State[SoftSwitch.NotVerticalBlank] ? 0x80 : 0x00), false);
 
                 //
                 // CASSETTE

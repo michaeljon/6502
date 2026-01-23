@@ -62,6 +62,9 @@ namespace Emu6502
             var bus = new AppleBus(config, memoryBlocks, machineState);
             var iou = new IOU(memoryBlocks, machineState, bus);
             var mmu = new MMU(machineState, bus);
+            var disk = new DiskIISlotDevice(bus, machineState, diskIIRom);
+
+            DiskIINibble.LoadDisk(disk.GetDrive(1), dos33);
 
             var cpu = new Cpu65C02(
                 bus,
@@ -104,11 +107,15 @@ namespace Emu6502
             {
                 e.Cancel = true;
 
+                Console.SetCursorPosition(0, 25);
+
                 Console.WriteLine("\nInterrupt received.");
                 Console.WriteLine(cpu.Registers);
                 Console.Write("[QINRST]> ");
 
+                Console.CursorVisible = true;
                 var key = Console.ReadKey();
+                Console.CursorVisible = false;
 
                 switch (key.KeyChar)
                 {

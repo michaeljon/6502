@@ -25,6 +25,8 @@ namespace InnoWerks.Emulators.Apple
 #pragma warning disable CA1716, CA1707, CA1822
     public abstract class SlotRomDevice : IDevice
     {
+        private readonly IBus bus;
+
         public const ushort IO_BASE_ADDR = 0xC080;
 
         public const ushort ROM_BASE_ADDR = 0xC100;
@@ -39,10 +41,11 @@ namespace InnoWerks.Emulators.Apple
 
 #pragma warning restore CA1819 // Properties should not return arrays
 
-        protected SlotRomDevice(int slot, string name, MachineState machineState, byte[] romImage)
+        protected SlotRomDevice(int slot, string name, IBus bus, MachineState machineState, byte[] romImage)
         {
             ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
             ArgumentNullException.ThrowIfNull(machineState, nameof(machineState));
+            ArgumentNullException.ThrowIfNull(bus, nameof(bus));
             ArgumentNullException.ThrowIfNull(romImage, nameof(romImage));
 
             ArgumentOutOfRangeException.ThrowIfGreaterThan(slot, 7, nameof(slot));
@@ -56,6 +59,7 @@ namespace InnoWerks.Emulators.Apple
             Slot = slot;
             Name = name;
 
+            this.bus = bus;
             this.machineState = machineState;
 
             if (romImage.Length > 256)
@@ -72,6 +76,8 @@ namespace InnoWerks.Emulators.Apple
             }
 
             Rom = romImage;
+
+            bus.AddDevice(this);
         }
 
         protected SlotRomDevice(int slot, string name, MachineState machineState, byte[] cxRom, byte[] c8Rom)
