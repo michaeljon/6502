@@ -27,7 +27,11 @@ namespace Sim6502
             HasLowercase = true
         };
 
-        private readonly AppleBus bus = new(configuration, new SoftSwitches());
+        private readonly MachineState machineState;
+
+        private readonly MemoryBlocks memoryBlocks;
+
+        private readonly AppleBus bus;
 
         private readonly Dictionary<ushort, byte> breakpoints = [];
 
@@ -60,6 +64,13 @@ namespace Sim6502
                     return 1;
                 }
             );
+        }
+
+        private Program()
+        {
+            machineState = new();
+            memoryBlocks = new(machineState);
+            bus = new(configuration, memoryBlocks, machineState);
         }
 
         private int RunSimulator(CliOptions options)

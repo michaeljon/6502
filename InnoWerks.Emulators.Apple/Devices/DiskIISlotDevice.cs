@@ -22,26 +22,22 @@ namespace InnoWerks.Emulators.Apple
         private DiskIIDrive CurrentDrive =>
             driveSelect ? drives[0] : drives[1];
 
-        public DiskIISlotDevice(SoftSwitches softSwitches, byte[] romImage)
-            : base(6, "Disk II Controller", softSwitches, romImage)
+        public DiskIISlotDevice(IBus bus, MachineState machineState, byte[] romImage)
+            : base(6, "Disk II Controller", bus, machineState, romImage)
         {
             drives[0] = new DiskIIDrive();
             drives[1] = new DiskIIDrive();
         }
 
         public override bool HandlesRead(ushort address) =>
-            (address & 0xFFF0) == 0xC0E0 || (address & 0xFF00) == 0xC600;
+            (address & 0xFFF0) == 0xC0E0 || (address >> 8) == 0xC6;
 
         public override bool HandlesWrite(ushort address) =>
-            (address & 0xFFF0) == 0xC0E0 || (address & 0xFF00) == 0xC600;
+            (address & 0xFFF0) == 0xC0E0 || (address >> 8) == 0xC6;
 
-        public override byte Read(ushort address)
+        public override (byte value, bool remapNeeded) Read(ushort address)
         {
-            if ((address & 0xFF00) == 0xC600)
-            {
-                // this is really explicit and it's because disk ii is special
-                return ReadSlotRom(address);
-            }
+            SimDebugger.Info($"Read DiskII({address:X4})\n");
 
             switch (address & 0x0F)
             {
@@ -50,28 +46,32 @@ namespace InnoWerks.Emulators.Apple
                     break;
 
                 case 0x0E:   // data read
-                    return shiftRegister;
+                    return (shiftRegister, false);
 
                 default:
                     Handle(address);
                     break;
             }
 
-            return 0x00;
+            return (0x00, false);
         }
 
-        public override void Write(ushort address, byte value)
+        public override bool Write(ushort address, byte value)
         {
+            SimDebugger.Info($"Write DiskII({address:X4}, {value:X2})\n");
+
             switch (address & 0x0F)
             {
                 case 0x0F:   // data write
                     shiftRegister = value;
-                    return;
+                    break;
 
                 default:
                     Handle(address);
-                    return;
+                    break;
             }
+
+            return false;
         }
 
         public override void Tick(int cycles) {/* NO-OP */ }
@@ -86,8 +86,10 @@ namespace InnoWerks.Emulators.Apple
 
         public DiskIIDrive GetDrive(int drive)
         {
-            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(drive, nameof(drive));
-            ArgumentOutOfRangeException.ThrowIfGreaterThan(drive, 2, nameof(drive));
+            if (drive < 1 || drive > 2)
+            {
+                throw new ArgumentOutOfRangeException(nameof(drive), "DiskII Controller support Drive 1 and Drive 2 only");
+            }
 
             return drives[drive];
         }

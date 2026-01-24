@@ -1,6 +1,8 @@
+using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
+
 namespace InnoWerks.Emulators.Apple
 {
-#pragma warning disable CA1707
     public static class SoftSwitchAddress
     {
         //
@@ -8,19 +10,32 @@ namespace InnoWerks.Emulators.Apple
         //
 
         public const ushort KBD = 0xC000;   // Last Key Pressed (+ 128 if strobe not cleared)
+        public const ushort KBDSTRB = 0xC010;  //  1=key pressed 0=keys free    (clears strobe)
 
         // MEMORY MANAGEMENT SOFT SWITCHES
 
+        public const ushort RDLCBNK2 = 0xC011;  // 1=bank2 available    0=bank1 available
+        public const ushort RDLCRAM = 0xC012;  // 1=BSR active for read 0=$D000-$FFFF active
+
         public const ushort RDMAINRAM = 0xC002;  // Read enable main memory from $0200-$BFFF
         public const ushort RDCARDRAM = 0xC003;  //  Read enable aux memory from $0200-$BFFF
+        public const ushort RDRAMRD = 0xC013;  //  0=main $0200-$BFFF active reads  1=aux active
+
         public const ushort WRMAINRAM = 0xC004;  // Write enable main memory from $0200-$BFFF
         public const ushort WRCARDRAM = 0xC005;  // Write enable aux memory from $0200-$BFFF
+        public const ushort RDRAMWRT = 0xC014;  //  0=main $0200-$BFFF active writes 1=aux writes
+
         public const ushort SETSLOTCXROM = 0xC006;  // Enable slot ROM from $C100-$CFFF
         public const ushort SETINTCXROM = 0xC007;  // Enable main ROM from $C100-$CFFF
-        public const ushort SETSTDZP = 0xC008;  // Enable main memory from $0000-$01FF & avl BSR
-        public const ushort SETALTZP = 0xC009;  //  Enable aux memory from $0000-$01FF & avl BSR
+        public const ushort RDCXROM = 0xC015;  // 1=main $C100-$CFFF ROM active 0=slot active
+
+        public const ushort CLRALSTKZP = 0xC008;  // Enable main memory from $0000-$01FF & avl BSR
+        public const ushort SETALTSTKZP = 0xC009;  //  Enable aux memory from $0000-$01FF & avl BSR
+        public const ushort RDALTSTKZP = 0xC016;  //  1=aux $0000-$1FF+auxBSR    0=main available
+
         public const ushort SETINTC3ROM = 0xC00A;  // Enable main ROM from $C300-$C3FF
         public const ushort SETSLOTC3ROM = 0xC00B;  // Enable slot ROM from $C300-$C3FF
+        public const ushort RDC3ROM = 0xC017;  // 1=slot $C3 ROM active 0=main $C3 ROM active
 
         // VIDEO SOFT SWITCHES
 
@@ -28,9 +43,9 @@ namespace InnoWerks.Emulators.Apple
         public const ushort SETALTCHAR = 0xC00F;  // Turn on alternate characters
         public const ushort RDALTCHR = 0xC01E;  // 1=alt character set on   0=alt char set off
 
-        public const ushort CLR80VID = 0xC00C;  // Turn off 80 column display
-        public const ushort SET80VID = 0xC00D;  //  Turn on 80 column display
-        public const ushort RD80VID = 0xC01F;  //  1=80 col display on 0=80 col display off
+        public const ushort CLR80COL = 0xC00C;  // Turn off 80 column display
+        public const ushort SET80COL = 0xC00D;  //  Turn on 80 column display
+        public const ushort RD80COL = 0xC01F;  //  1=80 col display on 0=80 col display off
 
         public const ushort CLR80STORE = 0xC000;  // Allow page2 to switch video page1 page2
         public const ushort SET80STORE = 0xC001;  // Allow page2 to switch main & aux video memory
@@ -60,19 +75,7 @@ namespace InnoWerks.Emulators.Apple
         public const ushort DHIRESOFF = 0xC05F;
         public const ushort RDDHIRES = 0xC07F;
 
-        public const ushort RDVBL = 0xC019;  // 1=vertical retrace on 0=vertical retrace off
-
-        // SOFT SWITCH STATUS FLAGS
-
-        public const ushort KBDSTRB = 0xC010;  //  1=key pressed 0=keys free    (clears strobe)
-        public const ushort RDLCBNK2 = 0xC011;  // 1=bank2 available    0=bank1 available
-        public const ushort RDLCRAM = 0xC012;  // 1=BSR active for read 0=$D000-$FFFF active
-        public const ushort RDRAMRD = 0xC013;  //  0=main $0200-$BFFF active reads  1=aux active
-        public const ushort RDRAMWRT = 0xC014;  //  0=main $0200-$BFFF active writes 1=aux writes
-        public const ushort RDCXROM = 0xC015;  // 1=main $C100-$CFFF ROM active 0=slot active
-        public const ushort RDALTZP = 0xC016;  //  1=aux $0000-$1FF+auxBSR    0=main available
-        public const ushort RDC3ROM = 0xC017;  // 1=slot $C3 ROM active 0=main $C3 ROM active
-
+        public const ushort RDVBLBAR = 0xC019;  // 1=vertical retrace on 0=vertical retrace off
 
         // Annunciator pairs
         public const ushort CLRAN0 = 0xC058;
@@ -102,6 +105,100 @@ namespace InnoWerks.Emulators.Apple
         public const ushort PADDLE2 = 0xC066;
         public const ushort PADDLE3 = 0xC067;
         public const ushort PTRIG = 0xC070;
+
+        public static string LookupAddress(ushort address)
+        {
+            return Lookup.TryGetValue(address, out string value) ? value : "Unassigned";
+        }
+
+        public static readonly Dictionary<ushort, string> Lookup = new()
+        {
+            { 0xC000, "KBD / CLR80STORE" },
+            { KBDSTRB, "KBDSTRB" },
+
+            { RDLCBNK2, "RDLCBNK2" },
+            { RDLCRAM, "RDLCRAM" },
+
+            { RDMAINRAM, "RDMAINRAM" },
+            { RDCARDRAM, "RDCARDRAM" },
+            { RDRAMRD, "RDRAMRD" },
+
+            { WRMAINRAM, "WRMAINRAM" },
+            { WRCARDRAM, "WRCARDRAM" },
+            { RDRAMWRT, "RDRAMWRT" },
+
+            { SETSLOTCXROM, "SETSLOTCXROM" },
+            { SETINTCXROM, "SETINTCXROM" },
+            { RDCXROM, "RDCXROM" },
+
+            { CLRALSTKZP, "CLRALSTKZP" },
+            { SETALTSTKZP, "SETALTSTKZP" },
+            { RDALTSTKZP, "RDALTSTKZP" },
+
+            { SETINTC3ROM, "SETINTC3ROM" },
+            { SETSLOTC3ROM, "SETSLOTC3ROM" },
+            { RDC3ROM, "RDC3ROM" },
+
+            { 0xC00E, "CLRALTCHAR" },
+            { 0xC00F, "SETALTCHAR" },
+            { 0xC01E, "RDALTCHR" },
+
+            { CLR80COL, "CLR80COL" },
+            { SET80COL, "SET80COL" },
+            { RD80COL, "RD80COL" },
+
+            // CLR80STORE see above
+            { SET80STORE, "SET80STORE" },
+            { RD80STORE, "RD80STORE" },
+
+            { TXTPAGE1, "TXTPAGE1" },
+            { TXTPAGE2, "TXTPAGE2" },
+            { RDPAGE2, "RDPAGE2" },
+
+            { TXTCLR, "TXTCLR" },
+            { TXTSET, "TXTSET" },
+            { RDTEXT, "RDTEXT" },
+
+            { MIXCLR, "MIXCLR" },
+            { MIXSET, "MIXSET" },
+            { RDMIXED, "RDMIXED" },
+
+            { LORES, "LORES" },
+            { HIRES, "HIRES" },
+            { RDHIRES, "RDHIRES" },
+
+            { IOUDISON, "IOUDISON / RDIOUDIS" },
+            { IOUDISOFF, "IOUDISOFF / RDDHIRES" },
+
+            { DHIRESON, "DHIRESON / CLRAN3" },
+            { DHIRESOFF, "DHIRESOFF / SETAN3" },
+            // RDDHIRES see above
+
+            { RDVBLBAR, "RDVBLBAR" },
+
+            { CLRAN0, "CLRAN0" },
+            { SETAN0, "SETAN0" },
+            { CLRAN1, "CLRAN1" },
+            { SETAN1, "SETAN1" },
+            { CLRAN2, "CLRAN2" },
+            { SETAN2, "SETAN2" },
+            // CLRAN3 see above
+            // SETAN3 see above
+
+            { SPKR, "SPKR" },
+            { TAPEOUT, "TAPEOUT" },
+            { TAPEIN, "TAPEIN" },
+            { STROBE, "STROBE" },
+
+            { 0xC061, "BUTTON0 / OPENAPPLE" },
+            { 0xC062, "BUTTON1 / SOLIDAPPLE" },
+            { 0xC063, "BUTTON2 / SHIFT" },
+
+            { PADDLE0, "PADDLE0" },
+            { PADDLE1, "PADDLE1" },
+            { PADDLE2, "PADDLE2" },
+            { PADDLE3, "PADDLE3" },
+            { PTRIG, "PTRIG" },
+        };
     }
-#pragma warning restore CA1707
 }

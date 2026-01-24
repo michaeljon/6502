@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using InnoWerks.Processors;
@@ -12,37 +13,29 @@ namespace InnoWerks.Emulators.Apple
     {
         private readonly AppleConfiguration configuration;
 
-#pragma warning disable CA5394 // Do not use insecure randomness
-        private readonly byte floatingBus = (byte)(new Random().Next() & 0xFF);
-#pragma warning restore CA5394 // Do not use insecure randomness
-
         private int transactionCycles;
 
-        private readonly MemoryIIe memory;
-
-        public MemoryIIe DirectMemory => memory;
-
-        private readonly List<IDevice> systemDevices = [];
+        private readonly MemoryBlocks memoryBlocks;
 
         // there are 8 slots, 0 - 7, most of the time, but slot 0 is not used
         // we keep the numbering for convenience
-        private readonly IDevice[] slotDevices = new IDevice[8];
+        private readonly SlotRomDevice[] slotDevices = new SlotRomDevice[8];
 
         private readonly List<IDevice> softSwitchDevices = [];
 
-        private readonly SoftSwitches softSwitches;
+        private readonly MachineState machineState;
 
         private bool reportKeyboardLatchAll = true;
 
-        public AppleBus(AppleConfiguration configuration, SoftSwitches softSwitches)
+        public AppleBus(AppleConfiguration configuration, MemoryBlocks memoryBlocks, MachineState machineState)
         {
             ArgumentNullException.ThrowIfNull(configuration);
-            ArgumentNullException.ThrowIfNull(softSwitches);
+            ArgumentNullException.ThrowIfNull(memoryBlocks);
+            ArgumentNullException.ThrowIfNull(machineState);
 
             this.configuration = configuration;
-            this.softSwitches = softSwitches;
-
-            memory = new MemoryIIe(configuration, softSwitches);
+            this.memoryBlocks = memoryBlocks;
+            this.machineState = machineState;
         }
 
         public void AddDevice(IDevice device)
@@ -54,10 +47,6 @@ namespace InnoWerks.Emulators.Apple
 
             switch (device.Priority)
             {
-                case DevicePriority.System:
-                    systemDevices.Add(device);
-                    break;
-
                 case DevicePriority.SoftSwitch:
                     softSwitchDevices.Add(device);
                     break;
@@ -68,7 +57,14 @@ namespace InnoWerks.Emulators.Apple
                         throw new ArgumentException($"There is already a device {slotDevices[device.Slot].Name} in slot {device.Slot}");
                     }
 
-                    slotDevices[device.Slot] = device;
+                    var slotDevice = (SlotRomDevice)device;
+                    slotDevices[device.Slot] = slotDevice;
+
+                    memoryBlocks.LoadSlotCxRom(device.Slot, slotDevice.Rom);
+                    if (slotDevice.ExpansionRom != null)
+                    {
+                        memoryBlocks.LoadSlotC8Rom(device.Slot, slotDevice.ExpansionRom);
+                    }
 
                     if (device.Slot == 1)
                     {
@@ -100,217 +96,120 @@ namespace InnoWerks.Emulators.Apple
         {
             Tick(1);
 
-            // handle the SoftSwitch.IntC8RomEnabled state
-            if (softSwitches.State[SoftSwitch.Slot3RomEnabled] == false && (address & 0xC300) == 0xC300)
+            HandleC3xxAndCfff(address);
+
+            if (address < 0xC000)
             {
-                softSwitches.State[SoftSwitch.IntC8RomEnabled] = true;
+                return memoryBlocks.Read(address);
             }
-
-            if (softSwitches.State[SoftSwitch.Slot3RomEnabled] == true && address == 0xCFFF)
+            else if (address < 0xC08F)
             {
-                softSwitches.State[SoftSwitch.IntC8RomEnabled] = false;
-            }
-
-            if (0xC000 <= address && address <= 0xC08F)
-            {
-                foreach (var device in systemDevices)
-                {
-                    if (device.HandlesRead(address))
-                    {
-                        return (byte)(device.Read(address) | CheckKeyboardLatch(address));
-                    }
-                }
-
                 foreach (var softSwitchDevice in softSwitchDevices)
                 {
                     if (softSwitchDevice.HandlesRead(address))
                     {
-                        return (byte)(softSwitchDevice.Read(address) | CheckKeyboardLatch(address));
-                    }
-                }
-            }
+                        var (value, remapNeeded) = softSwitchDevice.Read(address);
+                        value |= CheckKeyboardLatch(address);
 
-            if (0xC090 <= address && address <= 0xC0FF)
-            {
-                var slot = (address >> 4) & 7;
-                var device = slotDevices[slot];
-
-                if (device == null)
-                {
-                    return floatingBus;
-                }
-
-                if (device.HandlesRead(address) == true)
-                {
-                    return device.Read(address);
-                }
-
-                SimDebugger.Info("Reached I/O read from {0:X4} with device in {1} that doesn't handle", address, slot);
-            }
-
-            if (softSwitches.LcActive == false)
-            {
-                if (softSwitches.State[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC7FF)
-                {
-                    var slot = (address >> 8) & 7;
-                    var device = slotDevices[slot];
-
-                    if (device == null)
-                    {
-                        return floatingBus;
-                    }
-
-                    if (device.HandlesRead(address) == true)
-                    {
-                        // SimDebugger.Info("Read slot {0} ROM {1:X4}\n", slot, address);
-                        return device.Read(address);
-                    }
-
-                    return floatingBus;
-                }
-                else if (0xC800 <= address && address <= 0xCFFF)
-                {
-                    if (softSwitches.State[SoftSwitch.IntC8RomEnabled] == true)
-                    {
-                        return memory.Read(address);
-                    }
-                    else
-                    {
-                        //
-                        // apple iie technical ref ch 6 page 133-134 talks about
-                        // the peripheral listening to $CFFF and that it needs to
-                        // write its slot # to $07F8 before its expansion rom
-                        // is enabled
-                        //
-                        // that means that the test and reset above (and probably
-                        // below in Write) are likely wrong wrong wrong
-                        //
-                        var slot = (address >> 9) & 3;
-                        var device = slotDevices[slot];
-
-                        if (device == null)
+                        if (remapNeeded)
                         {
-                            return floatingBus;
+                            memoryBlocks.Remap();
                         }
 
-                        if (device.HandlesRead(address) == true)
-                        {
-                            SimDebugger.Info("Read slot {0} C8XX ROM {1:X4}\n", slot, address);
-                            return device.Read(address);
-                        }
+                        return value;
                     }
+                }
+
+                return 0x00;
+            }
+            else if (address < 0xC0FF)
+            {
+                machineState.CurrentSlot = ((address >> 4) & 7) - 8;
+
+                return DoSlotRead(machineState.CurrentSlot, address);
+            }
+            else if (address < 0xC800)
+            {
+                //
+                // this should just fall through to the underlying memory map
+                //
+                if (machineState.State[SoftSwitch.SlotRomEnabled] == true)
+                {
+                    machineState.CurrentSlot = (address >> 8) & 7;
+
+                    return DoSlotRead(machineState.CurrentSlot, address);
                 }
             }
 
-            return memory.Read(address);
+            return memoryBlocks.Read(address);
         }
 
         public void Write(ushort address, byte value)
         {
             Tick(1);
 
-            // handle the SoftSwitch.IntC8RomEnabled state
-            if (softSwitches.State[SoftSwitch.Slot3RomEnabled] == false && (address & 0xC300) == 0xC300)
-            {
-                softSwitches.State[SoftSwitch.IntC8RomEnabled] = true;
-            }
+            HandleC3xxAndCfff(address);
 
-            if (softSwitches.State[SoftSwitch.Slot3RomEnabled] == true && address == 0xCFFF)
+            if (address < 0xC000)
             {
-                softSwitches.State[SoftSwitch.IntC8RomEnabled] = false;
+                memoryBlocks.Write(address, value);
             }
-
-            if (0xC000 <= address && address <= 0xC08F)
+            else if (address < 0xC08F)
             {
                 CheckClearKeystrobe(address);
 
-                foreach (var device in systemDevices)
-                {
-                    if (device.HandlesWrite(address))
-                    {
-                        device.Write(address, value);
-                        return;
-                    }
-                }
-
                 foreach (var softSwitchDevice in softSwitchDevices)
                 {
-                    if (softSwitchDevice.HandlesWrite(address))
+                    if (softSwitchDevice.HandlesWrite(address) && softSwitchDevice.Write(address, value))
                     {
-                        softSwitchDevice.Write(address, value);
-                        return;
+                        memoryBlocks.Remap();
                     }
                 }
             }
-
-            if (0xC090 <= address && address <= 0xC0FF)
+            else if (address < 0xC0FF)
             {
-                var slot = (address >> 4) & 7;
-                var device = slotDevices[slot];
+                machineState.CurrentSlot = ((address >> 4) & 7) - 8;
 
-                if (device?.HandlesWrite(address) == true)
-                {
-                    SimDebugger.Info("Write IO {0} {1:X4}\n", slot, address);
-                    device.Write(address, value);
-                    return;
-                }
-
-                SimDebugger.Info("Reached I/O write to {0:X4} with device in {1} that doesn't handle", address, slot);
+                DoSlotWrite(machineState.CurrentSlot, address, value);
             }
-
-            if (softSwitches.LcActive == false)
+            else if (address < 0xC800)
             {
-                if (softSwitches.State[SoftSwitch.SlotRomEnabled] == true && 0xC100 <= address && address <= 0xC700)
+                //
+                // this should just fall through to the underlying memory map
+                //
+                if (machineState.State[SoftSwitch.SlotRomEnabled] == true)
                 {
-                    var slot = (address >> 8) & 7;
-                    var device = slotDevices[slot];
+                    machineState.CurrentSlot = (address >> 8) & 7;
 
-                    if (device?.HandlesWrite(address) == true)
-                    {
-                        SimDebugger.Info("Write ROM {0} {1:X4}\n", slot, address);
-                        device.Write(address, value);
-                        return;
-                    }
-                }
-                else if (softSwitches.State[SoftSwitch.IntC8RomEnabled] == false && 0xC800 <= address && address <= 0xCFFF)
-                {
-                    var slot = (address >> 9) & 3;
-                    var device = slotDevices[slot];
-
-                    if (device?.HandlesWrite(address) == true)
-                    {
-                        SimDebugger.Info("Write ExROM {0} {1:X4}\n", slot, address);
-                        device.Write(address, value);
-                        return;
-                    }
+                    DoSlotWrite(machineState.CurrentSlot, address, value);
                 }
             }
-
-            memory.Write(address, value);
+            else
+            {
+                memoryBlocks.Write(address, value);
+            }
         }
 
         public byte Peek(ushort address)
         {
-            return memory.Peek(address);
+            return memoryBlocks.Read(address);
         }
 
         public void Poke(ushort address, byte value)
         {
-            memory.Write(address, value);
+            memoryBlocks.Write(address, value);
         }
 
         public void LoadProgramToRom(byte[] objectCode)
         {
             ArgumentNullException.ThrowIfNull(objectCode);
-
-            memory.LoadProgramToRom(objectCode);
+            memoryBlocks.LoadProgramToRom(objectCode);
         }
 
         public void LoadProgramToRam(byte[] objectCode, ushort origin)
         {
             ArgumentNullException.ThrowIfNull(objectCode);
-
-            memory.LoadProgramToRam(objectCode, origin);
+            memoryBlocks.LoadProgramToRam(objectCode, origin);
         }
 
         public void Reset()
@@ -320,15 +219,14 @@ namespace InnoWerks.Emulators.Apple
                 device.Reset();
             }
 
-            foreach (var device in systemDevices)
-            {
-                device.Reset();
-            }
-
             for (var slot = 0; slot < slotDevices.Length; slot++)
             {
                 slotDevices[slot]?.Reset();
             }
+
+            machineState.CurrentSlot = -1;
+
+            memoryBlocks.Remap();
 
             transactionCycles = 0;
             CycleCount = 0;
@@ -337,12 +235,6 @@ namespace InnoWerks.Emulators.Apple
         private void Tick(int cycles)
         {
             CycleCount += (ulong)cycles;
-
-            // now tell the devices they got clocked
-            foreach (var device in systemDevices)
-            {
-                device.Tick(cycles);
-            }
 
             foreach (var device in softSwitchDevices)
             {
@@ -354,9 +246,79 @@ namespace InnoWerks.Emulators.Apple
                 slotDevices[slot]?.Tick(cycles);
             }
 
-            memory.Tick(cycles);
-
             transactionCycles += cycles;
+        }
+
+        private byte DoSlotRead(int slot, ushort address)
+        {
+            var slotDevice = slotDevices[slot];
+
+            if (slotDevice?.HandlesRead(address) == true)
+            {
+                var (value, _) = slotDevice.Read(address);
+                return value;
+            }
+
+            return 0xFF;
+        }
+
+        private void DoSlotWrite(int slot, ushort address, byte value)
+        {
+            var slotDevice = slotDevices[slot];
+
+            if (slotDevice?.HandlesWrite(address) == true)
+            {
+                SimDebugger.Info("Write IO {0} {1:X4}\n", slot, address);
+                slotDevice.Write(address, value);
+            }
+        }
+
+        private void HandleC3xxAndCfff(ushort address)
+        {
+            //
+            // apple iie technical ref ch 6 page 133-134 talks about
+            // the peripheral listening to $CFFF and that it needs to
+            // write its slot # to $07F8 before its expansion rom
+            // is enabled
+            //
+            // that means that the test and reset above (and probably
+            // below in Write) are likely wrong wrong wrong
+            //
+
+            /*
+            if (address >> 8 != 0xC3 && address != 0xCFFF)
+            {
+                return;
+            }
+
+            if (machineState.CurrentSlot != -1 && address == 0xCFFF)
+            {
+                Debugger.Break();
+            }
+            */
+
+            bool remapNeeded = false;
+
+            // handle the SoftSwitch.IntC8RomEnabled state
+            if (machineState.State[SoftSwitch.Slot3RomEnabled] == false && address >> 8 == 0xC3)
+            {
+                if (machineState.State[SoftSwitch.IntC8RomEnabled] == false)
+                {
+                    machineState.State[SoftSwitch.IntC8RomEnabled] = true;
+                    remapNeeded = true;
+                }
+            }
+
+            if (machineState.State[SoftSwitch.Slot3RomEnabled] == true && address == 0xCFFF)
+            {
+                machineState.State[SoftSwitch.IntC8RomEnabled] = false;
+                remapNeeded = true;
+            }
+
+            if (remapNeeded)
+            {
+                memoryBlocks.Remap();
+            }
         }
 
         private byte CheckKeyboardLatch(ushort address)
@@ -369,22 +331,22 @@ namespace InnoWerks.Emulators.Apple
             // all these addresses return the KSTRB and ASCII value
             if (address >= 0xC001 && address <= 0xC00F)
             {
-                return softSwitches.KeyStrobe ?
-                    softSwitches.KeyLatch |= 0x80 :
-                    softSwitches.KeyLatch;
+                return machineState.KeyStrobe ?
+                    machineState.KeyLatch |= 0x80 :
+                    machineState.KeyLatch;
             }
 
             // 0xC010 is handled directly by the keyboard as the "owning" device
 
             // if the IOU is disabled then we only handle the MMU soft switch
-            if (softSwitches.State[SoftSwitch.IOUDisabled] == true)
+            if (machineState.State[SoftSwitch.IOUDisabled] == true)
             {
                 return 0x00;
             }
 
             if (address >= 0xC001 && address <= 0xC01F)
             {
-                return softSwitches.KeyLatch;
+                return machineState.KeyLatch;
             }
 
             return 0x00;
@@ -399,70 +361,8 @@ namespace InnoWerks.Emulators.Apple
 
             if (address >= 0xC010 && address <= 0xC01F)
             {
-                softSwitches.KeyStrobe = false;
+                machineState.KeyStrobe = false;
             }
-        }
-
-        public IList<(ushort address, string name)> ConfiguredAddresses(bool forRead)
-        {
-            var configured = new List<(ushort address, string name)>();
-
-            foreach (var device in systemDevices)
-            {
-                for (ushort address = 0xC000; address < 0xC100; address++)
-                {
-                    if (forRead == true ? device.HandlesRead(address) : device.HandlesWrite(address))
-                    {
-                        configured.Add((address, device.Name));
-                    }
-                }
-            }
-
-            foreach (var device in softSwitchDevices)
-            {
-                for (ushort address = 0xC000; address < 0xC100; address++)
-                {
-                    if (forRead == true ? device.HandlesRead(address) : device.HandlesWrite(address))
-                    {
-                        configured.Add((address, device.Name));
-                    }
-                }
-            }
-
-            for (var slot = 0; slot < slotDevices.Length; slot++)
-            {
-                var device = slotDevices[slot];
-                if (device != null)
-                {
-                    for (ushort address = 0xC000; address < 0xC100; address++)
-                    {
-                        if (forRead == true ? device.HandlesRead(address) : device.HandlesWrite(address))
-                        {
-                            configured.Add((address, $"[{slot}] {device.Name}"));
-                        }
-                    }
-                }
-            }
-
-            // we only report out that we support the keyboard read bits here
-            if (forRead == true && reportKeyboardLatchAll == true)
-            {
-                for (ushort address = 0xC001; address < 0xC020; address++)
-                {
-                    configured.Add((address, "Keyboard latch handler KBD"));
-                }
-            }
-
-            // we only report out that we support the keyboard write bits here
-            if (forRead == false && reportKeyboardLatchAll == true)
-            {
-                for (ushort address = 0xC010; address < 0xC020; address++)
-                {
-                    configured.Add((address, "Keystrobe clear handler KBDSTRB"));
-                }
-            }
-
-            return configured;
         }
     }
 }
