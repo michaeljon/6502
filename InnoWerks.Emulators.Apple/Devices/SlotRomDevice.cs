@@ -29,7 +29,7 @@ namespace InnoWerks.Emulators.Apple
 
         public const ushort IO_BASE_ADDR = 0xC080;
 
-        public const ushort ROM_BASE_ADDR = 0xC100;
+        public const ushort ROM_BASE_ADDR = 0xC000;
 
         public const ushort EXPANSION_ROM_BASE_ADDR = 0xC800;
 
@@ -135,25 +135,25 @@ namespace InnoWerks.Emulators.Apple
         protected ushort IoBaseAddressHi => (ushort)(IO_BASE_ADDR + (Slot * 0x10) + 0x0F);
 
         // 256 bytes
-        protected ushort RomBaseAddressLo => (ushort)(ROM_BASE_ADDR + ((Slot - 1) * 0x100));
+        protected ushort RomBaseAddressLo => (ushort)(ROM_BASE_ADDR + (Slot * 0x100));
 
-        protected ushort RomBaseAddressHi => (ushort)(ROM_BASE_ADDR + ((Slot - 1) * 0x100) + 0xFF);
+        protected ushort RomBaseAddressHi => (ushort)(ROM_BASE_ADDR + (Slot * 0x100) + 0xFF);
 
         // 2048 bytes
-        protected ushort ExpansionBaseAddressLo => (ushort)(EXPANSION_ROM_BASE_ADDR + ((Slot - 1) * 0x100));
+        protected ushort ExpansionBaseAddressLo => EXPANSION_ROM_BASE_ADDR;
 
-        protected ushort ExpansionBaseAddressHi => (ushort)(EXPANSION_ROM_BASE_ADDR + ((Slot - 1) * 0x100) + 0x03FF);
+        protected ushort ExpansionBaseAddressHi => EXPANSION_ROM_BASE_ADDR + 0x7FF;
 
         protected virtual bool IsIoReadRequest(ushort address)
         {
-            // SimDebugger.Info("Slot {0} IsIoReadRequest({1:X4})\n", Slot, address);
+            SimDebugger.Info("Slot {0} IsIoReadRequest({1:X4})\n", Slot, address);
 
             return IoBaseAddressLo <= address && address <= IoBaseAddressHi;
         }
 
         protected virtual bool IsRomReadRequest(ushort address)
         {
-            // SimDebugger.Info("Slot {0} IsRomReadRequest({1:X4})\n", Slot, address);
+            SimDebugger.Info("Slot {0} IsRomReadRequest({1:X4})\n", Slot, address);
 
             if (Slot > 0 && Slot <= 4)
             {

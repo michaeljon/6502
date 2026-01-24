@@ -249,7 +249,7 @@ namespace InnoWerks.Emulators.Apple
             if (machineState.State[SoftSwitch.SlotRomEnabled] == false)
             {
                 InjectRom(intCxRom, 0xC0, 0xD0);
-                activeRead[0xC0] = MemoryPage.FFs;
+                activeRead[0xC0] = MemoryPage.Zeros;
             }
             else
             {
@@ -257,13 +257,6 @@ namespace InnoWerks.Emulators.Apple
                 for (var slot = 0; slot < 8; slot++)
                 {
                     activeRead[0xC0 + slot] = loSlotRom[slot];
-                }
-
-                // hook up the active slot's rom to c8
-                for (var loop = 0xC8; loop < 0xD0; loop++)
-                {
-                    activeRead[loop] = MemoryPage.Zeros;
-                    // Debugger.Break();
                 }
 
                 if (machineState.State[SoftSwitch.Slot3RomEnabled] == false)
@@ -280,7 +273,20 @@ namespace InnoWerks.Emulators.Apple
                         activeRead[loop] = intCxRom[loop - 0xC0];
                     }
                 }
+                else
+                {
+                    // hook up the active slot's rom to c8
+                    if (machineState.CurrentSlot != -1)
+                    {
+                        for (var loop = 0xC8; loop < 0xD0; loop++)
+                        {
+                            InjectRom(hiSlotRom[machineState.CurrentSlot], 0xC8, 0xD0);
+                        }
+                    }
+                }
             }
+
+            activeRead[0xC0] = MemoryPage.FFs;
         }
 
         private void RemapWrite()
@@ -382,6 +388,10 @@ namespace InnoWerks.Emulators.Apple
 
             if (activeRead[page] != null)
             {
+                if (address == 0xC600)
+                {
+                    Debugger.Break();
+                }
                 return activeRead[page].Block[offset];
             }
 
@@ -451,7 +461,8 @@ namespace InnoWerks.Emulators.Apple
             // slots load themselves starting at 1, so 0xC6 would map to
             // a Disk II in slot 6
             var memoryPage = new MemoryPage($"slot{slot}-cx", 0xC0 + slot);
-            Array.Copy(objectCode, 0, loSlotRom[slot].Block, 0, 256);
+            Array.Copy(objectCode, 0, memoryPage.Block, 0, 256);
+
             loSlotRom[slot] = memoryPage;
         }
 
@@ -463,6 +474,7 @@ namespace InnoWerks.Emulators.Apple
             {
                 var memoryPage = new MemoryPage("slot{slot}-c8", 0xC8 + page);
                 Array.Copy(objectCode, 0, memoryPage.Block, 0, 256);
+
                 hiSlotRom[slot][page] = memoryPage;
             }
         }

@@ -6,6 +6,8 @@ namespace InnoWerks.Emulators.Apple
 {
     public class MachineState
     {
+        private readonly Random rng = new();
+
         public Dictionary<SoftSwitch, bool> State { get; } = [];
 
         public MachineState()
@@ -15,6 +17,9 @@ namespace InnoWerks.Emulators.Apple
                 State[sw] = false;
             }
         }
+
+        // used to hold the current slot device, if present
+        public int CurrentSlot { get; set; }
 
         /// <summary>
         /// Used to hold the most recent keyboard entry
@@ -71,15 +76,25 @@ namespace InnoWerks.Emulators.Apple
             }
         }
 
-        public (byte value, bool remapNeeded) HandleReadStateToggle(SoftSwitch softSwitch, bool toState)
+        public (byte value, bool remapNeeded) HandleReadStateToggle(SoftSwitch softSwitch, bool toState, bool floating = false)
         {
+            byte returnValue = 0x00;
+
+            if (floating == true)
+            {
+#pragma warning disable CA5394 // Do not use insecure randomness
+                returnValue = (byte)(rng.Next() & 0xFF);
+#pragma warning restore CA5394 // Do not use insecure randomness
+            }
+
             if (State[softSwitch] == toState)
             {
-                return (0x00, false);
+                return (returnValue, false);
             }
 
             State[softSwitch] = toState;
-            return (0x00, true);
+
+            return (returnValue, true);
         }
 
         public bool HandleWriteStateToggle(SoftSwitch softSwitch, bool toState)

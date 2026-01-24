@@ -98,7 +98,7 @@ namespace InnoWerks.Emulators.Apple
 
         public (byte value, bool remapNeeded) Read(ushort address)
         {
-            SimDebugger.Info($"Read MMU({address:X4}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
+            SimDebugger.Info($"Read MMU({address:X4}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
 
             switch (address)
             {
@@ -131,7 +131,7 @@ namespace InnoWerks.Emulators.Apple
 
         public bool Write(ushort address, byte value)
         {
-            SimDebugger.Info($"Write MMU({address:X4}, {value:X2}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
+            SimDebugger.Info($"Write MMU({address:X4}, {value:X2}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
 
             switch (address)
             {

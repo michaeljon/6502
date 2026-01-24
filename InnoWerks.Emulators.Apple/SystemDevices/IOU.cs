@@ -166,7 +166,7 @@ namespace InnoWerks.Emulators.Apple
         {
             if (address != SoftSwitchAddress.KBD && address != SoftSwitchAddress.KBDSTRB && address != SoftSwitchAddress.SPKR && address != SoftSwitchAddress.RD80COL)
             {
-                // SimDebugger.Info($"Read IOU({address:X4}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
+                // SimDebugger.Info($"Read IOU({address:X4}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
             }
 
             switch (address)
@@ -174,11 +174,11 @@ namespace InnoWerks.Emulators.Apple
                 //
                 // DISPLAY
                 //
-                case SoftSwitchAddress.TXTCLR: return machineState.HandleReadStateToggle(SoftSwitch.TextMode, false);
-                case SoftSwitchAddress.TXTSET: return machineState.HandleReadStateToggle(SoftSwitch.TextMode, true);
-                case SoftSwitchAddress.MIXCLR: return machineState.HandleReadStateToggle(SoftSwitch.MixedMode, false);
-                case SoftSwitchAddress.MIXSET: return machineState.HandleReadStateToggle(SoftSwitch.MixedMode, true);
-                case SoftSwitchAddress.TXTPAGE1: return machineState.HandleReadStateToggle(SoftSwitch.Page2, false);
+                case SoftSwitchAddress.TXTCLR: return machineState.HandleReadStateToggle(SoftSwitch.TextMode, false, true);
+                case SoftSwitchAddress.TXTSET: return machineState.HandleReadStateToggle(SoftSwitch.TextMode, true, true);
+                case SoftSwitchAddress.MIXCLR: return machineState.HandleReadStateToggle(SoftSwitch.MixedMode, false, true);
+                case SoftSwitchAddress.MIXSET: return machineState.HandleReadStateToggle(SoftSwitch.MixedMode, true, true);
+                case SoftSwitchAddress.TXTPAGE1: return machineState.HandleReadStateToggle(SoftSwitch.Page2, false, true);
                 case SoftSwitchAddress.TXTPAGE2: return machineState.HandleReadStateToggle(SoftSwitch.Page2, true);
                 case SoftSwitchAddress.LORES: return machineState.HandleReadStateToggle(SoftSwitch.HiRes, false);
                 case SoftSwitchAddress.HIRES: return machineState.HandleReadStateToggle(SoftSwitch.HiRes, true);
@@ -301,7 +301,7 @@ namespace InnoWerks.Emulators.Apple
         {
             if (address != SoftSwitchAddress.KBD && address != SoftSwitchAddress.KBDSTRB && address != SoftSwitchAddress.SPKR)
             {
-                // SimDebugger.Info($"Write IOU({address:X4}, {value:X2}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
+                // SimDebugger.Info($"Write IOU({address:X4}, {value:X2}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
             }
 
             switch (address)

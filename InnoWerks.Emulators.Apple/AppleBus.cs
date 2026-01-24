@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using InnoWerks.Processors;
@@ -123,9 +124,9 @@ namespace InnoWerks.Emulators.Apple
             }
             else if (address < 0xC0FF)
             {
-                var slot = (address >> 4) & 7;
+                machineState.CurrentSlot = ((address >> 4) & 7) - 8;
 
-                return DoSlotRead(slot, address);
+                return DoSlotRead(machineState.CurrentSlot, address);
             }
             else if (address < 0xC800)
             {
@@ -134,21 +135,9 @@ namespace InnoWerks.Emulators.Apple
                 //
                 if (machineState.State[SoftSwitch.SlotRomEnabled] == true)
                 {
-                    var slot = (address >> 8) & 7;
+                    machineState.CurrentSlot = (address >> 8) & 7;
 
-                    return DoSlotRead(slot, address);
-                }
-            }
-            else if (address < 0xD000)
-            {
-                //
-                // this should just fall through to the underlying memory map
-                //
-                if (machineState.State[SoftSwitch.IntC8RomEnabled] == false)
-                {
-                    var slot = (address >> 9) & 3;
-
-                    return DoSlotRead(slot, address);
+                    return DoSlotRead(machineState.CurrentSlot, address);
                 }
             }
 
@@ -179,9 +168,9 @@ namespace InnoWerks.Emulators.Apple
             }
             else if (address < 0xC0FF)
             {
-                var slot = (address >> 4) & 7;
+                machineState.CurrentSlot = ((address >> 4) & 7) - 8;
 
-                DoSlotWrite(slot, address, value);
+                DoSlotWrite(machineState.CurrentSlot, address, value);
             }
             else if (address < 0xC800)
             {
@@ -190,21 +179,9 @@ namespace InnoWerks.Emulators.Apple
                 //
                 if (machineState.State[SoftSwitch.SlotRomEnabled] == true)
                 {
-                    var slot = (address >> 8) & 7;
+                    machineState.CurrentSlot = (address >> 8) & 7;
 
-                    DoSlotWrite(slot, address, value);
-                }
-            }
-            else if (address < 0xD000)
-            {
-                //
-                // this should just fall through to the underlying memory map
-                //
-                if (machineState.State[SoftSwitch.IntC8RomEnabled] == false)
-                {
-                    var slot = (address >> 9) & 3;
-
-                    DoSlotWrite(slot, address, value);
+                    DoSlotWrite(machineState.CurrentSlot, address, value);
                 }
             }
             else
@@ -247,6 +224,8 @@ namespace InnoWerks.Emulators.Apple
                 slotDevices[slot]?.Reset();
             }
 
+            machineState.CurrentSlot = -1;
+
             memoryBlocks.Remap();
 
             transactionCycles = 0;
@@ -280,7 +259,7 @@ namespace InnoWerks.Emulators.Apple
                 return value;
             }
 
-            return 0x00;
+            return 0xFF;
         }
 
         private void DoSlotWrite(int slot, ushort address, byte value)
@@ -305,6 +284,18 @@ namespace InnoWerks.Emulators.Apple
             // that means that the test and reset above (and probably
             // below in Write) are likely wrong wrong wrong
             //
+
+            /*
+            if (address >> 8 != 0xC3 && address != 0xCFFF)
+            {
+                return;
+            }
+
+            if (machineState.CurrentSlot != -1 && address == 0xCFFF)
+            {
+                Debugger.Break();
+            }
+            */
 
             bool remapNeeded = false;
 
