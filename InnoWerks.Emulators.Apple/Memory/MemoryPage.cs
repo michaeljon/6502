@@ -15,13 +15,6 @@ namespace InnoWerks.Emulators.Apple
 
         public int PageNumber { get; init; }
 
-        public MemoryPage(byte[] block, string type, int pageNumber)
-        {
-            Block = block;
-            Type = type;
-            PageNumber = pageNumber;
-        }
-
         public MemoryPage(string type, int pageNumber)
         {
             Block = new byte[PageSize];

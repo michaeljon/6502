@@ -164,9 +164,9 @@ namespace InnoWerks.Emulators.Apple
 
         public (byte value, bool remapNeeded) Read(ushort address)
         {
-            if (address != SoftSwitchAddress.KBD && address != SoftSwitchAddress.KBDSTRB && address != SoftSwitchAddress.SPKR)
+            if (address != SoftSwitchAddress.KBD && address != SoftSwitchAddress.KBDSTRB && address != SoftSwitchAddress.SPKR && address != SoftSwitchAddress.RD80COL)
             {
-                SimDebugger.Info($"Read IOU({address:X4}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
+                // SimDebugger.Info($"Read IOU({address:X4}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
             }
 
             switch (address)
@@ -201,18 +201,18 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitchAddress.RDPAGE2: return ((byte)(machineState.State[SoftSwitch.Page2] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDHIRES: return ((byte)(machineState.State[SoftSwitch.HiRes] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDALTCHR:
-                    if (machineState.State[SoftSwitch.NotVerticalBlank] == false)
-                    {
-                        return (0x00, false);
-                    }
+                    // if (machineState.State[SoftSwitch.NotVerticalBlank] == false)
+                    // {
+                    //     return (0x00, false);
+                    // }
 
                     return ((byte)(machineState.State[SoftSwitch.AltCharSet] ? 0x80 : 0x00), false);
 
                 case SoftSwitchAddress.RD80COL:
-                    if (machineState.State[SoftSwitch.NotVerticalBlank] == false)
-                    {
-                        return (0x00, false);
-                    }
+                    // if (machineState.State[SoftSwitch.NotVerticalBlank] == false)
+                    // {
+                    //     return (0x00, false);
+                    // }
 
                     return ((byte)(machineState.State[SoftSwitch.EightyColumnMode] ? 0x80 : 0x00), false);
 
@@ -301,7 +301,7 @@ namespace InnoWerks.Emulators.Apple
         {
             if (address != SoftSwitchAddress.KBD && address != SoftSwitchAddress.KBDSTRB && address != SoftSwitchAddress.SPKR)
             {
-                SimDebugger.Info($"Write IOU({address:X4}, {value:X2}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
+                // SimDebugger.Info($"Write IOU({address:X4}, {value:X2}) -> {SoftSwitchAddress.LookupAddress(address)}\n");
             }
 
             switch (address)
@@ -426,12 +426,11 @@ namespace InnoWerks.Emulators.Apple
             {
                 for (int col = 0; col < 40; col++)
                 {
-                    ushort addr = GetTextAddress(row, col, true);
-                    byte b = memoryBlocks.Read(addr);
+                    ushort addr = GetTextAddress(row, col, false);
+                    byte b = memoryBlocks.GetAux(addr);
                     line[2 * col] = DecodeAppleChar(b);
 
-                    addr = GetTextAddress(row, col, false);
-                    b = memoryBlocks.Read(addr);
+                    b = memoryBlocks.GetMain(addr);
                     line[(2 * col) + 1] = DecodeAppleChar(b);
                 }
 
