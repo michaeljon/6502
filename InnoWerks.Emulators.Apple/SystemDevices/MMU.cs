@@ -63,8 +63,8 @@ namespace InnoWerks.Emulators.Apple
             SoftSwitchAddress.SETINTC3ROM,
             SoftSwitchAddress.SETSLOTC3ROM,
 
-            // 0xC080, 0xC081, 0xC082, 0xC083, 0xC084, 0xC085, 0xC086, 0xC087,
-            // 0xC088, 0xC089, 0xC08A, 0xC08B, 0xC08C, 0xC08D, 0xC08E, 0xC08F,
+            0xC080, 0xC081, 0xC082, 0xC083, 0xC084, 0xC085, 0xC086, 0xC087,
+            0xC088, 0xC089, 0xC08A, 0xC08B, 0xC08C, 0xC08D, 0xC08E, 0xC08F,
         ];
 
         private const ushort LANG_A3 = 0b00001000;
@@ -117,7 +117,7 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitchAddress.RDHIRES: return ((byte)(machineState.State[SoftSwitch.HiRes] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDDHIRES: return ((byte)(machineState.State[SoftSwitch.DoubleHiRes] ? 0x80 : 0x00), false);
 
-                case SoftSwitchAddress.RDCXROM: return ((byte)(machineState.State[SoftSwitch.SlotRomEnabled] ? 0x00 : 0x80), false);
+                case SoftSwitchAddress.RDCXROM: return ((byte)(machineState.State[SoftSwitch.InternalRomEnabled] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDC3ROM: return ((byte)(machineState.State[SoftSwitch.Slot3RomEnabled] ? 0x80 : 0x00), false);
             }
 
@@ -150,8 +150,8 @@ namespace InnoWerks.Emulators.Apple
                 //
                 // I/O BANKING
                 //
-                case SoftSwitchAddress.SETSLOTCXROM: return machineState.HandleWriteStateToggle(SoftSwitch.SlotRomEnabled, true);
-                case SoftSwitchAddress.SETINTCXROM: return machineState.HandleWriteStateToggle(SoftSwitch.SlotRomEnabled, false);
+                case SoftSwitchAddress.SETSLOTCXROM: return machineState.HandleWriteStateToggle(SoftSwitch.InternalRomEnabled, false);
+                case SoftSwitchAddress.SETINTCXROM: return machineState.HandleWriteStateToggle(SoftSwitch.InternalRomEnabled, true);
                 case SoftSwitchAddress.SETINTC3ROM: return machineState.HandleWriteStateToggle(SoftSwitch.Slot3RomEnabled, false);
                 case SoftSwitchAddress.SETSLOTC3ROM: return machineState.HandleWriteStateToggle(SoftSwitch.Slot3RomEnabled, true);
             }
@@ -170,6 +170,7 @@ namespace InnoWerks.Emulators.Apple
         {
             // bank 2 is the primary bank
             machineState.State[SoftSwitch.LcBank1] = false;
+            machineState.State[SoftSwitch.InternalRomEnabled] = true;
         }
 
         private bool HandleReadC08x(ushort address)

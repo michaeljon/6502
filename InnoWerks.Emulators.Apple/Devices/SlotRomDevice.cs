@@ -115,9 +115,11 @@ namespace InnoWerks.Emulators.Apple
 
         public string Name { get; }
 
-        public abstract bool HandlesRead(ushort address);
+        public virtual bool HandlesRead(ushort address)
+            => address >= IoBaseAddressLo && address <= IoBaseAddressHi;
 
-        public abstract bool HandlesWrite(ushort address);
+        public virtual bool HandlesWrite(ushort address)
+            => address >= IoBaseAddressLo && address <= IoBaseAddressHi;
 
         public abstract (byte value, bool remapNeeded) Read(ushort address);
 

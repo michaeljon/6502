@@ -49,7 +49,7 @@ namespace InnoWerks.Emulators.Apple
         NotVerticalBlank,
 
         // ROM & slot control
-        SlotRomEnabled,
+        InternalRomEnabled,
         Slot3RomEnabled,
         IntC8RomEnabled,
 

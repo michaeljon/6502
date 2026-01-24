@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Transactions;
 using InnoWerks.Processors;
 using InnoWerks.Simulators;
 
@@ -102,7 +103,7 @@ namespace InnoWerks.Emulators.Apple
             {
                 return memoryBlocks.Read(address);
             }
-            else if (address < 0xC08F)
+            else if (address < 0xC090)
             {
                 foreach (var softSwitchDevice in softSwitchDevices)
                 {
@@ -124,21 +125,9 @@ namespace InnoWerks.Emulators.Apple
             }
             else if (address < 0xC0FF)
             {
-                machineState.CurrentSlot = ((address >> 4) & 7) - 8;
+                var slot = ((address >> 4) & 7) - 8;
 
-                return DoSlotRead(machineState.CurrentSlot, address);
-            }
-            else if (address < 0xC800)
-            {
-                //
-                // this should just fall through to the underlying memory map
-                //
-                if (machineState.State[SoftSwitch.SlotRomEnabled] == true)
-                {
-                    machineState.CurrentSlot = (address >> 8) & 7;
-
-                    return DoSlotRead(machineState.CurrentSlot, address);
-                }
+                return DoSlotRead(slot, address);
             }
 
             return memoryBlocks.Read(address);
@@ -154,7 +143,7 @@ namespace InnoWerks.Emulators.Apple
             {
                 memoryBlocks.Write(address, value);
             }
-            else if (address < 0xC08F)
+            else if (address < 0xC090)
             {
                 CheckClearKeystrobe(address);
 
@@ -168,21 +157,9 @@ namespace InnoWerks.Emulators.Apple
             }
             else if (address < 0xC0FF)
             {
-                machineState.CurrentSlot = ((address >> 4) & 7) - 8;
+                var slot = ((address >> 4) & 7) - 8;
 
-                DoSlotWrite(machineState.CurrentSlot, address, value);
-            }
-            else if (address < 0xC800)
-            {
-                //
-                // this should just fall through to the underlying memory map
-                //
-                if (machineState.State[SoftSwitch.SlotRomEnabled] == true)
-                {
-                    machineState.CurrentSlot = (address >> 8) & 7;
-
-                    DoSlotWrite(machineState.CurrentSlot, address, value);
-                }
+                DoSlotWrite(slot, address, value);
             }
             else
             {
@@ -275,43 +252,19 @@ namespace InnoWerks.Emulators.Apple
 
         private void HandleC3xxAndCfff(ushort address)
         {
-            //
-            // apple iie technical ref ch 6 page 133-134 talks about
-            // the peripheral listening to $CFFF and that it needs to
-            // write its slot # to $07F8 before its expansion rom
-            // is enabled
-            //
-            // that means that the test and reset above (and probably
-            // below in Write) are likely wrong wrong wrong
-            //
-
-            /*
-            if (address >> 8 != 0xC3 && address != 0xCFFF)
-            {
-                return;
-            }
-
-            if (machineState.CurrentSlot != -1 && address == 0xCFFF)
-            {
-                Debugger.Break();
-            }
-            */
-
             bool remapNeeded = false;
 
-            // handle the SoftSwitch.IntC8RomEnabled state
             if (machineState.State[SoftSwitch.Slot3RomEnabled] == false && address >> 8 == 0xC3)
             {
-                if (machineState.State[SoftSwitch.IntC8RomEnabled] == false)
-                {
-                    machineState.State[SoftSwitch.IntC8RomEnabled] = true;
-                    remapNeeded = true;
-                }
+                // Debugger.Break();
+                machineState.State[SoftSwitch.IntC8RomEnabled] = false;
+                remapNeeded = true;
             }
 
-            if (machineState.State[SoftSwitch.Slot3RomEnabled] == true && address == 0xCFFF)
+            if (address == 0xCFFF)
             {
-                machineState.State[SoftSwitch.IntC8RomEnabled] = false;
+                // Debugger.Break();
+                machineState.State[SoftSwitch.IntC8RomEnabled] = true;
                 remapNeeded = true;
             }
 

@@ -47,6 +47,8 @@ namespace Emu6502
 
             var dos33 = File.ReadAllBytes("disks/dos33.dsk");
 
+            var audit = File.ReadAllBytes("tests/audit.o");
+
             var config = new AppleConfiguration(AppleModel.AppleIIe)
             {
                 CpuClass = CpuClass.WDC65C02,
@@ -156,6 +158,7 @@ namespace Emu6502
             };
 
             bus.LoadProgramToRom(mainRom);
+            bus.LoadProgramToRam(audit, 0x6000);
 
             cpu.Reset();
 
@@ -169,6 +172,11 @@ namespace Emu6502
 
                 while (bus.CycleCount < target)
                 {
+                    if (cpu.Registers.ProgramCounter == 0x605d)
+                    {
+                        options.SingleStep = true;
+                    }
+
                     if (options.SingleStep == true)
                     {
                         var (opcode, decode) = cpu.PeekInstruction();

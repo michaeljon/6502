@@ -29,12 +29,6 @@ namespace InnoWerks.Emulators.Apple
             drives[1] = new DiskIIDrive();
         }
 
-        public override bool HandlesRead(ushort address) =>
-            (address & 0xFFF0) == 0xC0E0 || (address >> 8) == 0xC6;
-
-        public override bool HandlesWrite(ushort address) =>
-            (address & 0xFFF0) == 0xC0E0 || (address >> 8) == 0xC6;
-
         public override (byte value, bool remapNeeded) Read(ushort address)
         {
             SimDebugger.Info($"Read DiskII({address:X4})\n");
@@ -53,7 +47,7 @@ namespace InnoWerks.Emulators.Apple
                     break;
             }
 
-            return (0x00, false);
+            return (machineState.FloatingValue, false);
         }
 
         public override bool Write(ushort address, byte value)

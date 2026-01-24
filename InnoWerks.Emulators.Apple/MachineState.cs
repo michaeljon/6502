@@ -76,6 +76,10 @@ namespace InnoWerks.Emulators.Apple
             }
         }
 
+#pragma warning disable CA5394 // Do not use insecure randomness
+        public byte FloatingValue => (byte)(rng.Next() & 0xFF);
+#pragma warning restore CA5394 // Do not use insecure randomness
+
         public (byte value, bool remapNeeded) HandleReadStateToggle(SoftSwitch softSwitch, bool toState, bool floating = false)
         {
             byte returnValue = 0x00;
