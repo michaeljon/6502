@@ -294,25 +294,34 @@ namespace InnoWerks.Emulators.Apple
                     activeRead[0xC3] = intCxRom[0x03];
                 }
 
-                // if (machineState.State[SoftSwitch.IntC8RomEnabled] == true)
-                // {
-                //     // point c8 at internal rom
-                //     for (var loop = 0xC8; loop < 0xD0; loop++)
-                //     {
-                //         activeRead[loop] = intCxRom[loop - 0xC0];
-                //     }
-                // }
-                // else
-                // {
-                //     // hook up the active slot's rom to c8
-                //     if (machineState.CurrentSlot != -1)
-                //     {
-                //         for (var loop = 0xC8; loop < 0xD0; loop++)
-                //         {
-                //             InjectRom(hiSlotRom[machineState.CurrentSlot], 0xC8, 0xD0);
-                //         }
-                //     }
-                // }
+
+                if (machineState.State[SoftSwitch.IntC8RomEnabled] == true)
+                {
+                    //
+                    // point c8 at internal rom
+                    //
+                    for (var loop = 0xC8; loop < 0xD0; loop++)
+                    {
+                        activeRead[loop] = intCxRom[loop - 0xC0];
+                    }
+                }
+                else
+                {
+                    //
+                    // hook up the active slot's rom to c8
+                    //
+                    if (machineState.CurrentSlot != -1)
+                    {
+                        InjectRom(hiSlotRom[machineState.CurrentSlot], 0xC8, 0xD0);
+                    }
+                    else
+                    {
+                        for (var loop = 0xC8; loop < 0xD0; loop++)
+                        {
+                            activeRead[loop] = null;
+                        }
+                    }
+                }
             }
 
             activeRead[0xC0] = MemoryPage.FFs;

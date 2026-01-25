@@ -172,7 +172,7 @@ namespace Emu6502
 
                 while (bus.CycleCount < target)
                 {
-                    if (cpu.Registers.ProgramCounter == 0x605d)
+                    if (cpu.Registers.ProgramCounter == 0x6ced)
                     {
                         options.SingleStep = true;
                     }
@@ -215,22 +215,25 @@ namespace Emu6502
         // todo: use apple iie ref table 2-3 to construct full mapping
         static byte MapToAppleKey(ConsoleKeyInfo key)
         {
-            if (key.Key == ConsoleKey.Enter)
-                return 0x8D;
-
             if (key.Key == ConsoleKey.Backspace)
-                return 0x88;
-
-            if (key.Key == ConsoleKey.Escape)
-                return 0x9B;
+                return 0x08;
 
             if (key.Key == ConsoleKey.LeftArrow)
                 return 0x08;
 
-            char c = char.ToUpperInvariant(key.KeyChar);
+            if (key.Key == ConsoleKey.RightArrow)
+                return 0x15;
 
-            if (c >= 0x20 && c <= 0x7E)
-                return (byte)c;
+            if (key.Key == ConsoleKey.UpArrow)
+                return 0x0B;
+
+            if (key.Key == ConsoleKey.DownArrow)
+                return 0x0A;
+
+            // char c = char.ToUpperInvariant(key.KeyChar);
+
+            // if (c >= 0x20 && c <= 0x7E)
+            //     return (byte)c;
 
             return (byte)key.KeyChar;
         }
