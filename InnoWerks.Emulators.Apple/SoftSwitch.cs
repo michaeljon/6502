@@ -46,6 +46,8 @@ namespace InnoWerks.Emulators.Apple
         EightyColumnMode,
         AltCharSet,
 
+        NotVerticalBlank,
+
         // ROM & slot control
         InternalRomEnabled,
         Slot3RomEnabled,

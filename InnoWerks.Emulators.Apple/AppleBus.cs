@@ -254,38 +254,29 @@ namespace InnoWerks.Emulators.Apple
         {
             bool remapNeeded = false;
 
-            var hi = (byte)(address >> 8);
-            var slot = (byte)(hi & 0x0F);
+            var page = memoryBlocks.GetPage(address);
 
-            //
-            // addresses that look like $CsXX where slot
-            if ((hi < 0xC0 || hi > 0xC7) && address != 0xCFFF)
+            if (page == 0xC3 && machineState.State[SoftSwitch.Slot3RomEnabled] == false)
             {
-                return;
-            }
-
-            if (machineState.State[SoftSwitch.Slot3RomEnabled] == false && hi == 0xC3)
-            {
-                // Debugger.Break();
                 machineState.State[SoftSwitch.IntC8RomEnabled] = true;
                 remapNeeded = true;
             }
 
             if (address == 0xCFFF)
             {
-                // Debugger.Break();
                 machineState.State[SoftSwitch.IntC8RomEnabled] = false;
                 remapNeeded = true;
-                machineState.CurrentSlot = -1;
-            }
-
-            if (slot < 8)
-            {
-                machineState.CurrentSlot = slot;
             }
 
             if (remapNeeded)
             {
+                var slot = (page == 0xC0) ? ((address - 0xC080) >> 4) : (page - 0xC0);
+
+                if (slot < 8)
+                {
+                    machineState.CurrentSlot = slot;
+                }
+
                 memoryBlocks.Remap();
             }
         }

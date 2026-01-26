@@ -49,33 +49,6 @@ namespace InnoWerks.Emulators.Apple
         public bool LcActive =>
             State[SoftSwitch.LcReadEnabled] || State[SoftSwitch.LcWriteEnabled];
 
-        // todo: get rid of this, it's not helping
-        public AuxReadAuxWriteBitmaskType AuxReadAuxWriteBitmask
-        {
-            get
-            {
-                if (State[SoftSwitch.AuxRead] == false && State[SoftSwitch.AuxWrite] == false)
-                {
-                    return AuxReadAuxWriteBitmaskType.NotReadNotWrite;
-                }
-                if (State[SoftSwitch.AuxRead] == false && State[SoftSwitch.AuxWrite] == true)
-                {
-                    return AuxReadAuxWriteBitmaskType.NotReadOkWrite;
-                }
-                if (State[SoftSwitch.AuxRead] == true && State[SoftSwitch.AuxWrite] == false)
-                {
-                    return AuxReadAuxWriteBitmaskType.OkReadNotWrite;
-                }
-                if (State[SoftSwitch.AuxRead] == true && State[SoftSwitch.AuxWrite] == true)
-                {
-                    return AuxReadAuxWriteBitmaskType.OkReadOkWrite;
-                }
-
-                // this is really a bad case, the compiler can't tell we are unreachable
-                return AuxReadAuxWriteBitmaskType.Undefined;
-            }
-        }
-
 #pragma warning disable CA5394 // Do not use insecure randomness
         public byte FloatingValue => (byte)(rng.Next() & 0xFF);
 #pragma warning restore CA5394 // Do not use insecure randomness

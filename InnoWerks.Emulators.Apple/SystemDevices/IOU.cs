@@ -201,18 +201,18 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitchAddress.RDPAGE2: return ((byte)(machineState.State[SoftSwitch.Page2] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDHIRES: return ((byte)(machineState.State[SoftSwitch.HiRes] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDALTCHR:
-                    if (InVerticalBlank() == true)
-                    {
-                        return (0x00, false);
-                    }
+                    // if (InVerticalBlank() == true)
+                    // {
+                    //     return (0x00, false);
+                    // }
 
                     return ((byte)(machineState.State[SoftSwitch.AltCharSet] ? 0x80 : 0x00), false);
 
                 case SoftSwitchAddress.RD80COL:
-                    if (InVerticalBlank() == true)
-                    {
-                        return (0x00, false);
-                    }
+                    // if (InVerticalBlank() == true)
+                    // {
+                    //     return (0x00, false);
+                    // }
 
                     return ((byte)(machineState.State[SoftSwitch.EightyColumnMode] ? 0x80 : 0x00), false);
 
@@ -253,8 +253,7 @@ namespace InnoWerks.Emulators.Apple
                 //
                 // VBL
                 //
-                case SoftSwitchAddress.RDVBLBAR:
-                    return ((byte)(InVerticalBlank() ? 0x00 : 0x80), false);
+                case SoftSwitchAddress.RDVBLBAR: return ((byte)(machineState.State[SoftSwitch.NotVerticalBlank] ? 0x80 : 0x00), false);
 
                 //
                 // CASSETTE

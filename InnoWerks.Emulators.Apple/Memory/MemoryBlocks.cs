@@ -12,9 +12,9 @@ namespace InnoWerks.Emulators.Apple
     {
         private readonly MachineState machineState;
 
-        private byte GetPage(ushort address) => (byte)((address & 0xFF00) >> 8);
+        public byte GetPage(ushort address) => (byte)((address & 0xFF00) >> 8);
 
-        private byte GetOffset(ushort address) => (byte)(address & 0x00FF);
+        public byte GetOffset(ushort address) => (byte)(address & 0x00FF);
 
         // 48k $00-$C0
         private readonly MemoryPage[] mainMemory;
