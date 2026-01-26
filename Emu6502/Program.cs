@@ -65,8 +65,8 @@ namespace Emu6502
             var iou = new IOU(memoryBlocks, machineState, bus);
             var mmu = new MMU(machineState, bus);
 
-            // var disk = new DiskIISlotDevice(bus, machineState, diskIIRom);
-            // DiskIINibble.LoadDisk(disk.GetDrive(1), dos33);
+            var disk = new DiskIISlotDevice(bus, machineState, diskIIRom);
+            DiskIINibble.LoadDisk(disk.GetDrive(1), dos33);
 
             var cpu = new Cpu65C02(
                 bus,
@@ -168,7 +168,7 @@ namespace Emu6502
             while (keepRunning)
             {
                 // Run roughly one frame worth of cycles
-                ulong target = bus.CycleCount + 17030;
+                ulong target = bus.CycleCount + VideoTiming.FrameCycles;
 
                 while (bus.CycleCount < target)
                 {

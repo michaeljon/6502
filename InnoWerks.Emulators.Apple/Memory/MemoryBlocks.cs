@@ -294,7 +294,6 @@ namespace InnoWerks.Emulators.Apple
                     activeRead[0xC3] = intCxRom[0x03];
                 }
 
-
                 if (machineState.State[SoftSwitch.IntC8RomEnabled] == true)
                 {
                     //
@@ -457,10 +456,6 @@ namespace InnoWerks.Emulators.Apple
 
             if (activeRead[page] != null)
             {
-                if (address == 0xC600)
-                {
-                    Debugger.Break();
-                }
                 return activeRead[page].Block[offset];
             }
 
@@ -482,6 +477,22 @@ namespace InnoWerks.Emulators.Apple
         {
             ArgumentNullException.ThrowIfNull(objectCode);
 
+            if (objectCode.Length == 32 * 1024)
+            {
+                Load32kRom(objectCode);
+            }
+            else if (objectCode.Length == 16 * 1024)
+            {
+                Load16kRom(objectCode);
+            }
+            else
+            {
+                throw new NotImplementedException("IIe ROM must be 16k or 32k");
+            }
+        }
+
+        private void Load32kRom(byte[] objectCode)
+        {
             if (objectCode.Length != 32 * 1024)
             {
                 throw new NotImplementedException("IIe ROM must be 32k");
@@ -503,6 +514,32 @@ namespace InnoWerks.Emulators.Apple
             {
                 // load the remaining 8k from the 16k block into hi rom
                 Array.Copy(objectCode, (24 * 1024) + (page * 0x100), intEFRom[page].Block, 0, 0x100);
+            }
+        }
+
+        private void Load16kRom(byte[] objectCode)
+        {
+            if (objectCode.Length != 16 * 1024)
+            {
+                throw new NotImplementedException("IIe ROM must be 16k");
+            }
+
+            for (var page = 0; page < 4 * 1024 / MemoryPage.PageSize; page++)
+            {
+                // load the first 4k from the 16k block at the end into cx rom
+                Array.Copy(objectCode, (page * 0x100), intCxRom[page].Block, 0, 0x100);
+            }
+
+            for (var page = 0; page < 4 * 1024 / MemoryPage.PageSize; page++)
+            {
+                // load the first 4k from the 16k block at the end into lo rom
+                Array.Copy(objectCode, (4 * 1024) + (page * 0x100), intDxRom[page].Block, 0, 0x100);
+            }
+
+            for (var page = 0; page < 8 * 1024 / MemoryPage.PageSize; page++)
+            {
+                // load the remaining 8k from the 16k block into hi rom
+                Array.Copy(objectCode, (8 * 1024) + (page * 0x100), intEFRom[page].Block, 0, 0x100);
             }
         }
 

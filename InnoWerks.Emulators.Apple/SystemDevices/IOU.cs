@@ -166,7 +166,7 @@ namespace InnoWerks.Emulators.Apple
         {
             if (address != SoftSwitchAddress.KBD && address != SoftSwitchAddress.KBDSTRB && address != SoftSwitchAddress.SPKR && address != SoftSwitchAddress.RD80COL)
             {
-                // SimDebugger.Info($"Read IOU({address:X4}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
+                SimDebugger.Info($"Read IOU({address:X4}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
             }
 
             switch (address)
@@ -201,18 +201,18 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitchAddress.RDPAGE2: return ((byte)(machineState.State[SoftSwitch.Page2] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDHIRES: return ((byte)(machineState.State[SoftSwitch.HiRes] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDALTCHR:
-                    // if (machineState.State[SoftSwitch.NotVerticalBlank] == false)
-                    // {
-                    //     return (0x00, false);
-                    // }
+                    if (InVerticalBlank() == true)
+                    {
+                        return (0x00, false);
+                    }
 
                     return ((byte)(machineState.State[SoftSwitch.AltCharSet] ? 0x80 : 0x00), false);
 
                 case SoftSwitchAddress.RD80COL:
-                    // if (machineState.State[SoftSwitch.NotVerticalBlank] == false)
-                    // {
-                    //     return (0x00, false);
-                    // }
+                    if (InVerticalBlank() == true)
+                    {
+                        return (0x00, false);
+                    }
 
                     return ((byte)(machineState.State[SoftSwitch.EightyColumnMode] ? 0x80 : 0x00), false);
 
@@ -253,7 +253,8 @@ namespace InnoWerks.Emulators.Apple
                 //
                 // VBL
                 //
-                case SoftSwitchAddress.RDVBLBAR: return ((byte)(machineState.State[SoftSwitch.NotVerticalBlank] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.RDVBLBAR:
+                    return ((byte)(InVerticalBlank() ? 0x00 : 0x80), false);
 
                 //
                 // CASSETTE
@@ -301,7 +302,7 @@ namespace InnoWerks.Emulators.Apple
         {
             if (address != SoftSwitchAddress.KBD && address != SoftSwitchAddress.KBDSTRB && address != SoftSwitchAddress.SPKR)
             {
-                // SimDebugger.Info($"Write IOU({address:X4}, {value:X2}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
+                SimDebugger.Info($"Write IOU({address:X4}, {value:X2}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
             }
 
             switch (address)
@@ -393,6 +394,15 @@ namespace InnoWerks.Emulators.Apple
             {
                 Render80Column();
             }
+        }
+
+        private bool InVerticalBlank()
+        {
+            var frameCycle = bus.CycleCount % VideoTiming.FrameCycles;
+
+            SimDebugger.Info($"IOU VBLBAR {frameCycle >= VideoTiming.VblStart}\n");
+
+            return frameCycle >= VideoTiming.VblStart;
         }
 
         private void Render40Column()
