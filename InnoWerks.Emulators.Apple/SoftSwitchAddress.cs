@@ -108,6 +108,11 @@ namespace InnoWerks.Emulators.Apple
 
         public static string LookupAddress(ushort address)
         {
+            if (address >= 0xC080 && address <= 0xC08F)
+            {
+                return "C08x range";
+            }
+
             return Lookup.TryGetValue(address, out string value) ? value : "Unassigned";
         }
 

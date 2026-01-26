@@ -378,6 +378,9 @@ namespace InnoWerks.Emulators.Apple
             machineState.State[SoftSwitch.TextMode] = true;
             machineState.State[SoftSwitch.IOUDisabled] = true;
             machineState.State[SoftSwitch.IntC8RomEnabled] = true;
+
+            // OpenApple();
+            // SolidApple();
         }
 
         public void Render()

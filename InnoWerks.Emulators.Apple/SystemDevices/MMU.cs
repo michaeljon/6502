@@ -1,3 +1,5 @@
+// #define DEBUG_C08X_HANDLER
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -98,7 +100,7 @@ namespace InnoWerks.Emulators.Apple
 
         public (byte value, bool remapNeeded) Read(ushort address)
         {
-            SimDebugger.Info($"Read MMU({address:X4}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
+            // SimDebugger.Info($"Read MMU({address:X4}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
 
             switch (address)
             {
@@ -131,7 +133,7 @@ namespace InnoWerks.Emulators.Apple
 
         public bool Write(ushort address, byte value)
         {
-            SimDebugger.Info($"Write MMU({address:X4}, {value:X2}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
+            // SimDebugger.Info($"Write MMU({address:X4}, {value:X2}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
 
             switch (address)
             {
@@ -175,6 +177,15 @@ namespace InnoWerks.Emulators.Apple
 
         private bool HandleReadC08x(ushort address)
         {
+#if DEBUG_C08X_HANDLER
+            var entryState = "";
+
+            entryState += machineState.State[SoftSwitch.LcBank1] ? "b=1," : "b=2,";
+            entryState += machineState.State[SoftSwitch.LcReadEnabled] ? "r=1," : "r=0,";
+            entryState += machineState.State[SoftSwitch.LcWriteEnabled] ? "w=1," : "w=0,";
+            entryState += $"p={preWrite}";
+#endif
+
             var lcBank1 = machineState.State[SoftSwitch.LcBank1];
             var lcReadEnabled = machineState.State[SoftSwitch.LcReadEnabled];
             var lcWriteEnabled = machineState.State[SoftSwitch.LcWriteEnabled];
@@ -200,17 +211,59 @@ namespace InnoWerks.Emulators.Apple
                 machineState.State[SoftSwitch.LcWriteEnabled] = false;
             }
 
+#if DEBUG_C08X_HANDLER
+            var exitState = "";
+
+            exitState += machineState.State[SoftSwitch.LcBank1] ? "b=1," : "b=2,";
+            exitState += machineState.State[SoftSwitch.LcReadEnabled] ? "r=1," : "r=0,";
+            exitState += machineState.State[SoftSwitch.LcWriteEnabled] ? "w=1," : "w=0,";
+            exitState += $"p={preWrite}";
+
+            SimDebugger.Info($"Read MMU({address:X4}) entry: {entryState} exit: {exitState}\n");
+#endif
+
             return lcBank1 != machineState.State[SoftSwitch.LcBank1] ||
                    lcReadEnabled != machineState.State[SoftSwitch.LcReadEnabled] ||
                    lcWriteEnabled != machineState.State[SoftSwitch.LcWriteEnabled];
         }
-
         private bool HandleWriteC08x(ushort address, byte value)
         {
-            // Writes to C08x do NOT affect LC state on real hardware
+#if DEBUG_C08X_HANDLER
+            var entryState = "";
+
+            entryState += machineState.State[SoftSwitch.LcBank1] ? "b=1," : "b=2,";
+            entryState += machineState.State[SoftSwitch.LcReadEnabled] ? "r=1," : "r=0,";
+            entryState += machineState.State[SoftSwitch.LcWriteEnabled] ? "w=1," : "w=0,";
+            entryState += $"p={preWrite}";
+#endif
+
             preWrite = 0;
 
-            return false;
+            var lcBank1 = machineState.State[SoftSwitch.LcBank1];
+            var lcReadEnabled = machineState.State[SoftSwitch.LcReadEnabled];
+            var lcWriteEnabled = machineState.State[SoftSwitch.LcWriteEnabled];
+
+            // Bank select
+            machineState.State[SoftSwitch.LcBank1] = (address & LANG_A3) != 0;
+
+            // Read enable
+            int low = address & LANG_A0A1;
+            machineState.State[SoftSwitch.LcReadEnabled] = low == 0 || low == 3;
+
+#if DEBUG_C08X_HANDLER
+            var exitState = "";
+
+            exitState += machineState.State[SoftSwitch.LcBank1] ? "b=1," : "b=2,";
+            exitState += machineState.State[SoftSwitch.LcReadEnabled] ? "r=1," : "r=0,";
+            exitState += machineState.State[SoftSwitch.LcWriteEnabled] ? "w=1," : "w=0,";
+            exitState += $"p={preWrite}";
+
+            SimDebugger.Info($"Write MMU({address:X4}) entry: {entryState} exit: {exitState}\n");
+#endif
+
+            return lcBank1 != machineState.State[SoftSwitch.LcBank1] ||
+                   lcReadEnabled != machineState.State[SoftSwitch.LcReadEnabled] ||
+                   lcWriteEnabled != machineState.State[SoftSwitch.LcWriteEnabled];
         }
     }
 }

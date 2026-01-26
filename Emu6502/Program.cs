@@ -64,9 +64,9 @@ namespace Emu6502
             var bus = new AppleBus(config, memoryBlocks, machineState);
             var iou = new IOU(memoryBlocks, machineState, bus);
             var mmu = new MMU(machineState, bus);
-            var disk = new DiskIISlotDevice(bus, machineState, diskIIRom);
 
-            DiskIINibble.LoadDisk(disk.GetDrive(1), dos33);
+            // var disk = new DiskIISlotDevice(bus, machineState, diskIIRom);
+            // DiskIINibble.LoadDisk(disk.GetDrive(1), dos33);
 
             var cpu = new Cpu65C02(
                 bus,
@@ -172,10 +172,10 @@ namespace Emu6502
 
                 while (bus.CycleCount < target)
                 {
-                    if (cpu.Registers.ProgramCounter == 0x6ced)
-                    {
-                        options.SingleStep = true;
-                    }
+                    // if (cpu.Registers.ProgramCounter == 0x6ced)
+                    // {
+                    //     options.SingleStep = true;
+                    // }
 
                     if (options.SingleStep == true)
                     {
