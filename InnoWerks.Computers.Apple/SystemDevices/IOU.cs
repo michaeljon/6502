@@ -1,0 +1,521 @@
+// #define DEBUG_READ
+// #define DEBUG_WRITE
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Channels;
+using InnoWerks.Processors;
+using InnoWerks.Simulators;
+
+namespace InnoWerks.Computers.Apple
+{
+    public class IOU : IDevice
+    {
+        private readonly IBus bus;
+
+        private readonly MemoryBlocks memoryBlocks;
+
+        private readonly MachineState machineState;
+
+        private readonly List<ushort> handlesRead = [
+            //
+            // DISPLAY
+            //
+            SoftSwitchAddress.TXTCLR,
+            SoftSwitchAddress.TXTSET,
+            SoftSwitchAddress.MIXCLR,
+            SoftSwitchAddress.MIXSET,
+            SoftSwitchAddress.TXTPAGE1,
+            SoftSwitchAddress.TXTPAGE2,
+            SoftSwitchAddress.LORES,
+            SoftSwitchAddress.HIRES,
+            SoftSwitchAddress.DHIRESON,
+            SoftSwitchAddress.DHIRESOFF,
+
+            SoftSwitchAddress.RDTEXT,
+            SoftSwitchAddress.RDMIXED,
+            SoftSwitchAddress.RDPAGE2,
+            SoftSwitchAddress.RDHIRES,
+            SoftSwitchAddress.RDALTCHR,
+            SoftSwitchAddress.RD80COL,
+            SoftSwitchAddress.RDDHIRES,
+
+            //
+            // KEYBOARD
+            //
+            SoftSwitchAddress.KBD,
+            SoftSwitchAddress.KBDSTRB,
+            SoftSwitchAddress.OPENAPPLE,
+            SoftSwitchAddress.SOLIDAPPLE,
+            SoftSwitchAddress.SHIFT,
+
+            //
+            // ANNUNCIATORS
+            //
+            SoftSwitchAddress.CLRAN0,
+            SoftSwitchAddress.SETAN0,
+            SoftSwitchAddress.CLRAN1,
+            SoftSwitchAddress.SETAN1,
+            SoftSwitchAddress.CLRAN2,
+            SoftSwitchAddress.SETAN2,
+            // SoftSwitchAddress.CLRAN3,
+            // SoftSwitchAddress.SETAN3,
+
+            //
+            // VBL
+            //
+            SoftSwitchAddress.RDVBLBAR,
+
+            //
+            // CASSETTE
+            //
+            SoftSwitchAddress.TAPEIN,
+            SoftSwitchAddress.TAPEOUT,
+
+            //
+            // SPEAKER
+            //
+            SoftSwitchAddress.SPKR,
+
+            //
+            // PADDLES AND BUTTONS
+            //
+            SoftSwitchAddress.PADDLE0,
+            SoftSwitchAddress.PADDLE1,
+            SoftSwitchAddress.PADDLE2,
+            SoftSwitchAddress.PADDLE3,
+            SoftSwitchAddress.PTRIG,
+            // SoftSwitchAddress.BUTTON0,
+            // SoftSwitchAddress.BUTTON1,
+            // SoftSwitchAddress.BUTTON2,
+            SoftSwitchAddress.STROBE,
+
+            //
+            // IOU
+            //
+            SoftSwitchAddress.RDIOUDIS
+        ];
+
+        private readonly List<ushort> handlesWrite =
+        [
+            //
+            // DISPLAY
+            //
+            SoftSwitchAddress.TXTCLR,
+            SoftSwitchAddress.TXTSET,
+            SoftSwitchAddress.MIXCLR,
+            SoftSwitchAddress.MIXSET,
+            SoftSwitchAddress.TXTPAGE1,
+            SoftSwitchAddress.TXTPAGE2,
+            SoftSwitchAddress.LORES,
+            SoftSwitchAddress.HIRES,
+            SoftSwitchAddress.DHIRESON,
+            SoftSwitchAddress.DHIRESOFF,
+
+            SoftSwitchAddress.CLR80COL,
+            SoftSwitchAddress.SET80COL,
+            SoftSwitchAddress.CLRALTCHAR,
+            SoftSwitchAddress.SETALTCHAR,
+
+            //
+            // KEYBOARD
+            //
+            SoftSwitchAddress.KBDSTRB,
+
+            //
+            // ANNUNCIATORS
+            //
+            SoftSwitchAddress.CLRAN0,
+            SoftSwitchAddress.SETAN0,
+            SoftSwitchAddress.CLRAN1,
+            SoftSwitchAddress.SETAN1,
+            SoftSwitchAddress.CLRAN2,
+            SoftSwitchAddress.SETAN2,
+            // SoftSwitchAddress.CLRAN3,
+            // SoftSwitchAddress.SETAN3,
+
+            //
+            // IOU
+            //
+            SoftSwitchAddress.IOUDISON,
+            SoftSwitchAddress.IOUDISOFF,
+        ];
+
+        public DevicePriority Priority => DevicePriority.SoftSwitch;
+
+        public int Slot => -1;
+
+        public string Name => $"IOU";
+
+        public IOU(MemoryBlocks memoryBlocks, MachineState machineState, IBus bus)
+        {
+            ArgumentNullException.ThrowIfNull(machineState, nameof(machineState));
+            ArgumentNullException.ThrowIfNull(memoryBlocks, nameof(memoryBlocks));
+            ArgumentNullException.ThrowIfNull(bus, nameof(bus));
+
+            this.machineState = machineState;
+            this.memoryBlocks = memoryBlocks;
+            this.bus = bus;
+
+            bus.AddDevice(this);
+        }
+
+        public bool HandlesRead(ushort address) => handlesRead.Contains(address);
+
+        public bool HandlesWrite(ushort address) => handlesWrite.Contains(address);
+
+        public (byte value, bool remapNeeded) Read(ushort address)
+        {
+#if DEBUG_READ
+            if (address != SoftSwitchAddress.KBD && address != SoftSwitchAddress.KBDSTRB && address != SoftSwitchAddress.SPKR && address != SoftSwitchAddress.RD80COL)
+            {
+                SimDebugger.Info($"Read IOU({address:X4}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
+            }
+#endif
+
+            switch (address)
+            {
+                //
+                // DISPLAY
+                //
+                case SoftSwitchAddress.TXTCLR: return machineState.HandleReadStateToggle(SoftSwitch.TextMode, false, true);
+                case SoftSwitchAddress.TXTSET: return machineState.HandleReadStateToggle(SoftSwitch.TextMode, true, true);
+                case SoftSwitchAddress.MIXCLR: return machineState.HandleReadStateToggle(SoftSwitch.MixedMode, false, true);
+                case SoftSwitchAddress.MIXSET: return machineState.HandleReadStateToggle(SoftSwitch.MixedMode, true, true);
+                case SoftSwitchAddress.TXTPAGE1: return machineState.HandleReadStateToggle(SoftSwitch.Page2, false, true);
+                case SoftSwitchAddress.TXTPAGE2: return machineState.HandleReadStateToggle(SoftSwitch.Page2, true);
+                case SoftSwitchAddress.LORES: return machineState.HandleReadStateToggle(SoftSwitch.HiRes, false);
+                case SoftSwitchAddress.HIRES: return machineState.HandleReadStateToggle(SoftSwitch.HiRes, true);
+
+                // see CLRAN3
+                case SoftSwitchAddress.DHIRESON:
+                    if (machineState.State[SoftSwitch.IOUDisabled] == true)
+                    {
+                        return machineState.HandleReadStateToggle(SoftSwitch.DoubleHiRes, true);
+                    }
+                    return (0x00, false);
+
+                // see SETAN3
+                case SoftSwitchAddress.DHIRESOFF:
+                    if (machineState.State[SoftSwitch.IOUDisabled] == true)
+                    {
+                        return machineState.HandleReadStateToggle(SoftSwitch.DoubleHiRes, false);
+                    }
+                    return (0x00, false);
+
+                case SoftSwitchAddress.RDTEXT: return ((byte)(machineState.State[SoftSwitch.TextMode] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.RDMIXED: return ((byte)(machineState.State[SoftSwitch.MixedMode] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.RDPAGE2: return ((byte)(machineState.State[SoftSwitch.Page2] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.RDHIRES: return ((byte)(machineState.State[SoftSwitch.HiRes] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.RDALTCHR:
+                    // if (InVerticalBlank() == true)
+                    // {
+                    //     return (0x00, false);
+                    // }
+
+                    return ((byte)(machineState.State[SoftSwitch.AltCharSet] ? 0x80 : 0x00), false);
+
+                case SoftSwitchAddress.RD80COL:
+                    // if (InVerticalBlank() == true)
+                    // {
+                    //     return (0x00, false);
+                    // }
+
+                    return ((byte)(machineState.State[SoftSwitch.EightyColumnMode] ? 0x80 : 0x00), false);
+
+                case SoftSwitchAddress.RDDHIRES: return ((byte)(machineState.State[SoftSwitch.DoubleHiRes] ? 0x80 : 0x00), false);
+
+                //
+                // KEYBOARD
+                //
+
+                // this looks like a keyboard here, because it is
+                // this is also known as CLR80STORE
+                case SoftSwitchAddress.KBD:
+                    return (machineState.KeyStrobe
+                        ? (byte)(machineState.KeyLatch | 0x80)
+                        : machineState.KeyLatch, false);
+
+                case SoftSwitchAddress.KBDSTRB:
+                    machineState.KeyStrobe = false;
+                    return (0x00, false);
+
+                case SoftSwitchAddress.OPENAPPLE: return ((byte)(machineState.State[SoftSwitch.OpenApple] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.SOLIDAPPLE: return ((byte)(machineState.State[SoftSwitch.SolidApple] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.SHIFT: return ((byte)(machineState.State[SoftSwitch.ShiftKey] ? 0x80 : 0x00), false);
+
+                //
+                // ANNUNCIATORS
+                //
+                // handle if IOU == true case
+                case SoftSwitchAddress.CLRAN0: machineState.State[SoftSwitch.Annunciator0] = false; return (0x00, false);
+                case SoftSwitchAddress.SETAN0: machineState.State[SoftSwitch.Annunciator0] = true; return (0x00, false);
+                case SoftSwitchAddress.CLRAN1: machineState.State[SoftSwitch.Annunciator1] = false; return (0x00, false);
+                case SoftSwitchAddress.SETAN1: machineState.State[SoftSwitch.Annunciator1] = true; return (0x00, false);
+                case SoftSwitchAddress.CLRAN2: machineState.State[SoftSwitch.Annunciator2] = false; return (0x00, false);
+                case SoftSwitchAddress.SETAN2: machineState.State[SoftSwitch.Annunciator2] = true; return (0x00, false);
+                // case SoftSwitchAddress.CLRAN3: machineState.State[SoftSwitch.Annunciator3] = false; return (0x00, false);
+                // case SoftSwitchAddress.SETAN3: machineState.State[SoftSwitch.Annunciator3] = true; return (0x00, false);
+
+                //
+                // VBL
+                //
+                case SoftSwitchAddress.RDVBLBAR:
+                    return (InVerticalBlank(), false);
+
+                //
+                // CASSETTE
+                //
+                case SoftSwitchAddress.TAPEOUT:
+                    machineState.State[SoftSwitch.TapeOut] = !machineState.State[SoftSwitch.TapeOut];
+                    return (0x00, false);
+                case SoftSwitchAddress.TAPEIN: return ((byte)(machineState.State[SoftSwitch.TapeIn] ? 0x80 : 0x00), false);
+
+                //
+                // SPEAKER
+                //
+                case SoftSwitchAddress.SPKR:
+                    machineState.State[SoftSwitch.Speaker] = !machineState.State[SoftSwitch.Speaker];
+                    return (0x00, false);
+
+                //
+                // PADDLES AND BUTTONS
+                //
+                case SoftSwitchAddress.PADDLE0: return ((byte)(machineState.State[SoftSwitch.Paddle0] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.PADDLE1: return ((byte)(machineState.State[SoftSwitch.Paddle1] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.PADDLE2: return ((byte)(machineState.State[SoftSwitch.Paddle2] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.PADDLE3: return ((byte)(machineState.State[SoftSwitch.Paddle3] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.PTRIG: return (0x00, false);
+
+                // case SoftSwitchAddress.BUTTON0: return (byte)(machineState.State[SoftSwitch.Button0] ? 0x80 : 0x00), false);
+                // case SoftSwitchAddress.BUTTON1: return (byte)(machineState.State[SoftSwitch.Button1] ? 0x80 : 0x00), false);
+                // case SoftSwitchAddress.BUTTON2: return (byte)(machineState.State[SoftSwitch.Button2] ? 0x80 : 0x00), false);
+
+                case SoftSwitchAddress.STROBE:
+                    machineState.State[SoftSwitch.GameStrobe] = true;
+                    return (0x00, false);
+
+                //
+                // IOU
+                //
+                case SoftSwitchAddress.RDIOUDIS: return ((byte)(machineState.State[SoftSwitch.IOUDisabled] ? 0x80 : 0x00), false);
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(address), $"Read {address:X4} is not supported in this device");
+            }
+        }
+
+        public bool Write(ushort address, byte value)
+        {
+#if DEBUG_WRITE
+            if (address != SoftSwitchAddress.KBD && address != SoftSwitchAddress.KBDSTRB && address != SoftSwitchAddress.SPKR)
+            {
+                SimDebugger.Info($"Write IOU({address:X4}, {value:X2}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
+            }
+#endif
+
+            switch (address)
+            {
+                //
+                // DISPLAY
+                //
+                case SoftSwitchAddress.TXTCLR: return machineState.HandleWriteStateToggle(SoftSwitch.TextMode, false);
+                case SoftSwitchAddress.TXTSET: return machineState.HandleWriteStateToggle(SoftSwitch.TextMode, true);
+                case SoftSwitchAddress.MIXCLR: return machineState.HandleWriteStateToggle(SoftSwitch.MixedMode, false);
+                case SoftSwitchAddress.MIXSET: return machineState.HandleWriteStateToggle(SoftSwitch.MixedMode, true);
+                case SoftSwitchAddress.TXTPAGE1: return machineState.HandleWriteStateToggle(SoftSwitch.Page2, false);
+                case SoftSwitchAddress.TXTPAGE2: return machineState.HandleWriteStateToggle(SoftSwitch.Page2, true);
+                case SoftSwitchAddress.LORES: return machineState.HandleWriteStateToggle(SoftSwitch.HiRes, false);
+                case SoftSwitchAddress.HIRES: return machineState.HandleWriteStateToggle(SoftSwitch.HiRes, true);
+
+                case SoftSwitchAddress.DHIRESON:
+                    if (machineState.State[SoftSwitch.IOUDisabled] == true)
+                    {
+                        return machineState.HandleWriteStateToggle(SoftSwitch.DoubleHiRes, true);
+                    }
+                    return false;
+                case SoftSwitchAddress.DHIRESOFF:
+                    if (machineState.State[SoftSwitch.IOUDisabled] == true)
+                    {
+                        return machineState.HandleWriteStateToggle(SoftSwitch.DoubleHiRes, false);
+                    }
+                    return false;
+
+                case SoftSwitchAddress.CLR80COL: return machineState.HandleWriteStateToggle(SoftSwitch.EightyColumnMode, false);
+                case SoftSwitchAddress.SET80COL: return machineState.HandleWriteStateToggle(SoftSwitch.EightyColumnMode, true);
+                case SoftSwitchAddress.CLRALTCHAR: machineState.State[SoftSwitch.AltCharSet] = false; return false;
+                case SoftSwitchAddress.SETALTCHAR: machineState.State[SoftSwitch.AltCharSet] = true; return false;
+
+                //
+                // KEYBOARD
+                //
+                case SoftSwitchAddress.KBDSTRB:
+                    machineState.KeyStrobe = false;
+                    machineState.KeyLatch &= 0x7f;  // leave the value, clear the high bit
+                    return false;
+
+                //
+                // ANNUNCIATORS
+                //
+                // handle weirdness with IOU
+                case SoftSwitchAddress.CLRAN0: machineState.State[SoftSwitch.Annunciator0] = false; return false;
+                case SoftSwitchAddress.SETAN0: machineState.State[SoftSwitch.Annunciator0] = true; return false;
+                case SoftSwitchAddress.CLRAN1: machineState.State[SoftSwitch.Annunciator1] = false; return false;
+                case SoftSwitchAddress.SETAN1: machineState.State[SoftSwitch.Annunciator1] = true; return false;
+                case SoftSwitchAddress.CLRAN2: machineState.State[SoftSwitch.Annunciator2] = false; return false;
+                case SoftSwitchAddress.SETAN2: machineState.State[SoftSwitch.Annunciator2] = true; return false;
+                // case SoftSwitchAddress.CLRAN3: machineState.State[SoftSwitch.Annunciator3] = false; break;
+                // case SoftSwitchAddress.SETAN3: machineState.State[SoftSwitch.Annunciator3] = true; break;
+
+                //
+                // IOU
+                //
+                case SoftSwitchAddress.IOUDISON: machineState.State[SoftSwitch.IOUDisabled] = true; return false;
+                case SoftSwitchAddress.IOUDISOFF: machineState.State[SoftSwitch.IOUDisabled] = false; return false;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(address), $"Write {address:X4} is not supported in this device");
+            }
+        }
+
+        public void Tick(int cycles) { /* NO-OP */ }
+
+        public void Reset()
+        {
+            machineState.KeyStrobe = false;
+            machineState.KeyLatch = 0x00;
+
+            machineState.State[SoftSwitch.TextMode] = true;
+            machineState.State[SoftSwitch.IOUDisabled] = true;
+            machineState.State[SoftSwitch.IntC8RomEnabled] = true;
+
+            // OpenApple();
+            // SolidApple();
+        }
+
+        public void Render()
+        {
+            if (machineState.State[SoftSwitch.EightyColumnMode] == false)
+            {
+                Render40Column();
+            }
+            else
+            {
+                Render80Column();
+            }
+        }
+
+        private byte InVerticalBlank()
+        {
+            var frameIndex = bus.CycleCount / VideoTiming.FrameCycles;
+            var frameCycle = (int)(bus.CycleCount % VideoTiming.FrameCycles);
+
+            bool inVbl = frameCycle >= VideoTiming.VblStart;
+
+            SimDebugger.Info($" --> busCycle={bus.CycleCount}, frame#={frameIndex}, frameCycle={frameCycle}, inVbl=={inVbl}\n");
+
+            return inVbl ? (byte)0x00 : (byte)0x80;
+        }
+
+        private void Render40Column()
+        {
+            Span<char> line = stackalloc char[40];
+
+            Console.CursorVisible = false;
+            Console.SetCursorPosition(0, 0);
+
+            for (int row = 0; row < 24; row++)
+            {
+                bool page2 = machineState.State[SoftSwitch.Page2];
+
+                for (int col = 0; col < 40; col++)
+                {
+                    ushort addr = GetTextAddress(row, col, page2);
+                    byte b = memoryBlocks.Read(addr);
+
+                    line[col] = DecodeAppleChar(b);
+                }
+
+                Console.WriteLine(line);
+            }
+        }
+
+        private void Render80Column()
+        {
+            Span<char> line = stackalloc char[80];
+
+            Console.CursorVisible = false;
+            Console.SetCursorPosition(0, 0);
+
+            for (int row = 0; row < 24; row++)
+            {
+                for (int col = 0; col < 40; col++)
+                {
+                    ushort addr = GetTextAddress(row, col, false);
+                    byte b = memoryBlocks.GetAux(addr);
+                    line[2 * col] = DecodeAppleChar(b);
+
+                    b = memoryBlocks.GetMain(addr);
+                    line[(2 * col) + 1] = DecodeAppleChar(b);
+                }
+
+                Console.WriteLine(line);
+            }
+        }
+
+        private static char DecodeAppleChar(byte b)
+        {
+            // Ignore inverse/flash for now
+            b &= 0x7F;
+
+            // Apple II uses ASCII-ish set
+            if (b < 0x20)
+                return ' ';
+
+            return (char)b;
+        }
+
+        private static ushort GetTextAddress(int row, int col, bool page2)
+        {
+            int pageOffset = page2 ? 0x800 : 0x400;
+
+            return (ushort)(
+                pageOffset +
+                textRowBase[row & 0x07] +
+                (row >> 3) * 40 +
+                col
+            );
+        }
+
+        private static readonly int[] textRowBase =
+        [
+            0x000, 0x080, 0x100, 0x180,
+            0x200, 0x280, 0x300, 0x380
+        ];
+
+        /// <summary>
+        /// Injects a key from the host system.
+        /// </summary>
+        public void InjectKey(byte ascii)
+        {
+            machineState.KeyStrobe = true;
+            machineState.KeyLatch = ascii;
+        }
+
+        public void OpenApple()
+        {
+            machineState.State[SoftSwitch.OpenApple] = true;
+        }
+
+        public void SolidApple()
+        {
+            machineState.State[SoftSwitch.SolidApple] = true;
+        }
+
+        public void ShiftKey()
+        {
+            machineState.State[SoftSwitch.ShiftKey] = true;
+        }
+    }
+}
