@@ -1,6 +1,6 @@
 // #define DEBUG_C08X_HANDLER
-#define DEBUG_READ
-#define DEBUG_WRITE
+// #define DEBUG_READ
+// #define DEBUG_WRITE
 
 using System;
 using System.Collections.Generic;

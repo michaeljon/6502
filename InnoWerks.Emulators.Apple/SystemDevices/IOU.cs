@@ -1,3 +1,6 @@
+// #define DEBUG_READ
+// #define DEBUG_WRITE
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -164,10 +167,12 @@ namespace InnoWerks.Emulators.Apple
 
         public (byte value, bool remapNeeded) Read(ushort address)
         {
+#if DEBUG_READ
             if (address != SoftSwitchAddress.KBD && address != SoftSwitchAddress.KBDSTRB && address != SoftSwitchAddress.SPKR && address != SoftSwitchAddress.RD80COL)
             {
                 SimDebugger.Info($"Read IOU({address:X4}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
             }
+#endif
 
             switch (address)
             {
@@ -303,10 +308,12 @@ namespace InnoWerks.Emulators.Apple
 
         public bool Write(ushort address, byte value)
         {
+#if DEBUG_WRITE
             if (address != SoftSwitchAddress.KBD && address != SoftSwitchAddress.KBDSTRB && address != SoftSwitchAddress.SPKR)
             {
                 SimDebugger.Info($"Write IOU({address:X4}, {value:X2}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
             }
+#endif
 
             switch (address)
             {
