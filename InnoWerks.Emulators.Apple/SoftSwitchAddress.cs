@@ -108,12 +108,19 @@ namespace InnoWerks.Emulators.Apple
 
         public static string LookupAddress(ushort address)
         {
-            if (address >= 0xC080 && address <= 0xC08F)
+            return address switch
             {
-                return "C08x range";
-            }
+                0xC080 or 0xC084 => $"READBSR2 {address & 0x000F:b4}",
+                0xC081 or 0xC085 => $"WRITEBSR2 {address & 0x000F:b4}",
+                0xC082 or 0xC086 => $"OFFSBR2 {address & 0x000F:b4}",
+                0xC083 or 0xC087 => $"RDWRBSR2 {address & 0x000F:b4}",
+                0xC088 or 0xC08C => $"READBSR1 {address & 0x000F:b4}",
+                0xC089 or 0xC08D => $"WRITEBSR1 {address & 0x000F:b4}",
+                0xC08A or 0xC08E => $"OFFSBR1 {address & 0x000F:b4}",
+                0xC08B or 0xC08F => $"RDWRBSR1 {address & 0x000F:b4}",
 
-            return Lookup.TryGetValue(address, out string value) ? value : "Unassigned";
+                _ => Lookup.TryGetValue(address, out string value) ? value : "*** UNASSIGNED ***",
+            };
         }
 
         public static readonly Dictionary<ushort, string> Lookup = new()
@@ -144,9 +151,9 @@ namespace InnoWerks.Emulators.Apple
             { SETSLOTC3ROM, "SETSLOTC3ROM" },
             { RDC3ROM, "RDC3ROM" },
 
-            { 0xC00E, "CLRALTCHAR" },
-            { 0xC00F, "SETALTCHAR" },
-            { 0xC01E, "RDALTCHR" },
+            { CLRALTCHAR, "CLRALTCHAR" },
+            { SETALTCHAR, "SETALTCHAR" },
+            { RDALTCHR, "RDALTCHR" },
 
             { CLR80COL, "CLR80COL" },
             { SET80COL, "SET80COL" },

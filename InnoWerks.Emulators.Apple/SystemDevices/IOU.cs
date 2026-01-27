@@ -183,12 +183,15 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitchAddress.LORES: return machineState.HandleReadStateToggle(SoftSwitch.HiRes, false);
                 case SoftSwitchAddress.HIRES: return machineState.HandleReadStateToggle(SoftSwitch.HiRes, true);
 
+                // see CLRAN3
                 case SoftSwitchAddress.DHIRESON:
                     if (machineState.State[SoftSwitch.IOUDisabled] == true)
                     {
                         return machineState.HandleReadStateToggle(SoftSwitch.DoubleHiRes, true);
                     }
                     return (0x00, false);
+
+                // see SETAN3
                 case SoftSwitchAddress.DHIRESOFF:
                     if (machineState.State[SoftSwitch.IOUDisabled] == true)
                     {
@@ -253,7 +256,8 @@ namespace InnoWerks.Emulators.Apple
                 //
                 // VBL
                 //
-                case SoftSwitchAddress.RDVBLBAR: return ((byte)(machineState.State[SoftSwitch.NotVerticalBlank] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.RDVBLBAR:
+                    return (InVerticalBlank(), false);
 
                 //
                 // CASSETTE
@@ -395,13 +399,16 @@ namespace InnoWerks.Emulators.Apple
             }
         }
 
-        private bool InVerticalBlank()
+        private byte InVerticalBlank()
         {
-            var frameCycle = bus.CycleCount % VideoTiming.FrameCycles;
+            var frameIndex = bus.CycleCount / VideoTiming.FrameCycles;
+            var frameCycle = (int)(bus.CycleCount % VideoTiming.FrameCycles);
 
-            SimDebugger.Info($"IOU VBLBAR {frameCycle >= VideoTiming.VblStart}\n");
+            bool inVbl = frameCycle >= VideoTiming.VblStart;
 
-            return frameCycle >= VideoTiming.VblStart;
+            SimDebugger.Info($" --> busCycle={bus.CycleCount}, frame#={frameIndex}, frameCycle={frameCycle}, inVbl=={inVbl}\n");
+
+            return inVbl ? (byte)0x00 : (byte)0x80;
         }
 
         private void Render40Column()

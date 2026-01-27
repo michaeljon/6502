@@ -42,7 +42,7 @@ namespace Emu6502
 
         private static int RunEmulator(CliOptions options)
         {
-            var mainRom = File.ReadAllBytes("roms/apple2e.rom");
+            var mainRom = File.ReadAllBytes("roms/apple2e-16k.rom");
             var diskIIRom = File.ReadAllBytes("roms/DiskII.rom");
 
             var dos33 = File.ReadAllBytes("disks/dos33.dsk");

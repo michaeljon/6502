@@ -1,6 +1,6 @@
 // #define DEBUG_C08X_HANDLER
-// #define DEBUG_READ
-// #define DEBUG_WRITE
+#define DEBUG_READ
+#define DEBUG_WRITE
 
 using System;
 using System.Collections.Generic;
@@ -13,7 +13,7 @@ namespace InnoWerks.Emulators.Apple
 {
     public class MMU : IDevice
     {
-        private int preWrite;
+        private bool preWrite;
 
         private readonly IBus bus;
 
@@ -41,8 +41,9 @@ namespace InnoWerks.Emulators.Apple
             SoftSwitchAddress.RDCXROM,
             SoftSwitchAddress.RDC3ROM,
 
-            0xC080, 0xC081, 0xC082, 0xC083, 0xC084, 0xC085, 0xC086, 0xC087,
-            0xC088, 0xC089, 0xC08A, 0xC08B, 0xC08C, 0xC08D, 0xC08E, 0xC08F,
+            //           BSR2                              BSR1
+            0xC080, 0xC081, 0xC082, 0xC083,    0xC088, 0xC089, 0xC08A, 0xC08B,
+            0xC084, 0xC085, 0xC086, 0xC087,    0xC08C, 0xC08D, 0xC08E, 0xC08F,
         ];
 
         private readonly List<ushort> handlesWrite =
@@ -67,8 +68,9 @@ namespace InnoWerks.Emulators.Apple
             SoftSwitchAddress.SETINTC3ROM,
             SoftSwitchAddress.SETSLOTC3ROM,
 
-            0xC080, 0xC081, 0xC082, 0xC083, 0xC084, 0xC085, 0xC086, 0xC087,
-            0xC088, 0xC089, 0xC08A, 0xC08B, 0xC08C, 0xC08D, 0xC08E, 0xC08F,
+            //           BSR2                              BSR1
+            0xC080, 0xC081, 0xC082, 0xC083,    0xC088, 0xC089, 0xC08A, 0xC08B,
+            0xC084, 0xC085, 0xC086, 0xC087,    0xC08C, 0xC08D, 0xC08E, 0xC08F,
         ];
 
         private const ushort LANG_A3 = 0b00001000;
@@ -103,7 +105,7 @@ namespace InnoWerks.Emulators.Apple
         public (byte value, bool remapNeeded) Read(ushort address)
         {
 #if DEBUG_READ
-            if (address < 0xC080)
+            if (address < 0xC090)
             {
                 SimDebugger.Info($"Read MMU({address:X4}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
             }
@@ -115,7 +117,7 @@ namespace InnoWerks.Emulators.Apple
                 // LANGUAGE CARD
                 //
 
-                case SoftSwitchAddress.RDLCBNK2: return ((byte)(machineState.State[SoftSwitch.LcBank1] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.RDLCBNK2: return ((byte)(machineState.State[SoftSwitch.LcBank2] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDLCRAM: return ((byte)(machineState.State[SoftSwitch.LcReadEnabled] ? 0x80 : 0x00), false);
 
                 case SoftSwitchAddress.RDRAMRD: return ((byte)(machineState.State[SoftSwitch.AuxRead] ? 0x80 : 0x00), false);
@@ -126,7 +128,7 @@ namespace InnoWerks.Emulators.Apple
                 case SoftSwitchAddress.RDHIRES: return ((byte)(machineState.State[SoftSwitch.HiRes] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDDHIRES: return ((byte)(machineState.State[SoftSwitch.DoubleHiRes] ? 0x80 : 0x00), false);
 
-                case SoftSwitchAddress.RDCXROM: return ((byte)(machineState.State[SoftSwitch.InternalRomEnabled] ? 0x80 : 0x00), false);
+                case SoftSwitchAddress.RDCXROM: return ((byte)(machineState.State[SoftSwitch.IntCxRomEnabled] ? 0x80 : 0x00), false);
                 case SoftSwitchAddress.RDC3ROM: return ((byte)(machineState.State[SoftSwitch.Slot3RomEnabled] ? 0x80 : 0x00), false);
             }
 
@@ -141,7 +143,7 @@ namespace InnoWerks.Emulators.Apple
         public bool Write(ushort address, byte value)
         {
 #if DEBUG_WRITE
-            if (address < 0xC080)
+            if (address < 0xC090)
             {
                 SimDebugger.Info($"Write MMU({address:X4}, {value:X2}) [{SoftSwitchAddress.LookupAddress(address)}]\n");
             }
@@ -164,8 +166,8 @@ namespace InnoWerks.Emulators.Apple
                 //
                 // I/O BANKING
                 //
-                case SoftSwitchAddress.SETSLOTCXROM: return machineState.HandleWriteStateToggle(SoftSwitch.InternalRomEnabled, false);
-                case SoftSwitchAddress.SETINTCXROM: return machineState.HandleWriteStateToggle(SoftSwitch.InternalRomEnabled, true);
+                case SoftSwitchAddress.SETSLOTCXROM: return machineState.HandleWriteStateToggle(SoftSwitch.IntCxRomEnabled, false);
+                case SoftSwitchAddress.SETINTCXROM: return machineState.HandleWriteStateToggle(SoftSwitch.IntCxRomEnabled, true);
                 case SoftSwitchAddress.SETINTC3ROM: return machineState.HandleWriteStateToggle(SoftSwitch.Slot3RomEnabled, false);
                 case SoftSwitchAddress.SETSLOTC3ROM: return machineState.HandleWriteStateToggle(SoftSwitch.Slot3RomEnabled, true);
             }
@@ -183,8 +185,8 @@ namespace InnoWerks.Emulators.Apple
         public void Reset()
         {
             // bank 2 is the primary bank
-            machineState.State[SoftSwitch.LcBank1] = false;
-            machineState.State[SoftSwitch.InternalRomEnabled] = true;
+            machineState.State[SoftSwitch.LcBank2] = true;
+            machineState.State[SoftSwitch.IntCxRomEnabled] = true;
         }
 
         private bool HandleReadC08x(ushort address)
@@ -192,18 +194,18 @@ namespace InnoWerks.Emulators.Apple
 #if DEBUG_C08X_HANDLER
             var entryState = "";
 
-            entryState += machineState.State[SoftSwitch.LcBank1] ? "b=1," : "b=2,";
+            entryState += machineState.State[SoftSwitch.LcBank2] ? "b=2," : "b=1,";
             entryState += machineState.State[SoftSwitch.LcReadEnabled] ? "r=1," : "r=0,";
             entryState += machineState.State[SoftSwitch.LcWriteEnabled] ? "w=1," : "w=0,";
-            entryState += $"p={preWrite}";
+            entryState += $"p={(preWrite ? 1 : 0)}";
 #endif
 
-            var lcBank1 = machineState.State[SoftSwitch.LcBank1];
+            var lcBank2 = machineState.State[SoftSwitch.LcBank2];
             var lcReadEnabled = machineState.State[SoftSwitch.LcReadEnabled];
             var lcWriteEnabled = machineState.State[SoftSwitch.LcWriteEnabled];
 
             // Bank select
-            machineState.State[SoftSwitch.LcBank1] = (address & LANG_A3) != 0;
+            machineState.State[SoftSwitch.LcBank2] = (address & LANG_A3) == 0;
 
             // Read enable
             int low = address & LANG_A0A1;
@@ -212,29 +214,33 @@ namespace InnoWerks.Emulators.Apple
             // Write enable sequencing (critical)
             if ((address & LANG_A0) == 1)
             {
-                if (preWrite == 1)
+                if (preWrite == true)
+                {
                     machineState.State[SoftSwitch.LcWriteEnabled] = true;
+                }
                 else
-                    preWrite = 1;
+                {
+                    preWrite = true;
+                }
             }
             else
             {
-                preWrite = 0;
+                preWrite = false;
                 machineState.State[SoftSwitch.LcWriteEnabled] = false;
             }
 
 #if DEBUG_C08X_HANDLER
             var exitState = "";
 
-            exitState += machineState.State[SoftSwitch.LcBank1] ? "b=1," : "b=2,";
+            exitState += machineState.State[SoftSwitch.LcBank2] ? "b=2," : "b=1,";
             exitState += machineState.State[SoftSwitch.LcReadEnabled] ? "r=1," : "r=0,";
             exitState += machineState.State[SoftSwitch.LcWriteEnabled] ? "w=1," : "w=0,";
-            exitState += $"p={preWrite}";
+            exitState += $"p={(preWrite ? 1 : 0)}";
 
             SimDebugger.Info($"Read MMU({address:X4}) entry: {entryState} exit: {exitState}\n");
 #endif
 
-            return lcBank1 != machineState.State[SoftSwitch.LcBank1] ||
+            return lcBank2 != machineState.State[SoftSwitch.LcBank2] ||
                    lcReadEnabled != machineState.State[SoftSwitch.LcReadEnabled] ||
                    lcWriteEnabled != machineState.State[SoftSwitch.LcWriteEnabled];
         }
@@ -243,20 +249,19 @@ namespace InnoWerks.Emulators.Apple
 #if DEBUG_C08X_HANDLER
             var entryState = "";
 
-            entryState += machineState.State[SoftSwitch.LcBank1] ? "b=1," : "b=2,";
+            entryState += machineState.State[SoftSwitch.LcBank2] ? "b=2," : "b=1,";
             entryState += machineState.State[SoftSwitch.LcReadEnabled] ? "r=1," : "r=0,";
             entryState += machineState.State[SoftSwitch.LcWriteEnabled] ? "w=1," : "w=0,";
-            entryState += $"p={preWrite}";
+            entryState += $"p={(preWrite ? 1 : 0)}";
 #endif
 
-            preWrite = 0;
-
-            var lcBank1 = machineState.State[SoftSwitch.LcBank1];
+            var lcBank2 = machineState.State[SoftSwitch.LcBank2];
             var lcReadEnabled = machineState.State[SoftSwitch.LcReadEnabled];
-            var lcWriteEnabled = machineState.State[SoftSwitch.LcWriteEnabled];
+
+            preWrite = false;
 
             // Bank select
-            machineState.State[SoftSwitch.LcBank1] = (address & LANG_A3) != 0;
+            machineState.State[SoftSwitch.LcBank2] = (address & LANG_A3) == 0;
 
             // Read enable
             int low = address & LANG_A0A1;
@@ -265,17 +270,16 @@ namespace InnoWerks.Emulators.Apple
 #if DEBUG_C08X_HANDLER
             var exitState = "";
 
-            exitState += machineState.State[SoftSwitch.LcBank1] ? "b=1," : "b=2,";
+            exitState += machineState.State[SoftSwitch.LcBank2] ? "b=2," : "b=1,";
             exitState += machineState.State[SoftSwitch.LcReadEnabled] ? "r=1," : "r=0,";
             exitState += machineState.State[SoftSwitch.LcWriteEnabled] ? "w=1," : "w=0,";
-            exitState += $"p={preWrite}";
+            exitState += $"p={(preWrite ? 1 : 0)}";
 
             SimDebugger.Info($"Write MMU({address:X4}) entry: {entryState} exit: {exitState}\n");
 #endif
 
-            return lcBank1 != machineState.State[SoftSwitch.LcBank1] ||
-                   lcReadEnabled != machineState.State[SoftSwitch.LcReadEnabled] ||
-                   lcWriteEnabled != machineState.State[SoftSwitch.LcWriteEnabled];
+            return lcBank2 != machineState.State[SoftSwitch.LcBank2] ||
+                   lcReadEnabled != machineState.State[SoftSwitch.LcReadEnabled];
         }
     }
 }

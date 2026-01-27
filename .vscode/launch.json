@@ -19,7 +19,12 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/Dasm6502/bin/Debug/net10.0/Dasm6502.dll",
-      "args": ["--input", "${workspaceFolder}/Modules/mini", "--output", "-"],
+      "args": [
+        "--input",
+        "${workspaceFolder}/Emu6502/roms/apple2e.rom",
+        "--output",
+        "-"
+      ],
       "cwd": "${workspaceFolder}/Dasm6502",
       "console": "internalConsole",
       "stopAtEntry": false,

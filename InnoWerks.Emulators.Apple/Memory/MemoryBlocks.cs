@@ -180,11 +180,7 @@ namespace InnoWerks.Emulators.Apple
             //
             // reset the entire memory map
             //
-            InjectDirectMemory(
-                activeRead,
-                machineState.State[SoftSwitch.AuxRead] == true ? auxMemory : mainMemory,
-                0x00, mainMemory.Length
-            );
+            InjectDirectMemory(activeRead, machineState.State[SoftSwitch.AuxRead] == true ? auxMemory : mainMemory);
 
             //
             // copy over the rom blocks, we might override below
@@ -200,36 +196,18 @@ namespace InnoWerks.Emulators.Apple
             {
                 if (machineState.State[SoftSwitch.ZpAux] == false)
                 {
-                    InjectIndirectMemory(
-                        activeRead,
-                        languageCardRam,
-                        0xD0, 0x100
-                    );
-
-                    if (machineState.State[SoftSwitch.LcBank1] == false)
+                    InjectIndirectMemory(activeRead, languageCardRam);
+                    if (machineState.State[SoftSwitch.LcBank2] == true)
                     {
-                        InjectIndirectMemory(
-                            activeRead,
-                            languageCardBank2,
-                            0xD0, 0xE0
-                        );
+                        InjectIndirectMemory(activeRead, languageCardBank2);
                     }
                 }
                 else
                 {
-                    InjectIndirectMemory(
-                        activeRead,
-                        auxLanguageCardRam,
-                        0xD0, 0x100
-                    );
-
-                    if (machineState.State[SoftSwitch.LcBank1] == false)
+                    InjectIndirectMemory(activeRead, auxLanguageCardRam);
+                    if (machineState.State[SoftSwitch.LcBank2] == true)
                     {
-                        InjectIndirectMemory(
-                            activeRead,
-                            auxLanguageCardBank2,
-                            0xD0, 0xE0
-                        );
+                        InjectIndirectMemory(activeRead, auxLanguageCardBank2);
                     }
                 }
             }
@@ -276,7 +254,7 @@ namespace InnoWerks.Emulators.Apple
             //
             // ROM                      $C0 - $C7
             //
-            if (machineState.State[SoftSwitch.InternalRomEnabled] == true)
+            if (machineState.State[SoftSwitch.IntCxRomEnabled] == true)
             {
                 InjectRom(intCxRom, 0xC0, 0xD0);
             }
@@ -331,11 +309,7 @@ namespace InnoWerks.Emulators.Apple
             //
             // reset the entire memory map
             //
-            InjectDirectMemory(
-                activeWrite,
-                machineState.State[SoftSwitch.AuxWrite] == true ? auxMemory : mainMemory,
-                0x00, mainMemory.Length
-            );
+            InjectDirectMemory(activeWrite, machineState.State[SoftSwitch.AuxWrite] == true ? auxMemory : mainMemory);
 
             //
             // mark the lo rom blocks as read-only
@@ -352,36 +326,18 @@ namespace InnoWerks.Emulators.Apple
             {
                 if (machineState.State[SoftSwitch.ZpAux] == false)
                 {
-                    InjectIndirectMemory(
-                        activeWrite,
-                        languageCardRam,
-                        0xD0, 0x100
-                    );
-
-                    if (machineState.State[SoftSwitch.LcBank1] == false)
+                    InjectIndirectMemory(activeWrite, languageCardRam);
+                    if (machineState.State[SoftSwitch.LcBank2] == true)
                     {
-                        InjectIndirectMemory(
-                            activeWrite,
-                            languageCardBank2,
-                            0xD0, 0xE0
-                        );
+                        InjectIndirectMemory(activeWrite, languageCardBank2);
                     }
                 }
                 else
                 {
-                    InjectIndirectMemory(
-                        activeWrite,
-                        auxLanguageCardRam,
-                        0xD0, 0x100
-                    );
-
-                    if (machineState.State[SoftSwitch.LcBank1] == false)
+                    InjectIndirectMemory(activeWrite, auxLanguageCardRam);
+                    if (machineState.State[SoftSwitch.LcBank2] == true)
                     {
-                        InjectIndirectMemory(
-                            activeWrite,
-                            auxLanguageCardBank2,
-                            0xD0, 0xE0
-                        );
+                        InjectIndirectMemory(activeWrite, auxLanguageCardBank2);
                     }
                 }
             }
@@ -433,11 +389,19 @@ namespace InnoWerks.Emulators.Apple
             }
         }
 
-        private void InjectIndirectMemory(MemoryPage[] activeMemory, MemoryPage[] memoryPages, int from, int to)
+        private void InjectIndirectMemory(MemoryPage[] activeMemory, MemoryPage[] memoryPages)
         {
-            for (var p = from; p < to; p++)
+            foreach (var memoryPage in memoryPages)
             {
-                activeMemory[p] = memoryPages[p - from];
+                activeMemory[memoryPage.PageNumber] = memoryPage;
+            }
+        }
+
+        private void InjectDirectMemory(MemoryPage[] activeMemory, MemoryPage[] memoryPages)
+        {
+            foreach (var memoryPage in memoryPages)
+            {
+                activeMemory[memoryPage.PageNumber] = memoryPage;
             }
         }
 
