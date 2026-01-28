@@ -166,9 +166,13 @@ namespace InnoWerks.Emulators.AppleIIe
             {
                 DrawTextMode(gameTime);
             }
-            else
+            else if (machineState.State[SoftSwitch.TextMode] == false && machineState.State[SoftSwitch.MixedMode] == false)
             {
                 DrawLoresMode(gameTime);
+            }
+            else if (machineState.State[SoftSwitch.MixedMode] == true)
+            {
+                DrawMixedMode(gameTime);
             }
 
             base.Draw(gameTime);
@@ -274,6 +278,141 @@ namespace InnoWerks.Emulators.AppleIIe
             var scale = MathF.Min(scaleX, scaleY);
 
             for (var row = 0; row < 24; row++)
+            {
+                for (var col = 0; col < cols; col++)
+                {
+                    var cell = textBuffer.Get(row, col);
+                    var c = cell.ToChar();
+
+                    var pos = new Vector2(
+                        MathF.Floor(col * charWidth * scale),
+                        MathF.Floor(row * charHeight * scale)
+                    );
+
+                    var fg = Color.LightGreen;
+                    var bg = Color.Black;
+
+                    // Handle inverse
+                    if (cell.Attr.HasFlag(TextAttributes.Inverse))
+                    {
+                        if (cell.Attr.HasFlag(TextAttributes.Flash) && !flashOn)
+                        {
+                            // Flashing off - draw normally
+                            fg = Color.LightGreen;
+                            bg = Color.Black;
+                        }
+                        else
+                        {
+                            // Draw inverse
+                            fg = Color.Black;
+                            bg = Color.LightGreen;
+                        }
+                    }
+
+                    // Draw background rectangle for inverse / flashing
+                    if (fg != Color.LightGreen)
+                    {
+                        spriteBatch.Draw(
+                            whitePixel, // a 1x1 white texture
+                            new Rectangle(
+                                (int)pos.X,
+                                (int)pos.Y,
+                                (int)(charWidth * scale),
+                                (int)(charHeight * scale)
+                            ),
+                            bg
+                        );
+                    }
+
+                    spriteBatch.DrawString(
+                        font,
+                        c.ToString(),
+                        pos,
+                        fg,
+                        rotation: 0f,
+                        origin: Vector2.Zero,
+                        scale: scale,
+                        effects: SpriteEffects.None,
+                        layerDepth: 0f
+                    );
+                }
+            }
+
+            spriteBatch.End();
+        }
+
+        private void DrawMixedMode(GameTime gameTime)
+        {
+            GraphicsDevice.Clear(Color.Black);
+
+            var loresBuffer = new LoresBuffer();
+            loresMemoryReader.ReadLoresPage(loresBuffer);
+
+            var textBuffer = new TextBuffer();
+            textReader.ReadTextPage(textBuffer);
+
+            spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+
+            var charWidth = font.MeasureString("W").X;
+            var charHeight = font.LineSpacing / 2;
+
+            var scaleX = GraphicsDevice.Viewport.Width / (40.0F * charWidth);
+            var scaleY = GraphicsDevice.Viewport.Height / (48.0F * charHeight);
+            var scale = MathF.Min(scaleX, scaleY);
+
+            var blockWidth = charWidth * scale;
+            var blockHeight = charHeight * scale;
+
+            for (var row = 0; row < 20; row++)
+            {
+                for (var col = 0; col < 40; col++)
+                {
+                    var cell = loresBuffer.Get(row, col);
+
+                    var topPixel = loresPixels[cell.TopIndex];
+                    var posTop = new Vector2(
+                        MathF.Floor(col * blockWidth),
+                        MathF.Floor(row * 2 * blockHeight)
+                    );
+                    spriteBatch.Draw(
+                        topPixel,
+                        new Rectangle(
+                            (int)posTop.X,
+                            (int)posTop.Y,
+                            (int)blockWidth,
+                            (int)blockHeight
+                        ),
+                        cell.Top
+                    );
+
+                    var bottomPixel = loresPixels[cell.BottomIndex];
+                    var posBottom = new Vector2(
+                        MathF.Floor(col * blockWidth),
+                        MathF.Floor(((row * 2) + 1) * blockHeight)
+                    );
+                    spriteBatch.Draw(
+                        bottomPixel,
+                        new Rectangle(
+                            (int)posBottom.X,
+                            (int)posBottom.Y,
+                            (int)blockWidth,
+                            (int)blockHeight
+                        ),
+                        cell.Bottom
+                    );
+                }
+            }
+
+            var cols = machineState.State[SoftSwitch.EightyColumnMode] ? 80 : 40;
+
+            charWidth = font.MeasureString("W").X;
+            charHeight = font.LineSpacing;
+
+            scaleX = GraphicsDevice.Viewport.Width / (cols * charWidth);
+            scaleY = GraphicsDevice.Viewport.Height / (24.0F * charHeight);
+            scale = MathF.Min(scaleX, scaleY);
+
+            for (var row = 20; row < 24; row++)
             {
                 for (var col = 0; col < cols; col++)
                 {

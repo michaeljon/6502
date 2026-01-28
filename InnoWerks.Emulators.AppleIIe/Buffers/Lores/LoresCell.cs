@@ -23,7 +23,7 @@ namespace InnoWerks.Emulators.AppleIIe
             Color.Pink,
             Color.LightGreen,
             Color.Yellow,
-            Color.SeaGreen,
+            Color.Aqua,
             Color.White
         ];
 
