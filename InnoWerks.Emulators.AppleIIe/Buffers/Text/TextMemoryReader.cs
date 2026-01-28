@@ -17,36 +17,39 @@ namespace InnoWerks.Emulators.AppleIIe
             this.machineState = machineState;
         }
 
-        public void ReadTextPage(TextCell[,] buffer)
+        public void ReadTextPage(TextBuffer textBuffer)
         {
-            ArgumentNullException.ThrowIfNull(buffer);
+            ArgumentNullException.ThrowIfNull(textBuffer);
 
             if (machineState.State[SoftSwitch.EightyColumnMode] == false)
             {
-                Render40Column(buffer);
+                Render40Column(textBuffer);
             }
             else
             {
-                Render80Column(buffer);
+                Render80Column(textBuffer);
             }
         }
 
-        private void Render40Column(TextCell[,] buffer)
+        private void Render40Column(TextBuffer textBuffer)
         {
+            // might want to keep this in the loop so
+            // switcing mid-render would work
+            bool page2 = machineState.State[SoftSwitch.Page2];
+
             for (int row = 0; row < 24; row++)
             {
-                bool page2 = machineState.State[SoftSwitch.Page2];
-
                 for (int col = 0; col < 40; col++)
                 {
                     ushort addr = GetTextAddress(row, col, page2);
                     byte value = ram.Read(addr);
-                    buffer[row, col] = ConstructTextCell(value);
+
+                    textBuffer.Put(row, col, ConstructTextCell(value));
                 }
             }
         }
 
-        private void Render80Column(TextCell[,] buffer)
+        private void Render80Column(TextBuffer textBuffer)
         {
             for (int row = 0; row < 24; row++)
             {
@@ -55,10 +58,10 @@ namespace InnoWerks.Emulators.AppleIIe
                     ushort addr = GetTextAddress(row, col, false);
 
                     byte value = ram.GetAux(addr);
-                    buffer[row, col * 2] = ConstructTextCell(value);
+                    textBuffer.Put(row, col * 2, ConstructTextCell(value));
 
                     value = ram.GetMain(addr);
-                    buffer[row, (col * 2) + 1] = ConstructTextCell(value);
+                    textBuffer.Put(row, (col * 2) + 1, ConstructTextCell(value));
                 }
             }
         }

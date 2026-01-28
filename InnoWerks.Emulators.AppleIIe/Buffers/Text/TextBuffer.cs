@@ -11,7 +11,7 @@ namespace InnoWerks.Emulators.AppleIIe
             return textBuffer[row, col];
         }
 
-        public void Set(int row, int col, TextCell cell)
+        public void Put(int row, int col, TextCell cell)
         {
             textBuffer[row, col] = cell;
         }

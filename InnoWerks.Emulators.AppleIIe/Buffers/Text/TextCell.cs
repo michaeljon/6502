@@ -13,7 +13,7 @@ namespace InnoWerks.Emulators.AppleIIe
         Flash = 2, // bit 1 of attribute
     }
 
-    public readonly struct TextCell : System.IEquatable<TextCell>
+    public readonly struct TextCell : IEquatable<TextCell>
     {
         public readonly byte Ascii { get; init; }           // 0x00–0x7F
         public readonly TextAttributes Attr { get; init; }  // inverse / flash

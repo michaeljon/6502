@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net.NetworkInformation;
 using InnoWerks.Computers.Apple;
 using InnoWerks.Processors;
 using InnoWerks.Simulators;
@@ -41,10 +42,12 @@ namespace InnoWerks.Emulators.AppleIIe
         private SpriteBatch spriteBatch;
         private SpriteFont font;
         private Texture2D whitePixel;
+        private Texture2D[] loresPixels;
 
         private KeyboardState previousKeyboardState;
 
         TextMemoryReader textReader;
+        LoresMemoryReader loresMemoryReader;
 
         public Emulator()
         {
@@ -103,6 +106,9 @@ namespace InnoWerks.Emulators.AppleIIe
 
             cpu.Reset();
 
+            textReader = new TextMemoryReader(memoryBlocks, machineState);
+            loresMemoryReader = new LoresMemoryReader(memoryBlocks, machineState);
+
             base.Initialize();
         }
 
@@ -114,7 +120,13 @@ namespace InnoWerks.Emulators.AppleIIe
             whitePixel = new Texture2D(GraphicsDevice, 1, 1);
             whitePixel.SetData([Color.White]);
 
-            textReader = new TextMemoryReader(memoryBlocks, machineState);
+            // this is a hack for now
+            loresPixels = new Texture2D[LoresCell.PaletteSize];
+            for (var p = 0; p < LoresCell.PaletteSize; p++)
+            {
+                loresPixels[p] = new Texture2D(GraphicsDevice, 1, 1);
+                loresPixels[p].SetData([LoresCell.GetPaletteColor(p)]);
+            }
         }
 
         private double flashTimer;
@@ -150,7 +162,14 @@ namespace InnoWerks.Emulators.AppleIIe
 
         protected override void Draw(GameTime gameTime)
         {
-            DrawTextMode(gameTime);
+            if (machineState.State[SoftSwitch.TextMode])
+            {
+                DrawTextMode(gameTime);
+            }
+            else
+            {
+                DrawLoresMode(gameTime);
+            }
 
             base.Draw(gameTime);
         }
@@ -174,15 +193,72 @@ namespace InnoWerks.Emulators.AppleIIe
             previousKeyboardState = state;
         }
 
-        // private void DrawLoresMode(GameTime gameTime)
-        // {
+        private void DrawLoresMode(GameTime gameTime)
+        {
+            GraphicsDevice.Clear(Color.Black);
+            var loresBuffer = new LoresBuffer();
 
-        // }
+            loresMemoryReader.ReadLoresPage(loresBuffer);
+
+            spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+
+            var charWidth = font.MeasureString("W").X;
+            var charHeight = font.LineSpacing / 2;
+
+            var scaleX = GraphicsDevice.Viewport.Width / (40.0F * charWidth);
+            var scaleY = GraphicsDevice.Viewport.Height / (48.0F * charHeight);
+            var scale = MathF.Min(scaleX, scaleY);
+
+            var blockWidth = charWidth * scale;
+            var blockHeight = charHeight * scale;
+
+            for (var row = 0; row < 24; row++)
+            {
+                for (var col = 0; col < 40; col++)
+                {
+                    var cell = loresBuffer.Get(row, col);
+
+                    var topPixel = loresPixels[cell.TopIndex];
+                    var posTop = new Vector2(
+                        MathF.Floor(col * blockWidth),
+                        MathF.Floor(row * 2 * blockHeight)
+                    );
+                    spriteBatch.Draw(
+                        topPixel,
+                        new Rectangle(
+                            (int)posTop.X,
+                            (int)posTop.Y,
+                            (int)blockWidth,
+                            (int)blockHeight
+                        ),
+                        cell.Top
+                    );
+
+                    var bottomPixel = loresPixels[cell.BottomIndex];
+                    var posBottom = new Vector2(
+                        MathF.Floor(col * blockWidth),
+                        MathF.Floor(((row * 2) + 1) * blockHeight)
+                    );
+                    spriteBatch.Draw(
+                        bottomPixel,
+                        new Rectangle(
+                            (int)posBottom.X,
+                            (int)posBottom.Y,
+                            (int)blockWidth,
+                            (int)blockHeight
+                        ),
+                        cell.Bottom
+                    );
+                }
+            }
+
+            spriteBatch.End();
+        }
 
         private void DrawTextMode(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black);
-            TextCell[,] textBuffer = new TextCell[24, 80];
+            var textBuffer = new TextBuffer();
 
             textReader.ReadTextPage(textBuffer);
 
@@ -194,19 +270,19 @@ namespace InnoWerks.Emulators.AppleIIe
             var charHeight = font.LineSpacing;
 
             var scaleX = GraphicsDevice.Viewport.Width / (cols * charWidth);
-            var scaleY = GraphicsDevice.Viewport.Height / (24 * charHeight);
-            var scale = MathF.Max(1f, MathF.Min(scaleX, scaleY));
+            var scaleY = GraphicsDevice.Viewport.Height / (24.0F * charHeight);
+            var scale = MathF.Min(scaleX, scaleY);
 
             for (var row = 0; row < 24; row++)
             {
                 for (var col = 0; col < cols; col++)
                 {
-                    var cell = textBuffer[row, col];
+                    var cell = textBuffer.Get(row, col);
                     var c = cell.ToChar();
 
                     var pos = new Vector2(
-                        col * charWidth * scale,
-                        row * charHeight * scale
+                        MathF.Floor(col * charWidth * scale),
+                        MathF.Floor(row * charHeight * scale)
                     );
 
                     var fg = Color.LightGreen;
