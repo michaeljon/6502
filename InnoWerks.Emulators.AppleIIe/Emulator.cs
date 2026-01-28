@@ -67,6 +67,8 @@ namespace InnoWerks.Emulators.AppleIIe
 
         protected override void Initialize()
         {
+            Window.Title = "Apple IIe";
+
             var mainRom = File.ReadAllBytes("roms/apple2e-16k.rom");
             var diskIIRom = File.ReadAllBytes("roms/DiskII.rom");
             var dos33 = File.ReadAllBytes("disks/dos33.dsk");
