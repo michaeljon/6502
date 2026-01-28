@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using InnoWerks.Computers.Apple;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
@@ -39,9 +40,8 @@ namespace InnoWerks.Emulators.AppleIIe
                 for (int col = 0; col < 40; col++)
                 {
                     ushort addr = GetTextAddress(row, col, page2);
-                    byte b = ram.Read(addr);
-
-                    buffer[row, col] = new TextCell((byte)(b & 0x7F));
+                    byte value = ram.Read(addr);
+                    buffer[row, col] = ConstructTextCell(value);
                 }
             }
         }
@@ -54,11 +54,11 @@ namespace InnoWerks.Emulators.AppleIIe
                 {
                     ushort addr = GetTextAddress(row, col, false);
 
-                    byte b = ram.GetAux(addr);
-                    buffer[row, col * 2] = new TextCell((byte)(b & 0x7F));
+                    byte value = ram.GetAux(addr);
+                    buffer[row, col * 2] = ConstructTextCell(value);
 
-                    b = ram.GetMain(addr);
-                    buffer[row, (col * 2) + 1] = new TextCell((byte)(b & 0x7F));
+                    value = ram.GetMain(addr);
+                    buffer[row, (col * 2) + 1] = ConstructTextCell(value);
                 }
             }
         }
@@ -80,5 +80,13 @@ namespace InnoWerks.Emulators.AppleIIe
             0x000, 0x080, 0x100, 0x180,
             0x200, 0x280, 0x300, 0x380
         ];
+
+        private static TextCell ConstructTextCell(byte value)
+        {
+            var highBitSet = (value & 0x80) != 0;
+            var attr = highBitSet ? TextAttributes.None : TextAttributes.Inverse;
+
+            return new TextCell((byte)(value & 0x7F), attr);
+        }
     }
 }

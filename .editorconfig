@@ -137,3 +137,6 @@ dotnet_naming_style.camel_case_style.capitalization = camel_case
 
 # IDE0051: Remove unused private members
 dotnet_diagnostic.IDE0051.severity = none
+
+# IDE0022: Use block body for method
+csharp_style_expression_bodied_methods = when_on_single_line

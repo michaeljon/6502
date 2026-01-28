@@ -40,13 +40,11 @@ namespace InnoWerks.Emulators.AppleIIe
         private readonly GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
         private SpriteFont font;
+        private Texture2D whitePixel;
 
         private KeyboardState previousKeyboardState;
 
         TextMemoryReader textReader;
-
-        TextCell[,] textBuffer = new TextCell[24, 80];
-
 
         public Emulator()
         {
@@ -113,21 +111,38 @@ namespace InnoWerks.Emulators.AppleIIe
             spriteBatch = new SpriteBatch(GraphicsDevice);
             font = Content.Load<SpriteFont>("CourierFont");
 
+            whitePixel = new Texture2D(GraphicsDevice, 1, 1);
+            whitePixel.SetData([Color.White]);
+
             textReader = new TextMemoryReader(memoryBlocks, machineState);
         }
 
+        private double flashTimer;
+        private bool flashOn = true;
+
         protected override void Update(GameTime gameTime)
         {
+            ArgumentNullException.ThrowIfNull(gameTime);
+
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            {
                 Exit();
+            }
+
+            HandleKeyboardInput();
 
             var targetCycles = appleBus.CycleCount + VideoTiming.FrameCycles;
-
             while (appleBus.CycleCount < targetCycles)
             {
                 cpu.Step();
+            }
 
-                HandleKeyboardInput();
+            // Toggle flashing every 500ms
+            flashTimer += gameTime.ElapsedGameTime.TotalMilliseconds;
+            if (flashTimer >= 500)
+            {
+                flashTimer = 0;
+                flashOn = !flashOn;
             }
 
             base.Update(gameTime);
@@ -135,47 +150,7 @@ namespace InnoWerks.Emulators.AppleIIe
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.Black);
-
-            textReader.ReadTextPage(textBuffer);
-
-            spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-
-            var cols = machineState.State[SoftSwitch.EightyColumnMode] ? 80 : 40;
-
-            var charWidth = font.MeasureString("W").X;
-            var charHeight = font.LineSpacing;
-
-            var scaleX = GraphicsDevice.Viewport.Width / (cols * charWidth);
-            var scaleY = GraphicsDevice.Viewport.Height / (24 * charHeight);
-            var scale = MathF.Max(1f, MathF.Min(scaleX, scaleY));
-
-            for (var row = 0; row < 24; row++)
-            {
-                for (var col = 0; col < cols; col++)
-                {
-                    var c = textBuffer[row, col].ToChar();
-
-                    var pos = new Vector2(
-                        col * charWidth * scale,
-                        row * charHeight * scale
-                    );
-
-                    spriteBatch.DrawString(
-                        font,
-                        c.ToString(),
-                        pos,
-                        Color.LightGreen,
-                        rotation: 0f,
-                        origin: Vector2.Zero,
-                        scale: scale,
-                        effects: SpriteEffects.None,
-                        layerDepth: 0f
-                    );
-                }
-            }
-
-            spriteBatch.End();
+            DrawTextMode(gameTime);
 
             base.Draw(gameTime);
         }
@@ -199,5 +174,91 @@ namespace InnoWerks.Emulators.AppleIIe
             previousKeyboardState = state;
         }
 
+        // private void DrawLoresMode(GameTime gameTime)
+        // {
+
+        // }
+
+        private void DrawTextMode(GameTime gameTime)
+        {
+            GraphicsDevice.Clear(Color.Black);
+            TextCell[,] textBuffer = new TextCell[24, 80];
+
+            textReader.ReadTextPage(textBuffer);
+
+            spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+
+            var cols = machineState.State[SoftSwitch.EightyColumnMode] ? 80 : 40;
+
+            var charWidth = font.MeasureString("W").X;
+            var charHeight = font.LineSpacing;
+
+            var scaleX = GraphicsDevice.Viewport.Width / (cols * charWidth);
+            var scaleY = GraphicsDevice.Viewport.Height / (24 * charHeight);
+            var scale = MathF.Max(1f, MathF.Min(scaleX, scaleY));
+
+            for (var row = 0; row < 24; row++)
+            {
+                for (var col = 0; col < cols; col++)
+                {
+                    var cell = textBuffer[row, col];
+                    var c = cell.ToChar();
+
+                    var pos = new Vector2(
+                        col * charWidth * scale,
+                        row * charHeight * scale
+                    );
+
+                    var fg = Color.LightGreen;
+                    var bg = Color.Black;
+
+                    // Handle inverse
+                    if (cell.Attr.HasFlag(TextAttributes.Inverse))
+                    {
+                        if (cell.Attr.HasFlag(TextAttributes.Flash) && !flashOn)
+                        {
+                            // Flashing off - draw normally
+                            fg = Color.LightGreen;
+                            bg = Color.Black;
+                        }
+                        else
+                        {
+                            // Draw inverse
+                            fg = Color.Black;
+                            bg = Color.LightGreen;
+                        }
+                    }
+
+                    // Draw background rectangle for inverse / flashing
+                    if (fg != Color.LightGreen)
+                    {
+                        spriteBatch.Draw(
+                            whitePixel, // a 1x1 white texture
+                            new Rectangle(
+                                (int)pos.X,
+                                (int)pos.Y,
+                                (int)(charWidth * scale),
+                                (int)(charHeight * scale)
+                            ),
+                            bg
+                        );
+                    }
+
+                    spriteBatch.DrawString(
+                        font,
+                        c.ToString(),
+                        pos,
+                        fg,
+                        rotation: 0f,
+                        origin: Vector2.Zero,
+                        scale: scale,
+                        effects: SpriteEffects.None,
+                        layerDepth: 0f
+                    );
+                }
+            }
+
+            spriteBatch.End();
+        }
     }
 }
