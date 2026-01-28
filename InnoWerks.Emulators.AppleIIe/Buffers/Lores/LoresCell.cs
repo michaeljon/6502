@@ -7,24 +7,22 @@ namespace InnoWerks.Emulators.AppleIIe
     {
         private static readonly Color[] loresPalette =
         [
-            Color.Black,
-            Color.Magenta,
-            Color.DarkBlue,
-            Color.Purple,
-            Color.DarkGreen,
-            Color.Gray,
-            Color.MediumBlue,
-            Color.LightBlue,
-
-            // repeated or placeholder for full 16
-            Color.Brown,
-            Color.Orange,
-            Color.Gray,
-            Color.Pink,
-            Color.LightGreen,
-            Color.Yellow,
-            Color.Aqua,
-            Color.White
+            new Color(0,  0,  0),
+            new Color(208,  0, 48),
+            new Color(  0,  0,128),
+            new Color(255,  0,255),
+            new Color(  0,128,  0),
+            new Color(128,128,128),
+            new Color(  0,  0,255),
+            new Color( 96,160,255),
+            new Color(128, 80,  0),
+            new Color(255,128,  0),
+            new Color(192,192,192),
+            new Color(255,144,128),
+            new Color(  0,255,  0),
+            new Color(255,255,  0),
+            new Color( 64,255,144),
+            new Color(255,255,255)
         ];
 
         public static Color GetPaletteColor(int index) => loresPalette[index];
