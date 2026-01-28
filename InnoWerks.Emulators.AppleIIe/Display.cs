@@ -41,7 +41,6 @@ namespace InnoWerks.Emulators.AppleIIe
         private Texture2D whitePixel;
         private Texture2D[] loresPixels;
         private Texture2D charTexture;
-        private RenderTarget2D appleTarget;
 
         private readonly MachineState machineState;
 
@@ -77,17 +76,6 @@ namespace InnoWerks.Emulators.AppleIIe
                 loresPixels[p] = new Texture2D(graphicsDevice, 1, 1);
                 loresPixels[p].SetData([LoresCell.GetPaletteColor(p)]);
             }
-
-            appleTarget = new RenderTarget2D(
-                graphicsDevice,
-                560,
-                InternalHeight,
-                false,
-                SurfaceFormat.Color,
-                DepthFormat.None,
-                0,
-                RenderTargetUsage.PreserveContents
-            );
 
             LoadCharacterRom();
         }
@@ -125,6 +113,17 @@ namespace InnoWerks.Emulators.AppleIIe
         public void Draw(bool flashOn)
         {
             ArgumentNullException.ThrowIfNull(graphicsDevice);
+
+            using var appleTarget = new RenderTarget2D(
+                graphicsDevice,
+                machineState.State[SoftSwitch.EightyColumnMode] ? 560 : 280,
+                InternalHeight,
+                false,
+                SurfaceFormat.Color,
+                DepthFormat.None,
+                0,
+                RenderTargetUsage.PreserveContents
+            );
 
             //
             // draw the content to the off-screen buffer
@@ -193,9 +192,11 @@ namespace InnoWerks.Emulators.AppleIIe
             var loresBuffer = new LoresBuffer();
             loresMemoryReader.ReadLoresPage(loresBuffer);
 
+            var cols = machineState.State[SoftSwitch.EightyColumnMode] ? 80 : 40;
+
             for (var row = start; row < start + count; row++)
             {
-                for (var col = 0; col < 40; col++)
+                for (var col = 0; col < cols; col++)
                 {
                     var cell = loresBuffer.Get(row, col);
 
@@ -228,9 +229,6 @@ namespace InnoWerks.Emulators.AppleIIe
 
         private void DrawChar(byte ascii, int col, int row)
         {
-            float scaleX = machineState.State[SoftSwitch.EightyColumnMode] ? 4f / 7f : 1f;
-            // float scaleY = 1f;
-
             var inverse = (ascii & 0x80) != 0;
             var flash = (ascii & 0x40) != 0;
 
@@ -244,8 +242,8 @@ namespace InnoWerks.Emulators.AppleIIe
             var srcX = (glyph % 16) * 8;
             var srcY = (glyph / 16) * 8;
 
-            var src = new Rectangle(srcX, srcY, 7, 8);
-            var dst = new Rectangle(col * AppleCellWidth, row * AppleCellHeight, (int)(AppleCellWidth * scaleX), AppleCellHeight);
+            var src = new Rectangle(srcX, srcY, AppleCellWidth, AppleCellHeight);
+            var dst = new Rectangle(col * AppleCellWidth, row * AppleCellHeight, AppleCellWidth, AppleCellHeight);
 
             // Background
             if (bg != Color.Transparent)
@@ -253,24 +251,11 @@ namespace InnoWerks.Emulators.AppleIIe
                 spriteBatch.Draw(whitePixel, dst, bg);
             }
 
-            var pos = new Vector2(col * AppleCellWidth, row * AppleCellHeight);
-
             spriteBatch.Draw(
                 charTexture,
                 dst,
                 src,
                 fg);
-
-            // spriteBatch.Draw(
-            //     charTexture,
-            //     pos,
-            //     src,
-            //     fg,
-            //     0f,
-            //     Vector2.Zero,
-            //     new Vector2(scaleX, scaleY),
-            //     SpriteEffects.None,
-            //     0f);
         }
 
         private void DrawBlocks(LoresCell cell, int col, int row)
@@ -313,7 +298,6 @@ namespace InnoWerks.Emulators.AppleIIe
                 spriteBatch?.Dispose();
                 whitePixel?.Dispose();
                 charTexture?.Dispose();
-                appleTarget?.Dispose();
             }
 
             disposed = true;

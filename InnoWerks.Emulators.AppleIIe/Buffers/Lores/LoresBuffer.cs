@@ -4,7 +4,7 @@ namespace InnoWerks.Emulators.AppleIIe
 {
     public class LoresBuffer
     {
-        private readonly LoresCell[,] graphicsBuffer = new LoresCell[24, 40];
+        private readonly LoresCell[,] graphicsBuffer = new LoresCell[24, 80];
 
         public LoresCell Get(int row, int col)
         {

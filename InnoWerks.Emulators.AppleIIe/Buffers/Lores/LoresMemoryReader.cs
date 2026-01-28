@@ -21,6 +21,18 @@ namespace InnoWerks.Emulators.AppleIIe
         {
             ArgumentNullException.ThrowIfNull(loresBuffer);
 
+            if (machineState.State[SoftSwitch.EightyColumnMode] == false)
+            {
+                ReadLores40(loresBuffer);
+            }
+            else
+            {
+                ReadLores80(loresBuffer);
+            }
+        }
+
+        private void ReadLores40(LoresBuffer loresBuffer)
+        {
             // might want to keep this in the loop so
             // switcing mid-render would work
             bool page2 = machineState.State[SoftSwitch.Page2];
@@ -32,7 +44,24 @@ namespace InnoWerks.Emulators.AppleIIe
                     ushort addr = GetTextAddress(row, col, page2);
                     byte value = ram.Read(addr);
 
-                    loresBuffer.Put(row, col, ConstructTLoresCell(value));
+                    loresBuffer.Put(row, col, ConstructLoresCell(value));
+                }
+            }
+        }
+
+        private void ReadLores80(LoresBuffer loresBuffer)
+        {
+            for (int row = 0; row < 24; row++)
+            {
+                for (int col = 0; col < 40; col++)
+                {
+                    ushort addr = GetTextAddress(row, col, false);
+
+                    byte value = ram.GetAux(addr);
+                    loresBuffer.Put(row, col * 2, ConstructLoresCell(value));
+
+                    value = ram.GetMain(addr);
+                    loresBuffer.Put(row, (col * 2) + 1, ConstructLoresCell(value));
                 }
             }
         }
@@ -55,7 +84,7 @@ namespace InnoWerks.Emulators.AppleIIe
             0x200, 0x280, 0x300, 0x380
         ];
 
-        private static LoresCell ConstructTLoresCell(byte value)
+        private static LoresCell ConstructLoresCell(byte value)
         {
             return new LoresCell(value);
         }
