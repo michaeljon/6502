@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CommandLine;
 using InnoWerks.Assemblers;
-using InnoWerks.Emulators.Apple;
+using InnoWerks.Computers.Apple;
 using InnoWerks.Processors;
 using InnoWerks.Simulators;
 

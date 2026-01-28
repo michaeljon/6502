@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
 using InnoWerks.Assemblers;
-using InnoWerks.Emulators.Apple;
+using InnoWerks.Computers.Apple;
 using InnoWerks.Processors;
 using InnoWerks.Simulators;
 
@@ -105,6 +105,24 @@ namespace Emu6502
                 }
             });
 
+            var renderer = Task.Run(() =>
+            {
+                while (keepRunning)
+                {
+                    // Run roughly one frame worth of cycles
+                    ulong target = bus.CycleCount + VideoTiming.FrameCycles;
+
+                    while (bus.CycleCount < target)
+                    {
+                        Thread.Sleep(1);
+                    }
+
+                    iou.Render();
+
+                    Thread.Sleep(16);
+                }
+            });
+
             Console.CancelKeyPress += (sender, e) =>
             {
                 e.Cancel = true;
@@ -172,11 +190,6 @@ namespace Emu6502
 
                 while (bus.CycleCount < target)
                 {
-                    // if (cpu.Registers.ProgramCounter == 0x6ced)
-                    // {
-                    //     options.SingleStep = true;
-                    // }
-
                     if (options.SingleStep == true)
                     {
                         var (opcode, decode) = cpu.PeekInstruction();
@@ -197,10 +210,6 @@ namespace Emu6502
                         Console.WriteLine(cpu.Registers);
                     }
                 }
-
-                if (options.SingleStep == false) { iou.Render(); }
-
-                Thread.Sleep(16);
             }
 
             Console.ResetColor();

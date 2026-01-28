@@ -134,3 +134,9 @@ dotnet_naming_rule.locals_should_be_camel_case.style = camel_case_style
 dotnet_naming_symbols.locals_and_parameters.applicable_kinds = parameter, local
 
 dotnet_naming_style.camel_case_style.capitalization = camel_case
+
+# IDE0051: Remove unused private members
+dotnet_diagnostic.IDE0051.severity = none
+
+# IDE0022: Use block body for method
+csharp_style_expression_bodied_methods = when_on_single_line
