@@ -50,7 +50,7 @@
       "program": "${workspaceFolder}/Emu6502/bin/Debug/net10.0/Emu6502.dll",
       "args": ["--speed", "0", "--single-step"],
       "cwd": "${workspaceFolder}/Emu6502",
-      "console": "externalTerminal",
+      "console": "internalConsole",
       "stopAtEntry": false,
       "requireExactSource": false
     },

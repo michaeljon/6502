@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.NetworkInformation;
 using InnoWerks.Computers.Apple;
@@ -30,12 +31,32 @@ namespace InnoWerks.Emulators.AppleIIe
         private IOU iou;
         private MMU mmu;
         private Cpu65C02 cpu;
+
+        //
+        // debug, etc.
+        //
+        private CpuTraceBuffer cpuTraceBuffer = new(128);
+        private bool cpuPaused;
+        private bool stepRequested;
+        private readonly HashSet<ushort> breakpoints = [0xc600];
+
+        private KeyboardState prevKeyboard;
+        private MouseState prevMouse;
+
+        //
+        // display renderer
+        //
         private Display display;
 
         //
         // MonoGame stuff
         //
         private readonly GraphicsDeviceManager graphicsDeviceManager;
+
+        //
+        // layout stuff
+        //
+        private HostLayout hostLayout;
 
         //
         // state stuff
@@ -48,14 +69,20 @@ namespace InnoWerks.Emulators.AppleIIe
         {
             graphicsDeviceManager = new GraphicsDeviceManager(this)
             {
-                PreferredBackBufferWidth = Display.InternalWidth * 2,     // initial width
-                PreferredBackBufferHeight = Display.InternalHeight * 2,   // initial height
+                PreferredBackBufferWidth = 1160,   // initial width
+                PreferredBackBufferHeight = 780,   // initial height
                 IsFullScreen = false
             };
             graphicsDeviceManager.ApplyChanges();
 
+            hostLayout = HostLayout.ComputeLayout(
+                graphicsDeviceManager.PreferredBackBufferWidth,
+                graphicsDeviceManager.PreferredBackBufferHeight
+            );
+
             // Make window resizable
-            Window.AllowUserResizing = true;
+            // Window.AllowUserResizing = true;
+            Window.ClientSizeChanged += HandleResize;
 
             Content.RootDirectory = "Content";
 
@@ -108,26 +135,33 @@ namespace InnoWerks.Emulators.AppleIIe
 
         protected override void LoadContent()
         {
-            display = new Display(GraphicsDevice, memoryBlocks, machineState);
-            display.LoadContent();
+            display = new Display(GraphicsDevice, cpu, appleBus, memoryBlocks, machineState);
+
+            display.LoadContent(Content);
         }
 
         protected override void Update(GameTime gameTime)
         {
             ArgumentNullException.ThrowIfNull(gameTime);
 
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-            {
-                Exit();
-            }
-
             HandleKeyboardInput();
 
-            var targetCycles = appleBus.CycleCount + VideoTiming.FrameCycles;
-            while (appleBus.CycleCount < targetCycles)
+            var mouse = Mouse.GetState();
+            if (mouse.LeftButton == ButtonState.Pressed && prevMouse.LeftButton == ButtonState.Released)
             {
-                cpu.Step();
+                var cpuTraceEntry = display.HandleTraceClick(hostLayout, cpuTraceBuffer, mouse.Position);
+
+                if (cpuTraceEntry != null)
+                {
+                    if (breakpoints.Add(cpuTraceEntry.Value.ProgramCounter) == false)
+                    {
+                        breakpoints.Remove(cpuTraceEntry.Value.ProgramCounter);
+                    }
+                }
             }
+            prevMouse = mouse;
+
+            RunEmulator();
 
             // Toggle flashing every 500ms
             flashTimer += gameTime.ElapsedGameTime.TotalMilliseconds;
@@ -140,14 +174,52 @@ namespace InnoWerks.Emulators.AppleIIe
             base.Update(gameTime);
         }
 
+        private void RunEmulator()
+        {
+            if (!cpuPaused)
+            {
+                RunCpuForFrame();
+            }
+            else if (stepRequested)
+            {
+                StepCpuOnce();
+                stepRequested = false;
+            }
+        }
+
+        private void RunCpuForFrame()
+        {
+            var targetCycles = appleBus.CycleCount + VideoTiming.FrameCycles;
+            while (appleBus.CycleCount < targetCycles)
+            {
+                var nextInstruction = cpu.PeekInstruction();
+
+                if (breakpoints.Contains(nextInstruction.ProgramCounter))
+                {
+                    cpuPaused = true;
+                    break;
+                }
+
+                StepCpuOnce();
+            }
+        }
+
+        private void StepCpuOnce()
+        {
+            var nextInstruction = cpu.PeekInstruction();
+
+            cpuTraceBuffer.Add(nextInstruction);
+
+            cpu.Step();
+        }
+
         protected override void Draw(GameTime gameTime)
         {
-            display.Draw(flashOn);
-
+            display.Draw(hostLayout, cpuTraceBuffer, breakpoints, flashOn);
             base.Draw(gameTime);
         }
 
-        void HandleKeyboardInput()
+        private void HandleKeyboardInput()
         {
             var state = Keyboard.GetState();
 
@@ -155,6 +227,21 @@ namespace InnoWerks.Emulators.AppleIIe
             {
                 if (previousKeyboardState.IsKeyUp(key))
                 {
+                    // Toggle pause
+                    if (state.IsKeyDown(Keys.F5) && !prevKeyboard.IsKeyDown(Keys.F5))
+                    {
+                        cpuPaused = !cpuPaused;
+                    }
+
+                    // Single-step
+                    if (state.IsKeyDown(Keys.F6) && !prevKeyboard.IsKeyDown(Keys.F6))
+                    {
+                        if (cpuPaused)
+                        {
+                            stepRequested = true;
+                        }
+                    }
+
                     if (KeyMapper.TryMap(key, state, out byte ascii))
                     {
                         iou.InjectKey(ascii);
@@ -164,6 +251,23 @@ namespace InnoWerks.Emulators.AppleIIe
             }
 
             previousKeyboardState = state;
+        }
+
+        private void HandleResize(object sender, EventArgs e)
+        {
+            Window.ClientSizeChanged -= HandleResize;
+
+            graphicsDeviceManager.PreferredBackBufferWidth = Window.ClientBounds.Width;
+            graphicsDeviceManager.PreferredBackBufferHeight = Window.ClientBounds.Height;
+
+            hostLayout = HostLayout.ComputeLayout(
+                Window.ClientBounds.Width,
+                Window.ClientBounds.Height
+            );
+
+            graphicsDeviceManager.ApplyChanges();
+
+            Window.ClientSizeChanged += HandleResize;
         }
     }
 }

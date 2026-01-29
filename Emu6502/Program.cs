@@ -192,9 +192,9 @@ namespace Emu6502
                 {
                     if (options.SingleStep == true)
                     {
-                        var (opcode, decode) = cpu.PeekInstruction();
+                        var traceEntry = cpu.PeekInstruction();
 
-                        Console.Write(decode);
+                        Console.Write($"{traceEntry.Formatted}\n");
                         Console.Write("> ");
                         var key = Console.ReadKey();
                         if (key.KeyChar == 'G')
