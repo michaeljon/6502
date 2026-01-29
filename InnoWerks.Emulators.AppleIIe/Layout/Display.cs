@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.NetworkInformation;
 using InnoWerks.Computers.Apple;
 using InnoWerks.Processors;
@@ -149,9 +150,10 @@ namespace InnoWerks.Emulators.AppleIIe
             charTexture.SetData(pixels);
         }
 
-        public void Draw(HostLayout hostLayout, bool flashOn)
+        public void Draw(HostLayout hostLayout, CpuTraceBuffer cpuTraceBuffer, bool flashOn)
         {
             ArgumentNullException.ThrowIfNull(hostLayout);
+            ArgumentNullException.ThrowIfNull(cpuTraceBuffer);
 
             using var appleTarget = new RenderTarget2D(
                 graphicsDevice,
@@ -177,7 +179,7 @@ namespace InnoWerks.Emulators.AppleIIe
             DrawPanel(hostLayout.AppleDisplay);
             spriteBatch.Draw(appleTarget, hostLayout.AppleDisplay, Color.White);
             DrawRegisters(hostLayout.Registers);
-            DrawCpuTrace(hostLayout.CpuTrace);
+            DrawCpuTrace(hostLayout.CpuTrace, cpuTraceBuffer);
 
             spriteBatch.End();
         }
@@ -232,12 +234,21 @@ namespace InnoWerks.Emulators.AppleIIe
             }
         }
 
-        private void DrawCpuTrace(Rectangle rectangle)
+        private void DrawCpuTrace(Rectangle rectangle, CpuTraceBuffer cpuTraceBuffer)
         {
             DrawPanel(rectangle);
 
-            var (opcode, decode) = cpu.PeekInstruction();
-            var display = cpu.OperandDisplay;
+            int x = rectangle.X + 8;
+            int y = rectangle.Bottom - debugFont.LineSpacing - 8;
+
+            foreach (var entry in cpuTraceBuffer.Entries.OrderByDescending(e => e.CycleCount))
+            {
+                if (y < rectangle.Y + 8)
+                    break;
+
+                DrawTraceLine(entry, x, ref y);
+                y -= debugFont.LineSpacing;
+            }
         }
 
         private void DrawPanel(Rectangle rectangle)
@@ -257,7 +268,6 @@ namespace InnoWerks.Emulators.AppleIIe
             y += debugFont.LineSpacing;
         }
 
-
         private void DrawLine(
             Rectangle panel,
             string text,
@@ -275,6 +285,14 @@ namespace InnoWerks.Emulators.AppleIIe
                 color ?? Color.LightGreen);
 
             y += debugFont.LineSpacing;
+        }
+
+        private void DrawTraceLine(
+            CpuTraceEntry e,
+            int x,
+            ref int y)
+        {
+            spriteBatch.DrawString(debugFont, e.Formatted, new Vector2(x, y), Color.LightGreen);
         }
 
         private void DrawLoresMode(int start, int count)

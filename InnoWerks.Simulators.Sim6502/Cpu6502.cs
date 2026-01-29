@@ -30,7 +30,7 @@ namespace InnoWerks.Simulators
                 CpuInstructions.OpCode6502[operation];
 
             // decode the operand based on the opcode and addressing mode
-            if (opCodeDefinition.DecodeOperand(this) == false)
+            if (opCodeDefinition.DecodeOperand(this) == null)
             {
                 if (illegalInstructionEncountered == true)
                 {
@@ -43,7 +43,7 @@ namespace InnoWerks.Simulators
 
             if (writeInstructions)
             {
-                var stepToExecute = $"{Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}";
+                var stepToExecute = $"{Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {opCodeDefinition.DecodeOperand(this),-10}\n";
                 Console.Error.Write(stepToExecute);
             }
 

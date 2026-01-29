@@ -30,6 +30,12 @@ namespace InnoWerks.Emulators.AppleIIe
         private IOU iou;
         private MMU mmu;
         private Cpu65C02 cpu;
+
+        private CpuTraceBuffer cpuTraceBuffer = new(50);
+
+        //
+        // display renderer
+        //
         private Display display;
 
         //
@@ -133,6 +139,8 @@ namespace InnoWerks.Emulators.AppleIIe
             var targetCycles = appleBus.CycleCount + VideoTiming.FrameCycles;
             while (appleBus.CycleCount < targetCycles)
             {
+                var peek = cpu.PeekInstruction();
+                cpuTraceBuffer.Add(peek);
                 cpu.Step();
             }
 
@@ -149,7 +157,7 @@ namespace InnoWerks.Emulators.AppleIIe
 
         protected override void Draw(GameTime gameTime)
         {
-            display.Draw(hostLayout, flashOn);
+            display.Draw(hostLayout, cpuTraceBuffer, flashOn);
 
             base.Draw(gameTime);
         }

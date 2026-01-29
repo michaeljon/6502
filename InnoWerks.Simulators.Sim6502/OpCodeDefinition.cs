@@ -8,7 +8,7 @@ namespace InnoWerks.Simulators
     public record OpCodeDefinition(
         OpCode OpCode,
         Action<MosTechnologiesCpu, ushort, byte> Execute,
-        Func<MosTechnologiesCpu, bool> DecodeOperand,
+        Func<MosTechnologiesCpu, string> DecodeOperand,
         AddressingMode AddressingMode)
     {
         /// <summary>
@@ -19,7 +19,7 @@ namespace InnoWerks.Simulators
         /// <summary>
         ///
         /// </summary>
-        public Func<MosTechnologiesCpu, bool> DecodeOperand { get; init; } = DecodeOperand;
+        public Func<MosTechnologiesCpu, string> DecodeOperand { get; init; } = DecodeOperand;
 
         /// <summary>
         ///

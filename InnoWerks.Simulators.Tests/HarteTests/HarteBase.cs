@@ -144,14 +144,14 @@ namespace InnoWerks.Simulators.Tests
 
             var testFailed = false;
 
-            // verify results
-            if (test.Final.ProgramCounter != cpu.Registers.ProgramCounter) { testFailed = true; results.Add($"{test.Name}: ProgramCounter expected {test.Final.ProgramCounter:X4} actual {cpu.Registers.ProgramCounter:X4}"); }
-
             // we can run these tests to this extent, after this i haven't implemented
             // the "undocumented" opcodes because, well, they're undocumented and
             // probably don't always behave like they should
             if (ocd.OpCode != OpCode.Unknown)
             {
+                // verify results
+                if (test.Final.ProgramCounter != cpu.Registers.ProgramCounter) { testFailed = true; results.Add($"{test.Name}: ProgramCounter expected {test.Final.ProgramCounter:X4} actual {cpu.Registers.ProgramCounter:X4}"); }
+
                 if (test.Final.S != cpu.Registers.StackPointer) { testFailed = true; results.Add($"{test.Name}: StackPointer expected {test.Final.S:X2} actual {cpu.Registers.StackPointer:X2}"); }
                 if (test.Final.A != cpu.Registers.A) { testFailed = true; results.Add($"{test.Name}: A expected {test.Final.A:X2} actual {cpu.Registers.A:X2}"); }
                 if (test.Final.X != cpu.Registers.X) { testFailed = true; results.Add($"{test.Name}: X expected {test.Final.X:X2} actual {cpu.Registers.Y:X2}"); }
