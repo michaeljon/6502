@@ -4,13 +4,33 @@ using InnoWerks.Processors;
 
 namespace InnoWerks.Simulators
 {
-    [DebuggerDisplay("{OpCode} {AddressingMode}")]
+    public record DecodedOperation
+    {
+        public string Display { get; set; }
+
+        public int Length { get; set; } = 1;
+
+        public byte OpCodeValue { get; set; }
+
+        public byte Operand1 { get; set; }
+
+        public byte Operand2 { get; set; }
+    }
+
     public record OpCodeDefinition(
+        byte OpCodeValue,
         OpCode OpCode,
         Action<MosTechnologiesCpu, ushort, byte> Execute,
-        Func<MosTechnologiesCpu, string> DecodeOperand,
-        AddressingMode AddressingMode)
+        Func<MosTechnologiesCpu, IBus, DecodedOperation> DecodeOperand,
+        AddressingMode AddressingMode,
+        int Bytes = 0,
+        int Cycles = 0)
     {
+        /// <summary>
+        ///
+        /// </summary>
+        public byte OpCodeValue { get; init; } = OpCodeValue;
+
         /// <summary>
         ///
         /// </summary>
@@ -19,7 +39,7 @@ namespace InnoWerks.Simulators
         /// <summary>
         ///
         /// </summary>
-        public Func<MosTechnologiesCpu, string> DecodeOperand { get; init; } = DecodeOperand;
+        public Func<MosTechnologiesCpu, IBus, DecodedOperation> DecodeOperand { get; init; } = DecodeOperand;
 
         /// <summary>
         ///
@@ -31,9 +51,19 @@ namespace InnoWerks.Simulators
         /// </summary>
         public AddressingMode AddressingMode { get; init; } = AddressingMode;
 
+        /// <summary>
+        ///
+        /// </summary>
+        public int Bytes { get; init; } = Bytes;
+
+        /// <summary>
+        ///
+        /// </summary>
+        public int Cycles { get; init; } = Cycles;
+
         public override string ToString()
         {
-            return $"{OpCode} {AddressingMode}";
+            return $"${OpCodeValue:X2} {OpCode} {AddressingMode}";
         }
     }
 }

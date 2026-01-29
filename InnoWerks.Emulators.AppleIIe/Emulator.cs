@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.NetworkInformation;
 using InnoWerks.Computers.Apple;
@@ -31,7 +32,15 @@ namespace InnoWerks.Emulators.AppleIIe
         private MMU mmu;
         private Cpu65C02 cpu;
 
-        private CpuTraceBuffer cpuTraceBuffer = new(50);
+        //
+        // debug, etc.
+        //
+        private CpuTraceBuffer cpuTraceBuffer = new(128);
+        private bool cpuPaused;
+        private bool stepRequested;
+        private readonly HashSet<ushort> breakpoints = [];
+
+        KeyboardState prevKeyboard;
 
         //
         // display renderer
@@ -125,7 +134,7 @@ namespace InnoWerks.Emulators.AppleIIe
 
         protected override void LoadContent()
         {
-            display = new Display(GraphicsDevice, cpu, memoryBlocks, machineState);
+            display = new Display(GraphicsDevice, cpu, appleBus, memoryBlocks, machineState);
 
             display.LoadContent(Content);
         }
@@ -136,13 +145,17 @@ namespace InnoWerks.Emulators.AppleIIe
 
             HandleKeyboardInput();
 
-            var targetCycles = appleBus.CycleCount + VideoTiming.FrameCycles;
-            while (appleBus.CycleCount < targetCycles)
-            {
-                var peek = cpu.PeekInstruction();
-                cpuTraceBuffer.Add(peek);
-                cpu.Step();
-            }
+            // var mouse = Mouse.GetState();
+
+            // if (mouse.LeftButton == ButtonState.Pressed &&
+            //     prevMouse.LeftButton == ButtonState.Released)
+            // {
+            //     HandleTraceClick(mouse.Position);
+            // }
+
+            // prevMouse = mouse;
+
+            RunEmulator();
 
             // Toggle flashing every 500ms
             flashTimer += gameTime.ElapsedGameTime.TotalMilliseconds;
@@ -153,6 +166,51 @@ namespace InnoWerks.Emulators.AppleIIe
             }
 
             base.Update(gameTime);
+        }
+
+        private void RunEmulator()
+        {
+            if (!cpuPaused)
+            {
+                RunCpuForFrame();
+            }
+            else if (stepRequested)
+            {
+                StepCpuOnce();
+                stepRequested = false;
+            }
+        }
+
+        private void RunCpuForFrame()
+        {
+            var targetCycles = appleBus.CycleCount + VideoTiming.FrameCycles;
+            while (appleBus.CycleCount < targetCycles)
+            {
+                var peek = cpu.PeekInstruction();
+
+                if (breakpoints.Contains(peek.ProgramCounter))
+                {
+                    cpuPaused = true;
+                    break;
+                }
+
+                StepCpuOnce();
+            }
+        }
+
+        private void StepCpuOnce()
+        {
+            var peek = cpu.PeekInstruction();
+
+            if (breakpoints.Contains(peek.ProgramCounter))
+            {
+                cpuPaused = true;
+                return;
+            }
+
+            cpuTraceBuffer.Add(peek);
+
+            cpu.Step();
         }
 
         protected override void Draw(GameTime gameTime)
@@ -170,6 +228,21 @@ namespace InnoWerks.Emulators.AppleIIe
             {
                 if (previousKeyboardState.IsKeyUp(key))
                 {
+                    // Toggle pause
+                    if (state.IsKeyDown(Keys.F5) && !prevKeyboard.IsKeyDown(Keys.F5))
+                    {
+                        cpuPaused = !cpuPaused;
+                    }
+
+                    // Single-step
+                    if (state.IsKeyDown(Keys.F6) && !prevKeyboard.IsKeyDown(Keys.F6))
+                    {
+                        if (cpuPaused)
+                        {
+                            stepRequested = true;
+                        }
+                    }
+
                     if (KeyMapper.TryMap(key, state, out byte ascii))
                     {
                         iou.InjectKey(ascii);

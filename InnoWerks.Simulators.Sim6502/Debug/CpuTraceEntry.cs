@@ -12,6 +12,7 @@ namespace InnoWerks.Simulators
 
         public CpuTraceEntry(
             MosTechnologiesCpu cpu,
+            IBus bus,
             ulong cycleCount,
             OpCodeDefinition opcode)
         {
@@ -23,7 +24,7 @@ namespace InnoWerks.Simulators
             CycleCount = cycleCount;
 
             Mnemonic = opcode.OpCode.ToString();
-            Formatted = $"{ProgramCounter:X4} {OpCode.OpCode}   {opcode.DecodeOperand(cpu)}";
+            Formatted = $"{ProgramCounter:X4} {OpCode.OpCode}   {opcode.DecodeOperand(cpu, bus).Display}";
         }
 
         public override bool Equals(object obj)

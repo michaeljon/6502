@@ -51,7 +51,8 @@ namespace InnoWerks.Emulators.AppleIIe
         private Texture2D[] loresPixels;
         private Texture2D charTexture;
 
-        private readonly Cpu65C02 cpu;
+        private readonly MosTechnologiesCpu cpu;
+        private readonly IBus bus;
         private readonly MachineState machineState;
 
         private readonly TextMemoryReader textMemoryReader;
@@ -84,16 +85,23 @@ namespace InnoWerks.Emulators.AppleIIe
             SoftSwitch.LcWriteEnabled,
         ];
 
-        public Display(GraphicsDevice graphicsDevice, Cpu65C02 cpu, MemoryBlocks memoryBlocks, MachineState machineState)
+        public Display(
+            GraphicsDevice graphicsDevice,
+            MosTechnologiesCpu cpu,
+            IBus bus,
+            MemoryBlocks memoryBlocks,
+            MachineState machineState)
         {
             ArgumentNullException.ThrowIfNull(graphicsDevice);
             ArgumentNullException.ThrowIfNull(cpu);
+            ArgumentNullException.ThrowIfNull(bus);
             ArgumentNullException.ThrowIfNull(memoryBlocks);
             ArgumentNullException.ThrowIfNull(machineState);
 
             this.graphicsDevice = graphicsDevice;
             this.machineState = machineState;
             this.cpu = cpu;
+            this.bus = bus;
 
             textMemoryReader = new TextMemoryReader(memoryBlocks, machineState);
             loresMemoryReader = new LoresMemoryReader(memoryBlocks, machineState);
@@ -292,7 +300,36 @@ namespace InnoWerks.Emulators.AppleIIe
             int x,
             ref int y)
         {
-            spriteBatch.DrawString(debugFont, e.Formatted, new Vector2(x, y), Color.LightGreen);
+            var opcode = e.OpCode;
+            var pc = e.ProgramCounter;
+            var decoded = e.OpCode.DecodeOperand(cpu, bus);
+
+            spriteBatch.DrawString(debugFont, $"{pc:X4}", new Vector2(x, y), Color.LightGreen);
+
+            spriteBatch.DrawString(
+                debugFont,
+                $"{opcode.OpCodeValue:X2}",
+                new Vector2(x + 52, y),
+                Color.Gray);
+
+            if (decoded.Length > 1)
+                spriteBatch.DrawString(debugFont, $"{decoded.Operand1:X2}", new Vector2(x + 80, y), Color.Gray);
+            if (decoded.Length > 2)
+                spriteBatch.DrawString(debugFont, $"{decoded.Operand2:X2}", new Vector2(x + 108, y), Color.Gray);
+
+            spriteBatch.DrawString(
+                debugFont,
+                e.Mnemonic,
+                new Vector2(x + 150, y),
+                Color.White);
+
+            spriteBatch.DrawString(
+                debugFont,
+                decoded.Display,
+                new Vector2(x + 200, y),
+                Color.White);
+
+            // todo: lookup symbols here??!!
         }
 
         private void DrawLoresMode(int start, int count)
