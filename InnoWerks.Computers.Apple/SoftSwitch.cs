@@ -29,7 +29,6 @@ namespace InnoWerks.Computers.Apple
         Paddle2,
         Paddle3,
 
-
         // Video
         TextMode,
         MixedMode,

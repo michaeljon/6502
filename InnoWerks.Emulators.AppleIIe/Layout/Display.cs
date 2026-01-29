@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Net.NetworkInformation;
@@ -6,6 +8,7 @@ using InnoWerks.Computers.Apple;
 using InnoWerks.Processors;
 using InnoWerks.Simulators;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -21,9 +24,13 @@ namespace InnoWerks.Emulators.AppleIIe
 
         public const int AppleBlockHeight = 4;
 
-        public const int InternalWidth = 280;
+        public const int AppleDisplayWidth = 280;
 
-        public const int InternalHeight = 192;
+        public const int AppleDisplayHeight = 192;
+
+        private const int LoresAppleWidth = 280;
+
+        private const int HiresAppleWidth = 560;
 
         private const int GlyphWidth = 8;
         private const int GlyphHeight = 8;
@@ -38,10 +45,12 @@ namespace InnoWerks.Emulators.AppleIIe
         //
         private GraphicsDevice graphicsDevice;
         private SpriteBatch spriteBatch;
+        private SpriteFont debugFont;
         private Texture2D whitePixel;
         private Texture2D[] loresPixels;
         private Texture2D charTexture;
 
+        private readonly Cpu65C02 cpu;
         private readonly MachineState machineState;
 
         private readonly TextMemoryReader textMemoryReader;
@@ -49,22 +58,52 @@ namespace InnoWerks.Emulators.AppleIIe
 
         private bool disposed;
 
-        public Display(GraphicsDevice graphicsDevice, MemoryBlocks memoryBlocks, MachineState machineState)
+        private readonly List<SoftSwitch> debugSwitches =
+        [
+            SoftSwitch.TextMode,
+            SoftSwitch.MixedMode,
+            SoftSwitch.Page2,
+            SoftSwitch.HiRes,
+            SoftSwitch.DoubleHiRes,
+            SoftSwitch.IOUDisabled,
+
+            SoftSwitch.Store80,
+            SoftSwitch.AuxRead,
+            SoftSwitch.AuxWrite,
+            SoftSwitch.ZpAux,
+            SoftSwitch.EightyColumnMode,
+            SoftSwitch.AltCharSet,
+
+            SoftSwitch.IntCxRomEnabled,
+            SoftSwitch.Slot3RomEnabled,
+            SoftSwitch.IntC8RomEnabled,
+
+            SoftSwitch.LcBank2,
+            SoftSwitch.LcReadEnabled,
+            SoftSwitch.LcWriteEnabled,
+        ];
+
+        public Display(GraphicsDevice graphicsDevice, Cpu65C02 cpu, MemoryBlocks memoryBlocks, MachineState machineState)
         {
             ArgumentNullException.ThrowIfNull(graphicsDevice);
+            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(memoryBlocks);
             ArgumentNullException.ThrowIfNull(machineState);
 
             this.graphicsDevice = graphicsDevice;
             this.machineState = machineState;
+            this.cpu = cpu;
 
             textMemoryReader = new TextMemoryReader(memoryBlocks, machineState);
             loresMemoryReader = new LoresMemoryReader(memoryBlocks, machineState);
         }
 
-        public void LoadContent()
+        public void LoadContent(ContentManager contentManager)
         {
+            ArgumentNullException.ThrowIfNull(contentManager);
+
             spriteBatch = new SpriteBatch(graphicsDevice);
+            debugFont = contentManager.Load<SpriteFont>("DebugFont");
 
             whitePixel = new Texture2D(graphicsDevice, 1, 1);
             whitePixel.SetData([Color.White]);
@@ -110,14 +149,14 @@ namespace InnoWerks.Emulators.AppleIIe
             charTexture.SetData(pixels);
         }
 
-        public void Draw(bool flashOn)
+        public void Draw(HostLayout hostLayout, bool flashOn)
         {
-            ArgumentNullException.ThrowIfNull(graphicsDevice);
+            ArgumentNullException.ThrowIfNull(hostLayout);
 
             using var appleTarget = new RenderTarget2D(
                 graphicsDevice,
-                machineState.State[SoftSwitch.EightyColumnMode] ? 560 : 280,
-                InternalHeight,
+                machineState.State[SoftSwitch.EightyColumnMode] ? HiresAppleWidth : LoresAppleWidth,
+                AppleDisplayHeight,
                 false,
                 SurfaceFormat.Color,
                 DepthFormat.None,
@@ -125,6 +164,26 @@ namespace InnoWerks.Emulators.AppleIIe
                 RenderTargetUsage.PreserveContents
             );
 
+            DrawAppleRegion(appleTarget, flashOn);
+
+            graphicsDevice.SetRenderTarget(null);
+            graphicsDevice.Clear(Color.Black);
+
+            spriteBatch.Begin(
+                sortMode: SpriteSortMode.Deferred,
+                blendState: BlendState.AlphaBlend,
+                samplerState: SamplerState.LinearClamp);
+
+            DrawPanel(hostLayout.AppleDisplay);
+            spriteBatch.Draw(appleTarget, hostLayout.AppleDisplay, Color.White);
+            DrawRegisters(hostLayout.Registers);
+            DrawCpuTrace(hostLayout.CpuTrace);
+
+            spriteBatch.End();
+        }
+
+        private void DrawAppleRegion(RenderTarget2D appleTarget, bool flashOn)
+        {
             //
             // draw the content to the off-screen buffer
             //
@@ -132,9 +191,8 @@ namespace InnoWerks.Emulators.AppleIIe
             graphicsDevice.Clear(Color.Black);
 
             spriteBatch.Begin(
-                samplerState: SamplerState.PointClamp,
-                sortMode: SpriteSortMode.Deferred
-            );
+                sortMode: SpriteSortMode.Deferred,
+                samplerState: SamplerState.PointClamp);
 
             if (machineState.State[SoftSwitch.TextMode])
             {
@@ -151,40 +209,72 @@ namespace InnoWerks.Emulators.AppleIIe
             }
 
             spriteBatch.End();
+        }
 
-            //
-            // blt the off-screen buffer onto the display
-            //
-            graphicsDevice.SetRenderTarget(null);
-            graphicsDevice.Clear(Color.Black);
+        private void DrawRegisters(Rectangle rectangle)
+        {
+            DrawPanel(rectangle);
 
-            spriteBatch.Begin(
-                samplerState: SamplerState.PointClamp,
-                sortMode: SpriteSortMode.Deferred
-            );
+            int x = rectangle.X + 8;
+            int y = rectangle.Y + 8;
 
-            int vw = graphicsDevice.Viewport.Width;
-            int vh = graphicsDevice.Viewport.Height;
+            DrawKeyValue($"PC:", $"{cpu.Registers.ProgramCounter:X4}", x, ref y);
+            DrawKeyValue($"A:", $"{cpu.Registers.A:X2}", x, ref y);
+            DrawKeyValue($"X:", $"{cpu.Registers.X:X2}", x, ref y);
+            DrawKeyValue($"Y:", $"{cpu.Registers.Y:X2}", x, ref y);
+            DrawKeyValue($"SP:", $"{cpu.Registers.StackPointer:X2}", x, ref y);
+            DrawKeyValue($"PS:", $"{cpu.Registers.InternalGetFlagsDisplay}", x, ref y);
 
-            float scaleX = vw / (float)InternalWidth;
-            float scaleY = vh / (float)InternalHeight;
-            float scale = MathF.Floor(MathF.Min(scaleX, scaleY));
+            y += 8;
+            foreach (var sw in debugSwitches)
+            {
+                DrawKeyValue($"{sw}:", $"{(machineState.State[sw] ? 1 : 0)}", x, ref y);
+            }
+        }
 
-            if (scale < 1) scale = 1;
+        private void DrawCpuTrace(Rectangle rectangle)
+        {
+            DrawPanel(rectangle);
 
-            int dstW = (int)(InternalWidth * scale);
-            int dstH = (int)(InternalHeight * scale);
+            var (opcode, decode) = cpu.PeekInstruction();
+            var display = cpu.OperandDisplay;
+        }
 
-            int offsetX = (vw - dstW) / 2;
-            int offsetY = (vh - dstH) / 2;
+        private void DrawPanel(Rectangle rectangle)
+        {
+            spriteBatch.Draw(whitePixel, rectangle, new Color(20, 20, 20));
+            spriteBatch.Draw(whitePixel, new Rectangle(rectangle.X, rectangle.Y, rectangle.Width, 1), Color.Gray);
+        }
 
-            spriteBatch.Draw(
-                appleTarget,
-                new Rectangle(offsetX, offsetY, dstW, dstH),
-                Color.White
-            );
+        private void DrawKeyValue(
+            string key,
+            string value,
+            int x,
+            ref int y)
+        {
+            spriteBatch.DrawString(debugFont, key, new Vector2(x, y), Color.LightGreen);
+            spriteBatch.DrawString(debugFont, value, new Vector2(x + 56, y), Color.White);
+            y += debugFont.LineSpacing;
+        }
 
-            spriteBatch.End();
+
+        private void DrawLine(
+            Rectangle panel,
+            string text,
+            int x,
+            ref int y,
+            Color? color = null)
+        {
+            if (y + debugFont.LineSpacing > panel.Bottom)
+                return;
+
+            spriteBatch.DrawString(
+                debugFont,
+                text,
+                new Vector2(x, y),
+                color ?? Color.LightGreen);
+
+            y += debugFont.LineSpacing;
         }
 
         private void DrawLoresMode(int start, int count)

@@ -249,7 +249,7 @@ namespace InnoWerks.Simulators
                 return (null, $"Invalid operation {operation:X2}");
             }
 
-            var stepToExecute = $"{bus.CycleCount:X16} {Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}\n";
+            var stepToExecute = $"{Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {OperandDisplay,-10}";
 
             return (opCodeDefinition, stepToExecute);
         }

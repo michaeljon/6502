@@ -38,6 +38,11 @@ namespace InnoWerks.Emulators.AppleIIe
         private readonly GraphicsDeviceManager graphicsDeviceManager;
 
         //
+        // layout stuff
+        //
+        private HostLayout hostLayout;
+
+        //
         // state stuff
         //
         private KeyboardState previousKeyboardState;
@@ -48,14 +53,20 @@ namespace InnoWerks.Emulators.AppleIIe
         {
             graphicsDeviceManager = new GraphicsDeviceManager(this)
             {
-                PreferredBackBufferWidth = Display.InternalWidth * 2,     // initial width
-                PreferredBackBufferHeight = Display.InternalHeight * 2,   // initial height
+                PreferredBackBufferWidth = Display.AppleDisplayWidth * 4,     // initial width
+                PreferredBackBufferHeight = Display.AppleDisplayHeight * 4,   // initial height
                 IsFullScreen = false
             };
             graphicsDeviceManager.ApplyChanges();
 
+            hostLayout = HostLayout.ComputeLayout(
+                Display.AppleDisplayWidth * 4,
+                Display.AppleDisplayWidth * 4
+            );
+
             // Make window resizable
             Window.AllowUserResizing = true;
+            Window.ClientSizeChanged += HandleResize;
 
             Content.RootDirectory = "Content";
 
@@ -108,18 +119,14 @@ namespace InnoWerks.Emulators.AppleIIe
 
         protected override void LoadContent()
         {
-            display = new Display(GraphicsDevice, memoryBlocks, machineState);
-            display.LoadContent();
+            display = new Display(GraphicsDevice, cpu, memoryBlocks, machineState);
+
+            display.LoadContent(Content);
         }
 
         protected override void Update(GameTime gameTime)
         {
             ArgumentNullException.ThrowIfNull(gameTime);
-
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-            {
-                Exit();
-            }
 
             HandleKeyboardInput();
 
@@ -142,12 +149,12 @@ namespace InnoWerks.Emulators.AppleIIe
 
         protected override void Draw(GameTime gameTime)
         {
-            display.Draw(flashOn);
+            display.Draw(hostLayout, flashOn);
 
             base.Draw(gameTime);
         }
 
-        void HandleKeyboardInput()
+        private void HandleKeyboardInput()
         {
             var state = Keyboard.GetState();
 
@@ -164,6 +171,25 @@ namespace InnoWerks.Emulators.AppleIIe
             }
 
             previousKeyboardState = state;
+        }
+
+        private void HandleResize(object sender, EventArgs e)
+        {
+            Window.ClientSizeChanged -= HandleResize;
+
+            graphicsDeviceManager.PreferredBackBufferWidth =
+                Math.Max(Window.ClientBounds.Width, Display.AppleDisplayWidth * 4);
+            graphicsDeviceManager.PreferredBackBufferHeight =
+                Math.Max(Window.ClientBounds.Height, Display.AppleDisplayHeight * 4);
+
+            hostLayout = HostLayout.ComputeLayout(
+                Math.Max(Window.ClientBounds.Width, Display.AppleDisplayWidth * 4),
+                Math.Max(Window.ClientBounds.Height, Display.AppleDisplayHeight * 4)
+            );
+
+            graphicsDeviceManager.ApplyChanges();
+
+            Window.ClientSizeChanged += HandleResize;
         }
     }
 }
