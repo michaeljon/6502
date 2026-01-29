@@ -118,7 +118,7 @@ namespace InnoWerks.Emulators.AppleIIe
             GraphicsDevice graphicsDevice,
             MosTechnologiesCpu cpu,
             IBus bus,
-            MemoryBlocks memoryBlocks,
+            Memory128k memoryBlocks,
             MachineState machineState)
         {
             ArgumentNullException.ThrowIfNull(graphicsDevice);

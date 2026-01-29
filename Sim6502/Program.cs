@@ -29,7 +29,7 @@ namespace Sim6502
 
         private readonly MachineState machineState;
 
-        private readonly MemoryBlocks memoryBlocks;
+        private readonly Memory128k memoryBlocks;
 
         private readonly AppleBus bus;
 

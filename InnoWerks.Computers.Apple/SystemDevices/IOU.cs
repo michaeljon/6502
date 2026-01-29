@@ -14,7 +14,7 @@ namespace InnoWerks.Computers.Apple
     {
         private readonly IBus bus;
 
-        private readonly MemoryBlocks memoryBlocks;
+        private readonly Memory128k memoryBlocks;
 
         private readonly MachineState machineState;
 
@@ -148,7 +148,7 @@ namespace InnoWerks.Computers.Apple
 
         public string Name => $"IOU";
 
-        public IOU(MemoryBlocks memoryBlocks, MachineState machineState, IBus bus)
+        public IOU(Memory128k memoryBlocks, MachineState machineState, IBus bus)
         {
             ArgumentNullException.ThrowIfNull(machineState, nameof(machineState));
             ArgumentNullException.ThrowIfNull(memoryBlocks, nameof(memoryBlocks));

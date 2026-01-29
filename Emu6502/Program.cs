@@ -59,7 +59,7 @@ namespace Emu6502
             };
 
             var machineState = new MachineState();
-            var memoryBlocks = new MemoryBlocks(machineState);
+            var memoryBlocks = new Memory128k(machineState);
 
             var bus = new AppleBus(config, memoryBlocks, machineState);
             var iou = new IOU(memoryBlocks, machineState, bus);

@@ -16,7 +16,7 @@ namespace InnoWerks.Computers.Apple
 
         private int transactionCycles;
 
-        private readonly MemoryBlocks memoryBlocks;
+        private readonly Memory128k memoryBlocks;
 
         // there are 8 slots, 0 - 7, most of the time, but slot 0 is not used
         // we keep the numbering for convenience
@@ -28,7 +28,7 @@ namespace InnoWerks.Computers.Apple
 
         private bool reportKeyboardLatchAll = true;
 
-        public AppleBus(AppleConfiguration configuration, MemoryBlocks memoryBlocks, MachineState machineState)
+        public AppleBus(AppleConfiguration configuration, Memory128k memoryBlocks, MachineState machineState)
         {
             ArgumentNullException.ThrowIfNull(configuration);
             ArgumentNullException.ThrowIfNull(memoryBlocks);
@@ -97,7 +97,18 @@ namespace InnoWerks.Computers.Apple
         {
             Tick(1);
 
-            HandleC3xxAndCfff(address);
+            var page = memoryBlocks.GetPage(address);
+            var offset = memoryBlocks.GetOffset(address);
+            if (page == 0xC0 && offset > 0x8F)
+            {
+                SimDebugger.Info($"Page 0xC0 read at {address:X4}\n");
+            }
+
+            if (HandleC3xxAndCfff(address) == true)
+            {
+                memoryBlocks.Remap();
+                return 0xFF;
+            }
 
             if (address < 0xC000)
             {
@@ -136,8 +147,6 @@ namespace InnoWerks.Computers.Apple
         public void Write(ushort address, byte value)
         {
             Tick(1);
-
-            HandleC3xxAndCfff(address);
 
             if (address < 0xC000)
             {
@@ -250,11 +259,16 @@ namespace InnoWerks.Computers.Apple
             }
         }
 
-        private void HandleC3xxAndCfff(ushort address)
+        private bool HandleC3xxAndCfff(ushort address)
         {
             bool remapNeeded = false;
 
             var page = memoryBlocks.GetPage(address);
+
+            if (page != 0xC3 && page != 0xCF)
+            {
+                return false;
+            }
 
             if (page == 0xC3 && machineState.State[SoftSwitch.Slot3RomEnabled] == false)
             {
@@ -270,15 +284,16 @@ namespace InnoWerks.Computers.Apple
 
             if (remapNeeded)
             {
-                var slot = (page == 0xC0) ? ((address - 0xC080) >> 4) : (page - 0xC0);
+                // var slot = (page == 0xC0) ? ((address - 0xC080) >> 4) : (page - 0xC0);
+                var slot = page - 0xC0;
 
                 if (slot < 8)
                 {
                     machineState.CurrentSlot = slot;
                 }
-
-                memoryBlocks.Remap();
             }
+
+            return remapNeeded;
         }
 
         private byte CheckKeyboardLatch(ushort address)

@@ -8,10 +8,10 @@ namespace InnoWerks.Emulators.AppleIIe
 {
     public sealed class LoresMemoryReader
     {
-        private readonly MemoryBlocks ram;
+        private readonly Memory128k ram;
         private readonly MachineState machineState;
 
-        public LoresMemoryReader(MemoryBlocks ram, MachineState machineState)
+        public LoresMemoryReader(Memory128k ram, MachineState machineState)
         {
             this.ram = ram;
             this.machineState = machineState;

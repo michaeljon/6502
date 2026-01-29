@@ -26,7 +26,7 @@ namespace InnoWerks.Emulators.AppleIIe
         // The Apple IIe itself
         //
         private AppleBus appleBus;
-        private MemoryBlocks memoryBlocks;
+        private Memory128k memoryBlocks;
         private MachineState machineState;
         private IOU iou;
         private MMU mmu;
@@ -38,7 +38,7 @@ namespace InnoWerks.Emulators.AppleIIe
         private CpuTraceBuffer cpuTraceBuffer = new(128);
         private bool cpuPaused;
         private bool stepRequested;
-        private readonly HashSet<ushort> breakpoints = [0xc600];
+        private readonly HashSet<ushort> breakpoints = [];
 
         private KeyboardState prevKeyboard;
         private MouseState prevMouse;
@@ -111,7 +111,7 @@ namespace InnoWerks.Emulators.AppleIIe
             };
 
             machineState = new MachineState();
-            memoryBlocks = new MemoryBlocks(machineState);
+            memoryBlocks = new Memory128k(machineState);
 
             appleBus = new AppleBus(config, memoryBlocks, machineState);
             iou = new IOU(memoryBlocks, machineState, appleBus);

@@ -8,7 +8,7 @@ using InnoWerks.Processors;
 
 namespace InnoWerks.Computers.Apple
 {
-    public class MemoryBlocks
+    public class Memory128k
     {
         private readonly MachineState machineState;
 
@@ -54,7 +54,7 @@ namespace InnoWerks.Computers.Apple
         // device rom, c800, numbered from 0 for convenience
         private readonly MemoryPage[][] hiSlotRom = new MemoryPage[8][];
 
-        public MemoryBlocks(MachineState machineState)
+        public Memory128k(MachineState machineState)
         {
             this.machineState = machineState;
 
@@ -301,7 +301,7 @@ namespace InnoWerks.Computers.Apple
                 }
             }
 
-            activeRead[0xC0] = MemoryPage.FFs;
+            activeRead[0xC0] = null; // CRASH??? MemoryPage.FFs;
         }
 
         private void RemapWrite()
