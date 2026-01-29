@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using InnoWerks.Processors;
+using Microsoft.VisualBasic;
 
 //
 // things to note: http://www.6502.org/tutorials/65c02opcodes.html
@@ -54,9 +55,14 @@ namespace InnoWerks.Simulators
             Registers.Reset();
         }
 
-        protected abstract void Dispatch(byte operation, bool writeInstructions = false);
+        protected abstract void Dispatch(OpCodeDefinition opCodeDefinition, bool writeInstructions = false);
 
-        protected abstract OpCodeDefinition GetOpCodeDefinition(byte operation);
+        protected abstract InstructionSet InstructionSet { get; }
+
+        protected virtual OpCodeDefinition GetOpCodeDefinition(byte operation)
+        {
+            return InstructionSet[operation];
+        }
 
         public void Reset()
         {
@@ -133,28 +139,6 @@ namespace InnoWerks.Simulators
             return (ushort)((0xff & StackPop()) | (0xff00 & (StackPop() << 8)));
         }
 
-        public ushort PeekWord(ushort address)
-        {
-            var lo = bus.Peek(address);
-            var hi = bus.Peek((ushort)(address + 1));
-
-            return (ushort)((hi << 8) | lo);
-        }
-
-        public ushort ReadWord(ushort address)
-        {
-            var lo = bus.Read(address);
-            var hi = bus.Read((ushort)(address + 1));
-
-            return (ushort)((hi << 8) | lo);
-        }
-
-        public void WriteWord(ushort address, ushort value)
-        {
-            bus.Write(address, (byte)(value & 0x00ff));
-            bus.Write((ushort)(address + 1), (byte)((value >> 8) & 0xff));
-        }
-
         public (int intructionCount, int cycleCount) Run(bool stopOnBreak = false, bool writeInstructions = false, int stepsPerSecond = 0)
         {
             var instructionCount = 0;
@@ -176,7 +160,10 @@ namespace InnoWerks.Simulators
                     break;
                 }
 
-                Dispatch(operation, writeInstructions);
+                OpCodeDefinition opCodeDefinition =
+                    GetInstruction(operation, writeInstructions);
+
+                Dispatch(opCodeDefinition, writeInstructions);
 
                 if (writeInstructions)
                 {
@@ -219,8 +206,11 @@ namespace InnoWerks.Simulators
             // T0
             operation = bus.Read(Registers.ProgramCounter);
 
+            OpCodeDefinition opCodeDefinition =
+                GetInstruction(operation, writeInstructions);
+
             // rest of memory cycles
-            Dispatch(operation, writeInstructions);
+            Dispatch(opCodeDefinition, writeInstructions);
 
             postExecutionCallback?.Invoke(this);
 
@@ -233,132 +223,41 @@ namespace InnoWerks.Simulators
             var operation = bus.Peek(Registers.ProgramCounter);
 
             OpCodeDefinition opCodeDefinition =
-                CpuInstructions.OpCode65C02[operation];
+                GetInstruction(operation, false);
+
+            return new CpuTraceEntry(this, bus, bus.CycleCount, opCodeDefinition);
+        }
+
+        private OpCodeDefinition GetInstruction(byte operation, bool writeInstructions)
+        {
+            OpCodeDefinition opCodeDefinition = InstructionSet[operation];
+
+            if (writeInstructions)
+            {
+                var stepToExecute = $"{Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {opCodeDefinition.DecodeOperand(this, bus),-10}\n";
+                Console.Error.Write(stepToExecute);
+            }
 
             // decode the operand based on the opcode and addressing mode
-            if (opCodeDefinition.DecodeOperand(this) == null)
+            if (opCodeDefinition.AddressingMode == AddressingMode.Unknown)
             {
-                if (illegalInstructionEncountered == true)
+                if (opCodeDefinition.Bytes == 0)
                 {
+                    illegalInstructionEncountered = true;
+
                     // This is a JAM / KIL
                     throw new IllegalOpCodeException(Registers.ProgramCounter, operation);
                 }
+
+                // all we can do is move the PC
+                Registers.ProgramCounter = (ushort)(Registers.ProgramCounter + opCodeDefinition.Bytes);
             }
 
-            return new CpuTraceEntry(
-                this,
-                bus.CycleCount,
-                opCodeDefinition
-            );
+            return opCodeDefinition;
         }
 
         #region InstructionDefinitions
-        /// <summary>
-        /// <para>ADC - Add with Carry 65C02</para>
-        /// <code>
-        /// Flags affected: nv----zc
-        ///
-        /// A ← A + M + c
-        ///
-        /// n ← Most significant bit of result
-        /// v ← Signed overflow of result
-        /// z ← Set if the result is zero
-        /// c ← Carry from ALU (bit 8/16 of result)
-        /// </code>
-        /// </summary>
-        public void ADC65C02(ushort addr, byte value)
-        {
-            int adjustment = Registers.Carry ? 0x01 : 0x00;
-            int w;
-
-            Registers.Overflow = ((Registers.A ^ value) & 0x80) == 0;
-
-            if (Registers.Decimal == true)
-            {
-                w = (Registers.A & 0x0f) + (value & 0x0f) + adjustment;
-                if (w >= 0x0a)
-                {
-                    w = 0x10 | ((w + 0x06) & 0x0f);
-                }
-                w += (Registers.A & 0xf0) + (value & 0xf0);
-                if (w >= 0xa0)
-                {
-                    Registers.Carry = true;
-                    Registers.Overflow &= w < 0x180;
-                    w += 0x60;
-                }
-                else
-                {
-                    Registers.Carry = false;
-                    Registers.Overflow &= w >= 0x80;
-                }
-            }
-            else
-            {
-                w = Registers.A + value + adjustment;
-                Registers.Overflow = ((Registers.A ^ w) & (value ^ w) & 0x80) != 0;
-                Registers.Carry = w >= 0x100;
-            }
-
-            Registers.A = RegisterMath.TruncateToByte(w);
-            Registers.SetNZ(Registers.A);
-        }
-
-        /// <summary>
-        /// <para>ADC - Add with Carry 6502</para>
-        /// <code>
-        /// Flags affected: nv----zc
-        ///
-        /// A ← A + M + c
-        ///
-        /// n ← Most significant bit of result
-        /// v ← Signed overflow of result
-        /// z ← Set if the result is zero
-        /// c ← Carry from ALU (bit 8/16 of result)
-        /// </code>
-        /// </summary>
-        public void ADC6502(ushort addr, byte value)
-        {
-            int adjustment = Registers.Carry ? 0x01 : 0x00;
-
-            if (Registers.Decimal == true)
-            {
-                int w = (Registers.A & 0x0f) + (value & 0x0f) + adjustment;
-                if (w > 0x09)
-                {
-                    w += 0x06;
-                }
-                if (w <= 0x0f)
-                {
-                    w = (w & 0x0f) + (Registers.A & 0xf0) + (value & 0xf0);
-                }
-                else
-                {
-                    w = (w & 0x0f) + (Registers.A & 0xf0) + (value & 0xf0) + 0x10;
-                }
-
-                Registers.Zero = RegisterMath.IsZero((Registers.A + value + adjustment) & 0xff);
-                Registers.Negative = RegisterMath.IsHighBitSet(w);
-                Registers.Overflow = ((Registers.A ^ w) & 0x80) != 0 && ((Registers.A ^ value) & 0x80) == 0;
-
-                if ((w & 0x1f0) > 0x90)
-                {
-                    w += 0x60;
-                }
-
-                Registers.Carry = (w & 0xff0) > 0xf0;
-                Registers.A = RegisterMath.TruncateToByte(w);
-            }
-            else
-            {
-                int w = Registers.A + value + adjustment;
-
-                Registers.Carry = w > 0xff;
-                Registers.Overflow = ((Registers.A & 0x80) == (value & 0x80)) && ((Registers.A & 0x80) != (w & 0x80));
-                Registers.A = RegisterMath.TruncateToByte(w);
-                Registers.SetNZ(Registers.A);
-            }
-        }
+        public abstract void ADC(ushort addr, byte value);
 
         /// <summary>
         /// <para>AND - And Accumulator with Memory</para>
@@ -1348,118 +1247,7 @@ namespace InnoWerks.Simulators
             Registers.ProgramCounter = (ushort)(((pch << 8) | pcl) + 1);
         }
 
-        /// <summary>
-        /// <para>SBC - Subtract with Borrow from Accumulator 6502</para>
-        /// <code>
-        /// Flags affected: nv----zc
-        ///
-        /// A ← A + (~M) + c
-        ///
-        /// n ← Most significant bit of result
-        /// v ← Signed overflow of result
-        /// z ← Set if the Accumulator is zero
-        /// c ← Carry from ALU(bit 8/16 of result) (set if borrow not required)
-        /// </code>
-        /// </summary>
-        public void SBC6502(ushort addr, byte value)
-        {
-            int adjustment = Registers.Carry ? 0x00 : 0x01;
-            int result = Registers.A - value - adjustment;
-
-            bool borrowNeeded = false;
-            if (result < 0)
-            {
-                borrowNeeded = true;
-            }
-
-            if (Registers.Decimal == true)
-            {
-                int val = (Registers.A & 0x0f) - (value & 0x0f) - adjustment;
-                if ((val & 0x10) != 0)
-                {
-                    val = ((val - 0x06) & 0x0f) | ((Registers.A & 0xf0) - (value & 0xf0) - 0x10);
-                }
-                else
-                {
-                    val = (val & 0x0f) | ((Registers.A & 0xf0) - (value & 0xf0));
-                }
-                if ((val & 0x100) != 0)
-                {
-                    val -= 0x60;
-                }
-
-                // Registers.Carry = result < 0x100;
-                Registers.Carry = !borrowNeeded;
-                Registers.SetNZ(result);
-                Registers.Overflow = ((Registers.A ^ result) & 0x80) != 0 && ((Registers.A ^ value) & 0x80) != 0;
-                Registers.A = RegisterMath.TruncateToByte(val);
-            }
-            else
-            {
-                // Registers.Carry = result < 0x100;
-                Registers.Carry = !borrowNeeded;
-                Registers.Overflow = ((Registers.A & 0x80) != (value & 0x80)) && ((Registers.A & 0x80) != (result & 0x80));
-                Registers.A = RegisterMath.TruncateToByte(result);
-                Registers.SetNZ(Registers.A);
-            }
-        }
-
-        /// <summary>
-        /// <para>SBC - Subtract with Borrow from Accumulator 65C02</para>
-        /// <code>
-        /// Flags affected: nv----zc
-        ///
-        /// A ← A + (~M) + c
-        ///
-        /// n ← Most significant bit of result
-        /// v ← Signed overflow of result
-        /// z ← Set if the Accumulator is zero
-        /// c ← Carry from ALU(bit 8/16 of result) (set if borrow not required)
-        /// </code>
-        /// </summary>
-        public void SBC65C02(ushort addr, byte value)
-        {
-            if (Registers.Decimal == false)
-            {
-                ADC65C02(addr, RegisterMath.TruncateToByte(~value));
-            }
-            else
-            {
-                int adjustment = Registers.Carry ? 0x01 : 0x00;
-                Registers.Overflow = ((Registers.A ^ value) & 0x80) != 0;
-
-                int w = 0x0f + (Registers.A & 0x0f) - (value & 0x0f) + adjustment;
-                int val = 0;
-
-                if (w < 0x10)
-                {
-                    w -= 0x06;
-                }
-                else
-                {
-                    val = 0x10;
-                    w -= 0x10;
-                }
-
-                val += 0xf0 + (Registers.A & 0xf0) - (value & 0xf0);
-
-                if (val < 0x100)
-                {
-                    Registers.Carry = false;
-                    Registers.Overflow &= val >= 0x80;
-                    val -= 0x60;
-                }
-                else
-                {
-                    Registers.Carry = true;
-                    Registers.Overflow &= val < 0x180;
-                }
-
-                val += w;
-                Registers.A = RegisterMath.TruncateToByte(val);
-                Registers.SetNZ(Registers.A);
-            }
-        }
+        public abstract void SBC(ushort addr, byte value);
 
         /// <summary>
         /// <para>SEC - Set Carry</para>
@@ -1790,216 +1578,5 @@ namespace InnoWerks.Simulators
             }
         }
         #endregion
-
-        #region InstructionDecoders
-        public string DecodeUndefined(int bytes, int cycles)
-        {
-            if (bytes == 0)
-            {
-                illegalInstructionEncountered = true;
-                return "<illegal>";
-            }
-
-            // all we can do is move the PC
-            Registers.ProgramCounter = (ushort)(Registers.ProgramCounter + bytes);
-            return "<illegal>";
-        }
-
-        /// <summary>
-        /// Implied - In the implied addressing mode, the address containing
-        /// the operand is implicitly stated in the operation code of the instruction.
-        /// </summary>
-        public string DecodeImplicit()
-        {
-            return "";
-        }
-
-        /// <summary>
-        /// Implied - In the implied addressing mode, the address containing
-        /// the operand is implicitly stated in the operation code of the instruction.
-        /// </summary>
-        public string DecodeStack()
-        {
-            return "";
-        }
-
-        /// <summary>
-        /// Accum - This form of addressing is represented with a
-        /// one byte instruction, implying an operation on the accumulator.
-        /// </summary>
-        public string DecodeAccumulator()
-        {
-            return "";
-        }
-
-        /// <summary>
-        /// IMM - In immediate addressing, the second byte of the instruction
-        /// contains the operand, with no further memory addressing required.
-        /// </summary>
-        public string DecodeImmediate()
-        {
-            return $"#${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2}";
-        }
-
-        /// <summary>
-        /// ABS - In absolute addressing, the second byte of the instruction
-        /// specifies the eight low order bits of the effective address while
-        /// the third byte specifies the eight high order bits. Thus the
-        /// absolute addressing mode allows access to the entire 64k bytes
-        /// of addressable memory.
-        /// </summary>
-        public string DecodeAbsolute()
-        {
-            return $"${PeekWord((ushort)(Registers.ProgramCounter + 1)):X4}";
-        }
-
-        /// <summary>
-        /// ZP - The zero page instructions allow for shorter code and execution
-        /// fetch times by fetching only the second byte of the instruction and
-        /// assuming a zero high address byte. Careful of use the zero page can
-        /// result in significant increase in code efficiency.
-        /// </summary>
-        public string DecodeZeroPage()
-        {
-            return $"${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2}";
-        }
-
-        /// <summary>
-        /// ABS,X (X indexing) - This form of addressing is used in conjunction
-        /// with X and Y index register and is referred to as "Absolute,X".
-        /// The effective address is formed by adding the contents
-        /// of X to the address contained in the second and third bytes of the
-        /// instruction. This mode allows for the index register to contain the
-        /// index or count value and the instruction to contain the base address.
-        /// This type of indexing allows any location referencing and the index
-        /// to modify fields, resulting in reducing coding and execution time.
-        /// </summary>
-        public string DecodeAbsoluteXIndexed()
-        {
-            return $"${PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},X";
-        }
-
-        /// <summary>
-        /// ABS,Y (Y indexing) - This form of addressing is used in conjunction
-        /// with X and Y index register and is referred to as
-        /// "Absolute,Y". The effective address is formed by adding the contents
-        /// of Y to the address contained in the second and third bytes of the
-        /// instruction. This mode allows for the index register to contain the
-        /// index or count value and the instruction to contain the base address.
-        /// This type of indexing allows any location referencing and the index
-        /// to modify fields, resulting in reducing coding and execution time.
-        /// </summary>
-        public string DecodeAbsoluteYIndexed()
-        {
-            return $"${PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},Y";
-        }
-
-        /// <summary>
-        /// ZP,X (X indexing) - This form of address is used with the index
-        /// register and is referred to as "Zero Page,X".
-        /// The effective address is calculated by adding the second byte to the
-        /// contents of the index register. Since this is a form of "Zero Page"
-        /// addressing, the content of the second byte references a location
-        /// in page zero. Additionally, due to the "Zero Page" addressing nature
-        /// of this mode, no carry is added to the high order eight bits of
-        /// memory and crossing page boundaries does not occur.
-        /// </summary>
-        public string DecodeZeroPageXIndexed()
-        {
-            return $"(${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2},X)";
-        }
-
-        /// <summary>
-        /// ZP,Y (Y indexing) - This form of address is used with the index
-        /// register and is referred to as "Zero Page,Y".
-        /// The effective address is calculated by adding the second byte to the
-        /// contents of the index register. Since this is a form of "Zero Page"
-        /// addressing, the content of the second byte references a location
-        /// in page zero. Additionally, due to the "Zero Page" addressing nature
-        /// of this mode, no carry is added to the high order eight bits of
-        /// memory and crossing page boundaries does not occur.
-        /// </summary>
-        public string DecodeZeroPageYIndexed()
-        {
-            return $"(${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2},Y";
-        }
-
-        /// <summary>
-        /// <para>Relative - Relative addressing is used only with branch instructions
-        /// and establishes a destination for the conditional branch.</para>
-        ///
-        /// <para>The second byte of the instruction becomes the operand which is an
-        /// "Offset" added to the contents of the lower eight bits of the program
-        /// counter when the counter is set at the next instruction. The range
-        /// of the offset is -128 to +127 bytes from the next instruction.</para>
-        /// </summary>
-        public string DecodeRelative()
-        {
-            return $"${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2}";
-        }
-
-        /// <summary>
-        /// (IND) - The second byte of the instruction contains a zero page address
-        /// serving as the indirect pointer.
-        /// </summary>
-        public string DecodeZeroPageIndirect()
-        {
-            return $"(${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2})";
-        }
-
-        /// <summary>
-        /// (ABS,X) - The contents of the second and third instruction byte are
-        /// added to the X register. The sixteen-bit result is a memory address
-        /// containing the effective address (JMP (ABS,X) only).
-        /// </summary>
-        public string DecodeAbsoluteIndexedIndirect()
-        {
-            return $"(${PeekWord((ushort)(Registers.ProgramCounter + 1)):X4},X)";
-        }
-
-        /// <summary>
-        /// (IND,X) - In indexed indirect addressing (referred to as (Indirect,X)),
-        /// the second byte of the instruction is added to the contents of the X
-        /// register, discarding the carry. The result of this addition points to a
-        /// memory location on page zero whose contents are the low order eight bits
-        /// of the effective address. The next memory location in page zero contains
-        /// the high order eight bits of the effective address. Both memory locations
-        /// specifying the high and low order bytes of the effective address
-        /// must be in page zero.
-        /// </summary>
-        public string DecodeXIndexedIndirect()
-        {
-            return $"(${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2},X)";
-        }
-
-        /// <summary>
-        /// (IND),Y - In indirect indexed addressing (referred to as (Indirect),Y), the
-        /// second byte of the instruction points to a memory location in page zero. The
-        /// contents of this memory location are added to the contents of the Y index
-        /// register, the result being the low order eight bits of the effective address.
-        /// The carry from this addition is added to the contents of the next page
-        /// zero memory location, the result being the high order eight bits
-        /// of the effective address.
-        /// </summary>
-        public string DecodeIndirectYIndexed()
-        {
-            return $"(${bus.Peek((ushort)(Registers.ProgramCounter + 1)):X2}),Y";
-        }
-
-        /// <summary>
-        /// (ABS) - The second byte of the instruction contains the low order eight
-        /// bits of a memory location. The high order eight bits of that memory
-        /// location are contained in the third byte of the instruction. The contents
-        /// of the fully specified memory location are the low order byte of the
-        /// effective address. The next memory location contains the high order
-        /// byte of the effective address which is loaded into the sixteen bits
-        /// of the program counter (JMP (ABS) only).
-        /// </summary>
-        public string DecodeAbsoluteIndirect()
-        {
-            return $"(${PeekWord((ushort)(Registers.ProgramCounter + 1)):X4})";
-        }
-        #endregion
     }
-
 }
