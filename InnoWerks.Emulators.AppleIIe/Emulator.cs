@@ -38,7 +38,7 @@ namespace InnoWerks.Emulators.AppleIIe
         private CpuTraceBuffer cpuTraceBuffer = new(128);
         private bool cpuPaused;
         private bool stepRequested;
-        private readonly HashSet<ushort> breakpoints = [];
+        private readonly HashSet<ushort> breakpoints = [0xc600];
 
         private KeyboardState prevKeyboard;
         private MouseState prevMouse;
@@ -207,12 +207,6 @@ namespace InnoWerks.Emulators.AppleIIe
         private void StepCpuOnce()
         {
             var nextInstruction = cpu.PeekInstruction();
-
-            if (breakpoints.Contains(nextInstruction.ProgramCounter))
-            {
-                cpuPaused = true;
-                return;
-            }
 
             cpuTraceBuffer.Add(nextInstruction);
 

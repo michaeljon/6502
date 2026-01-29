@@ -325,7 +325,7 @@ namespace InnoWerks.Emulators.AppleIIe
             int x = rectangle.X + 12;
             int y = rectangle.Bottom - debugFont.LineSpacing - 12;
 
-            for (var i = cpuTraceBuffer.Count; i >= 0; i--)
+            for (var i = cpuTraceBuffer.Count - 1; i > 0; i--)
             {
                 var entry = cpuTraceBuffer[i];
 
