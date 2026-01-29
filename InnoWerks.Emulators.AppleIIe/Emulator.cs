@@ -40,7 +40,8 @@ namespace InnoWerks.Emulators.AppleIIe
         private bool stepRequested;
         private readonly HashSet<ushort> breakpoints = [];
 
-        KeyboardState prevKeyboard;
+        private KeyboardState prevKeyboard;
+        private MouseState prevMouse;
 
         //
         // display renderer
@@ -145,15 +146,20 @@ namespace InnoWerks.Emulators.AppleIIe
 
             HandleKeyboardInput();
 
-            // var mouse = Mouse.GetState();
+            var mouse = Mouse.GetState();
+            if (mouse.LeftButton == ButtonState.Pressed && prevMouse.LeftButton == ButtonState.Released)
+            {
+                var cpuTraceEntry = display.HandleTraceClick(hostLayout, cpuTraceBuffer, mouse.Position);
 
-            // if (mouse.LeftButton == ButtonState.Pressed &&
-            //     prevMouse.LeftButton == ButtonState.Released)
-            // {
-            //     HandleTraceClick(mouse.Position);
-            // }
-
-            // prevMouse = mouse;
+                if (cpuTraceEntry != null)
+                {
+                    if (breakpoints.Add(cpuTraceEntry.Value.ProgramCounter) == false)
+                    {
+                        breakpoints.Remove(cpuTraceEntry.Value.ProgramCounter);
+                    }
+                }
+            }
+            prevMouse = mouse;
 
             RunEmulator();
 
@@ -186,9 +192,9 @@ namespace InnoWerks.Emulators.AppleIIe
             var targetCycles = appleBus.CycleCount + VideoTiming.FrameCycles;
             while (appleBus.CycleCount < targetCycles)
             {
-                var peek = cpu.PeekInstruction();
+                var nextInstruction = cpu.PeekInstruction();
 
-                if (breakpoints.Contains(peek.ProgramCounter))
+                if (breakpoints.Contains(nextInstruction.ProgramCounter))
                 {
                     cpuPaused = true;
                     break;
@@ -200,23 +206,22 @@ namespace InnoWerks.Emulators.AppleIIe
 
         private void StepCpuOnce()
         {
-            var peek = cpu.PeekInstruction();
+            var nextInstruction = cpu.PeekInstruction();
 
-            if (breakpoints.Contains(peek.ProgramCounter))
+            if (breakpoints.Contains(nextInstruction.ProgramCounter))
             {
                 cpuPaused = true;
                 return;
             }
 
-            cpuTraceBuffer.Add(peek);
+            cpuTraceBuffer.Add(nextInstruction);
 
             cpu.Step();
         }
 
         protected override void Draw(GameTime gameTime)
         {
-            display.Draw(hostLayout, cpuTraceBuffer, flashOn);
-
+            display.Draw(hostLayout, cpuTraceBuffer, breakpoints, flashOn);
             base.Draw(gameTime);
         }
 

@@ -5,7 +5,7 @@ namespace InnoWerks.Simulators
     public sealed class CpuTraceBuffer
     {
         private readonly CpuTraceEntry[] buffer;
-        private int index;
+        private int current;
         private int count;
 
         public int Capacity => buffer.Length;
@@ -18,10 +18,23 @@ namespace InnoWerks.Simulators
 
         public void Add(CpuTraceEntry entry)
         {
-            buffer[index] = entry;
-            index = (index + 1) % buffer.Length;
+            buffer[current] = entry;
+
+            current = (current + 1) % buffer.Length;
+
             if (count < buffer.Length)
+            {
                 count++;
+            }
+        }
+
+        public CpuTraceEntry this[int i]
+        {
+            get
+            {
+                int idx = (current - count + i + buffer.Length) % buffer.Length;
+                return buffer[idx];
+            }
         }
 
         public IEnumerable<CpuTraceEntry> Entries
@@ -30,7 +43,7 @@ namespace InnoWerks.Simulators
             {
                 for (int i = 0; i < count; i++)
                 {
-                    int idx = (index - count + i + buffer.Length) % buffer.Length;
+                    int idx = (current - count + i + buffer.Length) % buffer.Length;
                     yield return buffer[idx];
                 }
             }

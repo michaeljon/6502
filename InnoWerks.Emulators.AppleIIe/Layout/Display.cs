@@ -60,7 +60,7 @@ namespace InnoWerks.Emulators.AppleIIe
 
         private bool disposed;
 
-        private readonly List<SoftSwitch> debugSwitches =
+        private readonly List<SoftSwitch> debugSwitchesBlock1 =
         [
             SoftSwitch.TextMode,
             SoftSwitch.MixedMode,
@@ -68,22 +68,51 @@ namespace InnoWerks.Emulators.AppleIIe
             SoftSwitch.HiRes,
             SoftSwitch.DoubleHiRes,
             SoftSwitch.IOUDisabled,
+        ];
 
+        private readonly List<SoftSwitch> debugSwitchesBlock2 =
+        [
             SoftSwitch.Store80,
             SoftSwitch.AuxRead,
             SoftSwitch.AuxWrite,
             SoftSwitch.ZpAux,
             SoftSwitch.EightyColumnMode,
             SoftSwitch.AltCharSet,
+        ];
 
+        private readonly List<SoftSwitch> debugSwitchesBlock3 =
+        [
             SoftSwitch.IntCxRomEnabled,
             SoftSwitch.Slot3RomEnabled,
             SoftSwitch.IntC8RomEnabled,
-
             SoftSwitch.LcBank2,
             SoftSwitch.LcReadEnabled,
             SoftSwitch.LcWriteEnabled,
         ];
+
+        private readonly Dictionary<SoftSwitch, string> debugSwitchDisplay = new()
+        {
+            { SoftSwitch.TextMode, "TEXT" },
+            { SoftSwitch.MixedMode, "MIXED" },
+            { SoftSwitch.Page2, "PAGE2" },
+            { SoftSwitch.HiRes, "HIRES" },
+            { SoftSwitch.DoubleHiRes, "DHIRES" },
+            { SoftSwitch.IOUDisabled, "IOUDIS" },
+
+            { SoftSwitch.Store80, "STOR80" },
+            { SoftSwitch.AuxRead, "AUXRD" },
+            { SoftSwitch.AuxWrite, "AUXWR" },
+            { SoftSwitch.ZpAux, "ZPAUX" },
+            { SoftSwitch.EightyColumnMode, "80COL" },
+            { SoftSwitch.AltCharSet, "ALTCHR" },
+
+            { SoftSwitch.IntCxRomEnabled, "INTCX" },
+            { SoftSwitch.Slot3RomEnabled, "SLOTC3" },
+            { SoftSwitch.IntC8RomEnabled, "INTC8" },
+            { SoftSwitch.LcBank2, "BANK2" },
+            { SoftSwitch.LcReadEnabled, "LCRD" },
+            { SoftSwitch.LcWriteEnabled, "LCWRT" },
+        };
 
         public Display(
             GraphicsDevice graphicsDevice,
@@ -158,10 +187,15 @@ namespace InnoWerks.Emulators.AppleIIe
             charTexture.SetData(pixels);
         }
 
-        public void Draw(HostLayout hostLayout, CpuTraceBuffer cpuTraceBuffer, bool flashOn)
+        public void Draw(
+            HostLayout hostLayout,
+            CpuTraceBuffer cpuTraceBuffer,
+            HashSet<ushort> breakpoints,
+            bool flashOn)
         {
             ArgumentNullException.ThrowIfNull(hostLayout);
             ArgumentNullException.ThrowIfNull(cpuTraceBuffer);
+            ArgumentNullException.ThrowIfNull(breakpoints);
 
             using var appleTarget = new RenderTarget2D(
                 graphicsDevice,
@@ -186,10 +220,45 @@ namespace InnoWerks.Emulators.AppleIIe
 
             DrawPanel(hostLayout.AppleDisplay);
             spriteBatch.Draw(appleTarget, hostLayout.AppleDisplay, Color.White);
+
             DrawRegisters(hostLayout.Registers);
-            DrawCpuTrace(hostLayout.CpuTrace, cpuTraceBuffer);
+            DrawBlock(hostLayout.Block1, debugSwitchesBlock1);
+            DrawBlock(hostLayout.Block2, debugSwitchesBlock2);
+            DrawBlock(hostLayout.Block3, debugSwitchesBlock3);
+
+            DrawCpuTrace(hostLayout.CpuTrace, cpuTraceBuffer, breakpoints);
 
             spriteBatch.End();
+        }
+
+        public CpuTraceEntry? HandleTraceClick(HostLayout hostLayout, CpuTraceBuffer cpuTraceBuffer, Point mousePos)
+        {
+            ArgumentNullException.ThrowIfNull(hostLayout);
+            ArgumentNullException.ThrowIfNull(cpuTraceBuffer);
+
+            if (hostLayout.CpuTrace.Contains(mousePos) == false)
+            {
+                return null;
+            }
+
+            int lineHeight = debugFont.LineSpacing;
+            int bottom = hostLayout.CpuTrace.Bottom - 8;
+
+            int indexFromBottom = (bottom - mousePos.Y) / lineHeight;
+            if (indexFromBottom < 0)
+            {
+                return null;
+            }
+
+            var entries = cpuTraceBuffer.Entries.ToList();
+            entries.Reverse(); // newest first
+
+            if (indexFromBottom >= entries.Count)
+            {
+                return null;
+            }
+
+            return entries[indexFromBottom];
         }
 
         private void DrawAppleRegion(RenderTarget2D appleTarget, bool flashOn)
@@ -234,27 +303,39 @@ namespace InnoWerks.Emulators.AppleIIe
             DrawKeyValue($"Y:", $"{cpu.Registers.Y:X2}", x, ref y);
             DrawKeyValue($"SP:", $"{cpu.Registers.StackPointer:X2}", x, ref y);
             DrawKeyValue($"PS:", $"{cpu.Registers.InternalGetFlagsDisplay}", x, ref y);
-
-            y += 8;
-            foreach (var sw in debugSwitches)
-            {
-                DrawKeyValue($"{sw}:", $"{(machineState.State[sw] ? 1 : 0)}", x, ref y);
-            }
         }
 
-        private void DrawCpuTrace(Rectangle rectangle, CpuTraceBuffer cpuTraceBuffer)
+        private void DrawBlock(Rectangle rectangle, List<SoftSwitch> softSwitches)
         {
             DrawPanel(rectangle);
 
             int x = rectangle.X + 8;
-            int y = rectangle.Bottom - debugFont.LineSpacing - 8;
+            int y = rectangle.Y + 8;
 
-            foreach (var entry in cpuTraceBuffer.Entries.OrderByDescending(e => e.CycleCount))
+            foreach (var sw in softSwitches)
             {
-                if (y < rectangle.Y + 8)
-                    break;
+                DrawKeyValue($"{debugSwitchDisplay[sw]}:", $"{(machineState.State[sw] ? 1 : 0)}", x, ref y);
+            }
+        }
 
-                DrawTraceLine(entry, x, ref y);
+        private void DrawCpuTrace(Rectangle rectangle, CpuTraceBuffer cpuTraceBuffer, HashSet<ushort> breakpoints)
+        {
+            DrawPanel(rectangle);
+
+            int x = rectangle.X + 12;
+            int y = rectangle.Bottom - debugFont.LineSpacing - 12;
+
+            for (var i = cpuTraceBuffer.Count; i >= 0; i--)
+            {
+                var entry = cpuTraceBuffer[i];
+
+                if (y < rectangle.Y + 8)
+                {
+                    break;
+                }
+
+                DrawTraceLine(entry, breakpoints, x, y);
+
                 y -= debugFont.LineSpacing;
             }
         }
@@ -272,7 +353,7 @@ namespace InnoWerks.Emulators.AppleIIe
             ref int y)
         {
             spriteBatch.DrawString(debugFont, key, new Vector2(x, y), Color.LightGreen);
-            spriteBatch.DrawString(debugFont, value, new Vector2(x + 56, y), Color.White);
+            spriteBatch.DrawString(debugFont, value, new Vector2(x + 64, y), Color.White);
             y += debugFont.LineSpacing;
         }
 
@@ -296,13 +377,23 @@ namespace InnoWerks.Emulators.AppleIIe
         }
 
         private void DrawTraceLine(
-            CpuTraceEntry e,
+            CpuTraceEntry cpuTraceEntry,
+            HashSet<ushort> breakpoints,
             int x,
-            ref int y)
+            int y)
         {
-            var opcode = e.OpCode;
-            var pc = e.ProgramCounter;
-            var decoded = e.OpCode.DecodeOperand(cpu, bus);
+            var opcode = cpuTraceEntry.OpCode;
+            var pc = cpuTraceEntry.ProgramCounter;
+            var decoded = cpuTraceEntry.OpCode.DecodeOperand(cpu, bus);
+
+            if (breakpoints.Contains(cpuTraceEntry.ProgramCounter))
+            {
+                spriteBatch.DrawString(
+                    debugFont,
+                    ">",
+                    new Vector2(x - 8, y),
+                    Color.Red);
+            }
 
             spriteBatch.DrawString(debugFont, $"{pc:X4}", new Vector2(x, y), Color.LightGreen);
 
@@ -319,7 +410,7 @@ namespace InnoWerks.Emulators.AppleIIe
 
             spriteBatch.DrawString(
                 debugFont,
-                e.Mnemonic,
+                cpuTraceEntry.Mnemonic,
                 new Vector2(x + 150, y),
                 Color.White);
 
