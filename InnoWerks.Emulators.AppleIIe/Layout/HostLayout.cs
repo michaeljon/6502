@@ -26,7 +26,7 @@ namespace InnoWerks.Emulators.AppleIIe
 
         public static HostLayout ComputeLayout(int windowWidth, int windowHeight)
         {
-            const int CpuTraceWidth = 240;
+            const int CpuTraceWidth = 280;
             const int Padding = 8;
 
             int availableWidth = windowWidth - CpuTraceWidth - Padding * 3;
@@ -40,7 +40,8 @@ namespace InnoWerks.Emulators.AppleIIe
             int appleRenderWidth = Display.AppleDisplayWidth * scale;
             int appleRenderHeight = Display.AppleDisplayHeight * scale;
 
-            int blockWidth = Padding + (appleRenderWidth / 4);
+            int blockWidth = (appleRenderWidth - (3 * Padding)) / 4;
+            int blockHeight = windowHeight - appleRenderHeight - (3 * Padding);
 
             return new HostLayout
             {
@@ -52,38 +53,38 @@ namespace InnoWerks.Emulators.AppleIIe
                 ),
 
                 CpuTrace = new Rectangle(
-                    appleRenderWidth + Padding * 2,
+                    appleRenderWidth + 2 * Padding,
                     Padding,
-                    windowWidth - (appleRenderWidth + (3 * Padding)),
-                    windowHeight - (Padding * 3)
+                    CpuTraceWidth - Padding, // leaves some empty space on the right of the window
+                    windowHeight - (2 * Padding)
                 ),
 
                 Registers = new Rectangle(
-                    Padding,
+                    Padding * 1 + blockWidth * 0,
                     appleRenderHeight + (2 * Padding),
                     blockWidth,
-                    windowHeight - ((Padding * 3) + appleRenderHeight)
+                    blockHeight
                 ),
 
                 Block1 = new Rectangle(
-                    blockWidth * 1,
+                    Padding * 2 + blockWidth * 1,
                     appleRenderHeight + (2 * Padding),
                     blockWidth,
-                    windowHeight - ((Padding * 3) + appleRenderHeight)
+                    blockHeight
                 ),
 
                 Block2 = new Rectangle(
-                    blockWidth * 2,
+                    Padding * 3 + blockWidth * 2,
                     appleRenderHeight + (2 * Padding),
                     blockWidth,
-                    windowHeight - ((Padding * 3) + appleRenderHeight)
+                    blockHeight
                 ),
 
                 Block3 = new Rectangle(
-                    blockWidth * 3,
+                    Padding * 4 + blockWidth * 3,
                     appleRenderHeight + (2 * Padding),
                     blockWidth,
-                    windowHeight - ((Padding * 3) + appleRenderHeight)
+                    blockHeight
                 ),
             };
         }

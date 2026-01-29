@@ -69,19 +69,19 @@ namespace InnoWerks.Emulators.AppleIIe
         {
             graphicsDeviceManager = new GraphicsDeviceManager(this)
             {
-                PreferredBackBufferWidth = Display.AppleDisplayWidth * 4,     // initial width
-                PreferredBackBufferHeight = Display.AppleDisplayHeight * 4,   // initial height
+                PreferredBackBufferWidth = 1160,   // initial width
+                PreferredBackBufferHeight = 780,   // initial height
                 IsFullScreen = false
             };
             graphicsDeviceManager.ApplyChanges();
 
             hostLayout = HostLayout.ComputeLayout(
-                Display.AppleDisplayWidth * 4,
-                Display.AppleDisplayWidth * 4
+                graphicsDeviceManager.PreferredBackBufferWidth,
+                graphicsDeviceManager.PreferredBackBufferHeight
             );
 
             // Make window resizable
-            Window.AllowUserResizing = true;
+            // Window.AllowUserResizing = true;
             Window.ClientSizeChanged += HandleResize;
 
             Content.RootDirectory = "Content";
@@ -263,14 +263,12 @@ namespace InnoWerks.Emulators.AppleIIe
         {
             Window.ClientSizeChanged -= HandleResize;
 
-            graphicsDeviceManager.PreferredBackBufferWidth =
-                Math.Max(Window.ClientBounds.Width, Display.AppleDisplayWidth * 4);
-            graphicsDeviceManager.PreferredBackBufferHeight =
-                Math.Max(Window.ClientBounds.Height, Display.AppleDisplayHeight * 4);
+            graphicsDeviceManager.PreferredBackBufferWidth = Window.ClientBounds.Width;
+            graphicsDeviceManager.PreferredBackBufferHeight = Window.ClientBounds.Height;
 
             hostLayout = HostLayout.ComputeLayout(
-                Math.Max(Window.ClientBounds.Width, Display.AppleDisplayWidth * 4),
-                Math.Max(Window.ClientBounds.Height, Display.AppleDisplayHeight * 4)
+                Window.ClientBounds.Width,
+                Window.ClientBounds.Height
             );
 
             graphicsDeviceManager.ApplyChanges();

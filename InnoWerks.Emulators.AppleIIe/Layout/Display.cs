@@ -342,8 +342,10 @@ namespace InnoWerks.Emulators.AppleIIe
 
         private void DrawPanel(Rectangle rectangle)
         {
-            spriteBatch.Draw(whitePixel, rectangle, new Color(20, 20, 20));
-            spriteBatch.Draw(whitePixel, new Rectangle(rectangle.X, rectangle.Y, rectangle.Width, 1), Color.Gray);
+            spriteBatch.Draw(whitePixel, rectangle, Color.White);
+            spriteBatch.Draw(whitePixel, new Rectangle(rectangle.X + 1, rectangle.Y + 1, rectangle.Width - 2, rectangle.Height - 2), new Color(20, 20, 20));
+
+            // spriteBatch.Draw(whitePixel, new Rectangle(rectangle.X, rectangle.Y, rectangle.Width, 1), Color.Gray);
         }
 
         private void DrawKeyValue(
