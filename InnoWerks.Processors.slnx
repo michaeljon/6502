@@ -5,10 +5,10 @@
     <Platform Name="x86" />
   </Configurations>
 
-  <Project Path="Asm6502/Asm6502.csproj" />
-  <Project Path="Dasm6502/Dasm6502.csproj" />
-  <Project Path="Emu6502/Emu6502.csproj" />
-  <Project Path="Sim6502/Sim6502.csproj" />
+  <Project Path="ConsoleTools/Asm6502/Asm6502.csproj" />
+  <Project Path="ConsoleTools/Dasm6502/Dasm6502.csproj" />
+  <Project Path="ConsoleTools/Emu6502/Emu6502.csproj" />
+  <Project Path="ConsoleTools/Sim6502/Sim6502.csproj" />
 
   <Project Path="InnoWerks.Assemblers.Asm6502/InnoWerks.Assemblers.Asm6502.csproj" />
   <Project Path="InnoWerks.Assemblers.Tests/InnoWerks.Assemblers.Tests.csproj" />
