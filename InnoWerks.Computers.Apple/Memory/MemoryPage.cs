@@ -13,9 +13,9 @@ namespace InnoWerks.Computers.Apple
 
         public string Type { get; init; }
 
-        public int PageNumber { get; init; }
+        public byte PageNumber { get; init; }
 
-        public MemoryPage(string type, int pageNumber)
+        public MemoryPage(string type, byte pageNumber)
         {
             Block = new byte[PageSize];
             Type = type;
@@ -27,82 +27,47 @@ namespace InnoWerks.Computers.Apple
             return $"{Type} at ${PageNumber:X2}";
         }
 
-        private static MemoryPage zeros;
-
-        public static MemoryPage Zeros
+        public static MemoryPage Zeros(byte pageNumber)
         {
-            get
+            var page = new MemoryPage("0x00", pageNumber);
+            for (var i = 0; i < PageSize; i++)
             {
-                if (zeros == null)
-                {
-                    zeros = new MemoryPage("zero", 0x00);
-                    for (var i = 0; i < PageSize; i++)
-                    {
-                        zeros.Block[i] = 0x00;
-                    }
-                }
-
-                return zeros;
+                page.Block[i] = 0x00;
             }
+            return page;
         }
 
-        private static MemoryPage ffs;
-
-        public static MemoryPage FFs
+        public static MemoryPage FFs(byte pageNumber)
         {
-            get
+            var page = new MemoryPage("0xff", pageNumber);
+            for (var i = 0; i < PageSize; i++)
             {
-                if (ffs == null)
-                {
-                    ffs = new MemoryPage("ff", 0x00);
-                    for (var i = 0; i < PageSize; i++)
-                    {
-                        ffs.Block[i] = 0x00;
-                    }
-                }
-
-                return ffs;
+                page.Block[i] = 0xFF;
             }
+            return page;
         }
 
-        private static MemoryPage random;
-
-        public static MemoryPage Random
+        public static MemoryPage Random(byte pageNumber)
         {
-            get
-            {
-                if (random == null)
-                {
-                    var r = new Random();
+            var r = new Random();
 
-                    random = new MemoryPage("random", 0x00);
+            var page = new MemoryPage("rnd", pageNumber);
 #pragma warning disable CA5394
-                    r.NextBytes(random.Block);
+            r.NextBytes(page.Block);
 #pragma warning restore CA5394
-                }
-
-                return random;
-            }
+            return page;
         }
 
-        private static MemoryPage alternating;
-
-        public static MemoryPage Alternating
+        public static MemoryPage Alternating(byte pageNumber)
         {
-            get
+            var page = new MemoryPage("alt", pageNumber);
+            for (var i = 0; i < PageSize / 2; i += 2)
             {
-                if (alternating == null)
-                {
-                    alternating = new MemoryPage("zero", 0x00);
-                    for (var i = 0; i < PageSize / 2; i += 2)
-                    {
-                        alternating.Block[i] = 0x00;
-                        alternating.Block[i + 1] = 0xA0;
-                    }
-                }
-
-                return alternating;
+                page.Block[i] = 0x00;
+                page.Block[i + 1] = 0xA0;
             }
+            return page;
         }
     }
 }
+

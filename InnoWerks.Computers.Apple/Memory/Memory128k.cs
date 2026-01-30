@@ -74,8 +74,8 @@ namespace InnoWerks.Computers.Apple
             auxMemory = new MemoryPage[48 * 1024 / MemoryPage.PageSize];
             for (var p = 0x00; p < 0xC0; p++)
             {
-                mainMemory[p] = new MemoryPage("main", p);
-                auxMemory[p] = new MemoryPage("aux", p);
+                mainMemory[p] = new MemoryPage("main", (byte)p);
+                auxMemory[p] = new MemoryPage("aux", (byte)p);
 
                 activeRead[p] = mainMemory[p];
                 activeWrite[p] = mainMemory[p];
@@ -89,16 +89,16 @@ namespace InnoWerks.Computers.Apple
             auxLanguageCardRam = new MemoryPage[12 * 1024 / MemoryPage.PageSize];
             for (var p = 0; p < 12 * 1024 / MemoryPage.PageSize; p++)
             {
-                languageCardRam[p] = new MemoryPage("languageCardRam", 0xD0 + p);
-                auxLanguageCardRam[p] = new MemoryPage("auxLanguageCardRam", 0xD0 + p);
+                languageCardRam[p] = new MemoryPage("languageCardRam", (byte)(0xD0 + p));
+                auxLanguageCardRam[p] = new MemoryPage("auxLanguageCardRam", (byte)(0xD0 + p));
             }
 
             languageCardBank2 = new MemoryPage[4 * 1024 / MemoryPage.PageSize];
             auxLanguageCardBank2 = new MemoryPage[4 * 1024 / MemoryPage.PageSize];
             for (var p = 0; p < 4 * 1024 / MemoryPage.PageSize; p++)
             {
-                languageCardBank2[p] = new MemoryPage("languageCardBank2", 0xD0 + p);
-                auxLanguageCardBank2[p] = new MemoryPage("auxLanguageCardBank2", 0xD0 + p);
+                languageCardBank2[p] = new MemoryPage("languageCardBank2", (byte)(0xD0 + p));
+                auxLanguageCardBank2[p] = new MemoryPage("auxLanguageCardBank2", (byte)(0xD0 + p));
             }
 
             //
@@ -109,21 +109,21 @@ namespace InnoWerks.Computers.Apple
             intCxRom = new MemoryPage[4 * 1024 / MemoryPage.PageSize];
             for (var p = 0; p < 4 * 1024 / MemoryPage.PageSize; p++)
             {
-                intCxRom[p] = new MemoryPage("intCxRom", 0xC0 + p);
+                intCxRom[p] = new MemoryPage("intCxRom", (byte)(0xC0 + p));
             }
 
             // 4k ROM bank 1 $D000-$DFFF
             intDxRom = new MemoryPage[4 * 1024 / MemoryPage.PageSize];
             for (var p = 0; p < 4 * 1024 / MemoryPage.PageSize; p++)
             {
-                intDxRom[p] = new MemoryPage("intDxRom", 0xD0 + p);
+                intDxRom[p] = new MemoryPage("intDxRom", (byte)(0xD0 + p));
             }
 
             // 8k ROM $E000-$FFFF
             intEFRom = new MemoryPage[8 * 1024 / MemoryPage.PageSize];
             for (var p = 0; p < 8 * 1024 / MemoryPage.PageSize; p++)
             {
-                intEFRom[p] = new MemoryPage("intEFRom", 0xE0 + p);
+                intEFRom[p] = new MemoryPage("intEFRom", (byte)(0xE0 + p));
             }
 
             //
@@ -133,7 +133,7 @@ namespace InnoWerks.Computers.Apple
             // cx slot rom, one page per slot, $C100-$C7FF
             for (var slot = 0; slot < 8; slot++)
             {
-                loSlotRom[slot] = MemoryPage.Zeros;
+                loSlotRom[slot] = MemoryPage.Zeros((byte)(0xC0 + slot));
             }
 
             // c8 slot rom, one page per slot, $C800-$CFFF
@@ -143,7 +143,7 @@ namespace InnoWerks.Computers.Apple
 
                 for (var page = 0; page < 2048 / MemoryPage.PageSize; page++)
                 {
-                    hiSlotRom[slot][page] = MemoryPage.Zeros;
+                    hiSlotRom[slot][page] = MemoryPage.Zeros((byte)(0xC8 + page));
                 }
             }
 
@@ -180,13 +180,14 @@ namespace InnoWerks.Computers.Apple
             //
             // reset the entire memory map
             //
-            InjectDirectMemory(activeRead, machineState.State[SoftSwitch.AuxRead] == true ? auxMemory : mainMemory);
+            InjectRam(activeRead, machineState.State[SoftSwitch.AuxRead] == true ? auxMemory : mainMemory);
 
             //
             // copy over the rom blocks, we might override below
             //
-            InjectRom(intDxRom, 0xD0, 0xE0);
-            InjectRom(intEFRom, 0xE0, 0x100);
+            InjectRom(intCxRom);
+            InjectRom(intDxRom);
+            InjectRom(intEFRom);
 
             //
             // handle language card
@@ -196,18 +197,18 @@ namespace InnoWerks.Computers.Apple
             {
                 if (machineState.State[SoftSwitch.ZpAux] == false)
                 {
-                    InjectIndirectMemory(activeRead, languageCardRam);
+                    InjectRam(activeRead, languageCardRam);
                     if (machineState.State[SoftSwitch.LcBank2] == true)
                     {
-                        InjectIndirectMemory(activeRead, languageCardBank2);
+                        InjectRam(activeRead, languageCardBank2);
                     }
                 }
                 else
                 {
-                    InjectIndirectMemory(activeRead, auxLanguageCardRam);
+                    InjectRam(activeRead, auxLanguageCardRam);
                     if (machineState.State[SoftSwitch.LcBank2] == true)
                     {
-                        InjectIndirectMemory(activeRead, auxLanguageCardBank2);
+                        InjectRam(activeRead, auxLanguageCardBank2);
                     }
                 }
             }
@@ -217,7 +218,7 @@ namespace InnoWerks.Computers.Apple
             //
             if (machineState.State[SoftSwitch.Store80] == true)
             {
-                InjectDirectMemory(
+                InjectRam(
                     activeRead,
                     machineState.State[SoftSwitch.Page2] == true ? auxMemory : mainMemory,
                     0x04, 0x08
@@ -225,7 +226,7 @@ namespace InnoWerks.Computers.Apple
 
                 if (machineState.State[SoftSwitch.HiRes] == true)
                 {
-                    InjectDirectMemory(
+                    InjectRam(
                         activeRead,
                         machineState.State[SoftSwitch.Page2] == true ? auxMemory : mainMemory,
                         0x20, 0x40
@@ -236,7 +237,7 @@ namespace InnoWerks.Computers.Apple
             //
             // zero page and stack      $00 - $01
             //
-            InjectDirectMemory(
+            InjectRam(
                 activeRead,
                 machineState.State[SoftSwitch.ZpAux] == true ? auxMemory : mainMemory,
                 0x00, 0x02
@@ -254,11 +255,7 @@ namespace InnoWerks.Computers.Apple
             //
             // ROM                      $C0 - $C7
             //
-            if (machineState.State[SoftSwitch.IntCxRomEnabled] == true)
-            {
-                InjectRom(intCxRom, 0xC0, 0xD0);
-            }
-            else
+            if (machineState.State[SoftSwitch.IntCxRomEnabled] == false)
             {
                 // walk each slot and hook up its rom
                 for (var slot = 0; slot < 8; slot++)
@@ -287,9 +284,9 @@ namespace InnoWerks.Computers.Apple
                     //
                     // hook up the active slot's rom to c8
                     //
-                    if (machineState.CurrentSlot != -1)
+                    if (machineState.CurrentSlot != 0)
                     {
-                        InjectRom(hiSlotRom[machineState.CurrentSlot], 0xC8, 0xD0);
+                        InjectRom(hiSlotRom[machineState.CurrentSlot]);
                     }
                     else
                     {
@@ -309,7 +306,7 @@ namespace InnoWerks.Computers.Apple
             //
             // reset the entire memory map
             //
-            InjectDirectMemory(activeWrite, machineState.State[SoftSwitch.AuxWrite] == true ? auxMemory : mainMemory);
+            InjectRam(activeWrite, machineState.State[SoftSwitch.AuxWrite] == true ? auxMemory : mainMemory);
 
             //
             // mark the lo rom blocks as read-only
@@ -326,18 +323,18 @@ namespace InnoWerks.Computers.Apple
             {
                 if (machineState.State[SoftSwitch.ZpAux] == false)
                 {
-                    InjectIndirectMemory(activeWrite, languageCardRam);
+                    InjectRam(activeWrite, languageCardRam);
                     if (machineState.State[SoftSwitch.LcBank2] == true)
                     {
-                        InjectIndirectMemory(activeWrite, languageCardBank2);
+                        InjectRam(activeWrite, languageCardBank2);
                     }
                 }
                 else
                 {
-                    InjectIndirectMemory(activeWrite, auxLanguageCardRam);
+                    InjectRam(activeWrite, auxLanguageCardRam);
                     if (machineState.State[SoftSwitch.LcBank2] == true)
                     {
-                        InjectIndirectMemory(activeWrite, auxLanguageCardBank2);
+                        InjectRam(activeWrite, auxLanguageCardBank2);
                     }
                 }
             }
@@ -354,7 +351,7 @@ namespace InnoWerks.Computers.Apple
             //
             if (machineState.State[SoftSwitch.Store80] == true)
             {
-                InjectDirectMemory(
+                InjectRam(
                     activeWrite,
                     machineState.State[SoftSwitch.Page2] == true ? auxMemory : mainMemory,
                     0x04, 0x08
@@ -362,7 +359,7 @@ namespace InnoWerks.Computers.Apple
 
                 if (machineState.State[SoftSwitch.HiRes] == true)
                 {
-                    InjectDirectMemory(
+                    InjectRam(
                         activeWrite,
                         machineState.State[SoftSwitch.Page2] == true ? auxMemory : mainMemory,
                         0x20, 0x40
@@ -373,23 +370,33 @@ namespace InnoWerks.Computers.Apple
             //
             // zero page and stack      $00 - $01
             //
-            InjectDirectMemory(
+            InjectRam(
                 activeWrite,
                 machineState.State[SoftSwitch.ZpAux] == true ? auxMemory : mainMemory,
                 0x00, 0x02
             );
         }
 
-        private void InjectRom(MemoryPage[] memoryPages, int from, int to)
+        /// <summary>
+        /// Writes all pages from memoryPages into the proper location
+        /// within activeRead, and sets activeWrite to return 0x00
+        /// </summary>
+        /// <param name="memoryPages">Source ROM pages</param>
+        private void InjectRom(MemoryPage[] memoryPages)
         {
-            for (var p = from; p < to; p++)
+            foreach (var memoryPage in memoryPages)
             {
-                activeRead[p] = memoryPages[p - from];
-                activeWrite[p] = MemoryPage.FFs;
+                activeRead[memoryPage.PageNumber] = memoryPage;
+                activeWrite[memoryPage.PageNumber] = MemoryPage.FFs(memoryPage.PageNumber);
             }
         }
 
-        private void InjectIndirectMemory(MemoryPage[] activeMemory, MemoryPage[] memoryPages)
+        /// <summary>
+        /// Writes all pages from memoryPages into activeMemory (read or write)
+        /// </summary>
+        /// <param name="activeMemory">Target page read or write</param>
+        /// <param name="memoryPages">Source RAM pages</param>
+        private void InjectRam(MemoryPage[] activeMemory, MemoryPage[] memoryPages)
         {
             foreach (var memoryPage in memoryPages)
             {
@@ -397,15 +404,14 @@ namespace InnoWerks.Computers.Apple
             }
         }
 
-        private void InjectDirectMemory(MemoryPage[] activeMemory, MemoryPage[] memoryPages)
-        {
-            foreach (var memoryPage in memoryPages)
-            {
-                activeMemory[memoryPage.PageNumber] = memoryPage;
-            }
-        }
-
-        private void InjectDirectMemory(MemoryPage[] activeMemory, MemoryPage[] memoryPages, int from, int to)
+        /// <summary>
+        /// Writes selected pages from memoryPages into activeMemory
+        /// </summary>
+        /// <param name="activeMemory">Target page read or write</param>
+        /// <param name="memoryPages">Source RAM pages</param>
+        /// <param name="from">Inclusive starting page</param>
+        /// <param name="to">Exclusive ending page</param>
+        private void InjectRam(MemoryPage[] activeMemory, MemoryPage[] memoryPages, int from, int to)
         {
             for (var p = from; p < to; p++)
             {
@@ -413,6 +419,11 @@ namespace InnoWerks.Computers.Apple
             }
         }
 
+        /// <summary>
+        /// Main READ entry point into activeMemory
+        /// </summary>
+        /// <param name="address">Virtual 64k address mapped onto backing store</param>
+        /// <returns>Value at address</returns>
         public byte Read(ushort address)
         {
             var page = GetPage(address);
@@ -426,6 +437,11 @@ namespace InnoWerks.Computers.Apple
             return 0xFF;
         }
 
+        /// <summary>
+        /// Main WRITE entry point into activeMemory
+        /// </summary>
+        /// <param name="address">Virtual 64k address mapped onto backing store</param>
+        /// <param name="value">Value to write</param>
         public void Write(ushort address, byte value)
         {
             var page = GetPage(address);
@@ -530,7 +546,7 @@ namespace InnoWerks.Computers.Apple
         {
             // slots load themselves starting at 1, so 0xC6 would map to
             // a Disk II in slot 6
-            var memoryPage = new MemoryPage($"slot{slot}-cx", 0xC0 + slot);
+            var memoryPage = new MemoryPage($"slot{slot}-cx", (byte)(0xC0 + slot));
             Array.Copy(objectCode, 0, memoryPage.Block, 0, 256);
 
             loSlotRom[slot] = memoryPage;
@@ -542,7 +558,7 @@ namespace InnoWerks.Computers.Apple
 
             for (var page = 0; page < 2048 / MemoryPage.PageSize; page++)
             {
-                var memoryPage = new MemoryPage("slot{slot}-c8", 0xC8 + page);
+                var memoryPage = new MemoryPage($"slot{slot}-c8", (byte)(0xC8 + page));
                 Array.Copy(objectCode, 0, memoryPage.Block, 0, 256);
 
                 hiSlotRom[slot][page] = memoryPage;
@@ -563,6 +579,12 @@ namespace InnoWerks.Computers.Apple
             return activeWrite[page];
         }
 
+        /// <summary>
+        /// Allows for bus-tied devices to directly access the
+        /// main 64k of RAM. Used primarily by the video system.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
         public byte GetMain(ushort address)
         {
             var page = GetPage(address);
@@ -571,6 +593,12 @@ namespace InnoWerks.Computers.Apple
             return mainMemory[page].Block[offset];
         }
 
+        /// <summary>
+        /// Allows for bus-tied devices to directly access the
+        /// aux 64k of RAM. Used primarily by the video system.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
         public byte GetAux(ushort address)
         {
             var page = GetPage(address);
