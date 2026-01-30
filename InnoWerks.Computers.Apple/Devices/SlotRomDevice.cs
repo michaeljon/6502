@@ -75,6 +75,8 @@ namespace InnoWerks.Computers.Apple
                 }
             }
 
+            HasRom = true;
+
             Rom = romImage;
 
             bus.AddDevice(this);
@@ -103,10 +105,13 @@ namespace InnoWerks.Computers.Apple
 
             this.machineState = machineState;
 
+            HasRom = true;
             HasAuxRom = true;
 
             Rom = cxRom;
             ExpansionRom = c8Rom;
+
+            bus.AddDevice(this);
         }
 
         public DevicePriority Priority => DevicePriority.Slot;
@@ -129,7 +134,9 @@ namespace InnoWerks.Computers.Apple
 
         public abstract void Reset();
 
-        protected bool HasAuxRom { get; init; }
+        public bool HasRom { get; init; }
+
+        public bool HasAuxRom { get; init; }
 
         // 16 bytes bytes
         protected ushort IoBaseAddressLo => (ushort)(IO_BASE_ADDR + (Slot * 0x10));

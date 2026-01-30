@@ -99,11 +99,7 @@ namespace InnoWerks.Computers.Apple
 
             HandleC3xxAndCfff(address);
 
-            if (address < 0xC000)
-            {
-                return memoryBlocks.Read(address);
-            }
-            else if (address < 0xC090)
+            if (address >= 0xC000 && address <= 0xC08F)
             {
                 foreach (var softSwitchDevice in softSwitchDevices)
                 {
@@ -123,11 +119,18 @@ namespace InnoWerks.Computers.Apple
 
                 return 0x00;
             }
-            else if (address < 0xC0FF)
+            else if (address >= 0xC090 && address < 0xC0FF)
             {
                 var slot = ((address >> 4) & 7) - 8;
+                var slotDevice = slotDevices[slot];
 
-                return DoSlotRead(slot, address);
+                if (slotDevice?.HandlesRead(address) == true)
+                {
+                    var (value, _) = slotDevice.Read(address);
+                    return value;
+                }
+
+                return 0xFF;
             }
 
             return memoryBlocks.Read(address);
@@ -139,11 +142,7 @@ namespace InnoWerks.Computers.Apple
 
             HandleC3xxAndCfff(address);
 
-            if (address < 0xC000)
-            {
-                memoryBlocks.Write(address, value);
-            }
-            else if (address < 0xC090)
+            if (address >= 0xC000 && address <= 0xC08F)
             {
                 CheckClearKeystrobe(address);
 
@@ -154,17 +153,24 @@ namespace InnoWerks.Computers.Apple
                         memoryBlocks.Remap();
                     }
                 }
+
+                return;
             }
-            else if (address < 0xC0FF)
+            else if (address >= 0xC090 && address < 0xC0FF)
             {
                 var slot = ((address >> 4) & 7) - 8;
+                var slotDevice = slotDevices[slot];
 
-                DoSlotWrite(slot, address, value);
+                if (slotDevice?.HandlesWrite(address) == true)
+                {
+                    SimDebugger.Info("Write IO {0} {1:X4}\n", slot, address);
+                    slotDevice.Write(address, value);
+                }
+
+                return;
             }
-            else
-            {
-                memoryBlocks.Write(address, value);
-            }
+
+            memoryBlocks.Write(address, value);
         }
 
         public byte Peek(ushort address)
@@ -202,6 +208,7 @@ namespace InnoWerks.Computers.Apple
             }
 
             machineState.CurrentSlot = -1;
+            machineState.ExpansionRomType = ExpansionRomType.ExpRomInternal;
 
             memoryBlocks.Remap();
 
@@ -226,58 +233,25 @@ namespace InnoWerks.Computers.Apple
             transactionCycles += cycles;
         }
 
-        private byte DoSlotRead(int slot, ushort address)
-        {
-            var slotDevice = slotDevices[slot];
-
-            if (slotDevice?.HandlesRead(address) == true)
-            {
-                var (value, _) = slotDevice.Read(address);
-                return value;
-            }
-
-            return 0xFF;
-        }
-
-        private void DoSlotWrite(int slot, ushort address, byte value)
-        {
-            var slotDevice = slotDevices[slot];
-
-            if (slotDevice?.HandlesWrite(address) == true)
-            {
-                SimDebugger.Info("Write IO {0} {1:X4}\n", slot, address);
-                slotDevice.Write(address, value);
-            }
-        }
-
         private void HandleC3xxAndCfff(ushort address)
         {
-            bool remapNeeded = false;
-
-            var page = memoryBlocks.GetPage(address);
-
-            if (page == 0xC3 && machineState.State[SoftSwitch.Slot3RomEnabled] == false)
-            {
-                machineState.State[SoftSwitch.IntC8RomEnabled] = true;
-                remapNeeded = true;
-            }
-
             if (address == 0xCFFF)
             {
                 machineState.State[SoftSwitch.IntC8RomEnabled] = false;
-                remapNeeded = true;
+                memoryBlocks.Remap();
             }
 
-            if (remapNeeded)
+            var page = memoryBlocks.GetPage(address);
+            if (page == 0xC3 && machineState.State[SoftSwitch.Slot3RomEnabled] == false)
             {
-                var slot = (page == 0xC0) ? ((address - 0xC080) >> 4) : (page - 0xC0);
-
-                if (slot < 8)
-                {
-                    machineState.CurrentSlot = slot;
-                }
-
+                machineState.State[SoftSwitch.IntC8RomEnabled] = true;
                 memoryBlocks.Remap();
+            }
+
+            var slot = (page == 0xC0) ? ((address - 0xC080) >> 4) : (page - 0xC0);
+            if (slot >= 0 && slot <= 7)
+            {
+                machineState.CurrentSlot = slot;
             }
         }
 

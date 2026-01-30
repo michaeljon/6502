@@ -4,6 +4,14 @@ using System.Linq;
 
 namespace InnoWerks.Computers.Apple
 {
+    public enum ExpansionRomType
+    {
+        ExpRomNull = 0,
+        ExpRomInternal,
+        ExpRomPeripheral
+    };
+
+
     public class MachineState
     {
         private readonly Random rng = new();
@@ -19,7 +27,13 @@ namespace InnoWerks.Computers.Apple
         }
 
         // used to hold the current slot device, if present
-        public int CurrentSlot { get; set; }
+        public int CurrentSlot
+        {
+            get;
+            set;
+        }
+
+        public ExpansionRomType ExpansionRomType { get; set; }
 
         /// <summary>
         /// Used to hold the most recent keyboard entry
