@@ -242,6 +242,14 @@ namespace InnoWerks.Emulators.AppleIIe
                         }
                     }
 
+                    // Rebooet
+                    if (state.IsKeyDown(Keys.F1) && !prevKeyboard.IsKeyDown(Keys.F1))
+                    {
+                        cpuPaused = true;
+                        cpu.Reset();
+                        cpuPaused = false;
+                    }
+
                     if (KeyMapper.TryMap(key, state, out byte ascii))
                     {
                         iou.InjectKey(ascii);

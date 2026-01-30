@@ -187,6 +187,7 @@ namespace InnoWerks.Computers.Apple
             // bank 2 is the primary bank
             machineState.State[SoftSwitch.LcBank2] = true;
             machineState.State[SoftSwitch.IntCxRomEnabled] = true;
+            machineState.State[SoftSwitch.IntC8RomEnabled] = true;
         }
 
         private bool HandleReadC08x(ushort address)

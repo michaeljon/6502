@@ -133,18 +133,19 @@ namespace InnoWerks.Computers.Apple
             // cx slot rom, one page per slot, $C100-$C7FF
             for (var slot = 0; slot < 8; slot++)
             {
-                loSlotRom[slot] = MemoryPage.Zeros((byte)(0xC0 + slot));
+                // loSlotRom[slot] = MemoryPage.Zeros((byte)(0xC0 + slot));
+                loSlotRom[slot] = null;
             }
 
             // c8 slot rom, one page per slot, $C800-$CFFF
             for (var slot = 0; slot < 8; slot++)
             {
-                hiSlotRom[slot] = new MemoryPage[2048 / MemoryPage.PageSize];
+                // hiSlotRom[slot] = new MemoryPage[2048 / MemoryPage.PageSize];
 
-                for (var page = 0; page < 2048 / MemoryPage.PageSize; page++)
-                {
-                    hiSlotRom[slot][page] = MemoryPage.Zeros((byte)(0xC8 + page));
-                }
+                // for (var page = 0; page < 2048 / MemoryPage.PageSize; page++)
+                // {
+                //     hiSlotRom[slot][page] = null; // MemoryPage.Zeros((byte)(0xC8 + page));
+                // }
             }
 
             Remap();
@@ -284,7 +285,7 @@ namespace InnoWerks.Computers.Apple
                     //
                     // hook up the active slot's rom to c8
                     //
-                    if (machineState.CurrentSlot != 0)
+                    if (machineState.CurrentSlot != 0 && hiSlotRom[machineState.CurrentSlot] != null)
                     {
                         InjectRom(hiSlotRom[machineState.CurrentSlot]);
                     }
@@ -298,7 +299,9 @@ namespace InnoWerks.Computers.Apple
                 }
             }
 
-            activeRead[0xC0] = null; // CRASH??? MemoryPage.FFs;
+            // this is only here to help accesses higher in stack
+            // hard-fail since this page is never readable as ram or rom
+            activeRead[0xC0] = null;
         }
 
         private void RemapWrite()
@@ -662,7 +665,7 @@ namespace InnoWerks.Computers.Apple
             Debug.WriteLine("");
         }
 
-        internal void DumpActiveMemory(byte startPage = 0x00, byte endPage = 0xff)
+        internal void DumpActiveMemory(int startPage = 0x00, int endPage = 0x100)
         {
             for (int page = startPage; page < endPage; page++)
             {

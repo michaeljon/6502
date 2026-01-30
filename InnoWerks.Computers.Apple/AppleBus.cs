@@ -242,16 +242,24 @@ namespace InnoWerks.Computers.Apple
             }
 
             var page = memoryBlocks.GetPage(address);
+            var offset = memoryBlocks.GetOffset(address);
+
             if (page == 0xC3 && machineState.State[SoftSwitch.Slot3RomEnabled] == false)
             {
                 machineState.State[SoftSwitch.IntC8RomEnabled] = true;
                 memoryBlocks.Remap();
             }
 
-            var slot = (page == 0xC0) ? ((address - 0xC080) >> 4) : (page - 0xC0);
-            if (slot >= 0 && slot <= 7)
+            if ((page == 0xC0 && offset >= 0x80) || (page >= 0xC9 && page <= 0xCF))
             {
+                var slot = page == 0xC0 ? (address >> 4) & 0x7 : page & 0x7;
+                var newSlot = slot != machineState.CurrentSlot;
                 machineState.CurrentSlot = slot;
+
+                if (newSlot)
+                {
+                    memoryBlocks.Remap();
+                }
             }
         }
 
