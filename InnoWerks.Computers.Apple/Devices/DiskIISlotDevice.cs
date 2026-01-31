@@ -9,24 +9,17 @@ namespace InnoWerks.Computers.Apple
 
     public sealed class DiskIISlotDevice : SlotRomDevice
     {
-        private readonly DiskIIDrive[] drives = new DiskIIDrive[2];
+        private readonly DiskIIDrive drive1 = new();
 
-        private bool motorOn;
+        private readonly DiskIIDrive drive2 = new();
 
-        private bool driveSelect;
-
-        private int phase;
-
-        private byte shiftRegister;
-
-        private DiskIIDrive CurrentDrive =>
-            driveSelect ? drives[0] : drives[1];
+        DiskIIDrive currentDrive;
 
         public DiskIISlotDevice(IBus bus, MachineState machineState, byte[] romImage)
             : base(6, "Disk II Controller", bus, machineState, romImage)
         {
-            drives[0] = new DiskIIDrive();
-            drives[1] = new DiskIIDrive();
+            drive1 = new DiskIIDrive();
+            drive2 = new DiskIIDrive();
         }
 
         protected override byte DoIo(CardIoType ioType, byte address, byte value)
@@ -35,30 +28,69 @@ namespace InnoWerks.Computers.Apple
 
             switch (address)
             {
-                case 0x00: SetPhase(0, false); break;
-                case 0x01: SetPhase(0, true); break;
-                case 0x02: SetPhase(1, false); break;
-                case 0x03: SetPhase(1, true); break;
-                case 0x04: SetPhase(2, false); break;
-                case 0x05: SetPhase(2, true); break;
-                case 0x06: SetPhase(3, false); break;
-                case 0x07: SetPhase(3, true); break;
-
-                case 0x08: motorOn = false; break;
-                case 0x09: motorOn = true; break;
-
-                case 0x0A: driveSelect = false; break;
-                case 0x0B: driveSelect = true; break;
-
-                case 0x0C:   // shift read
-                    ShiftRead();
+                case 0x0:
+                case 0x1:
+                case 0x2:
+                case 0x3:
+                case 0x4:
+                case 0x5:
+                case 0x6:
+                case 0x7:
+                    currentDrive.step(address);
                     break;
 
-                case 0x0E:   // data read
-                    return shiftRegister;
+                case 0x8:
+                    // drive off
+                    currentDrive.setOn(false);
+                    currentDrive.removeIndicator();
+                    break;
 
-                case 0x0F:   // data write
-                    shiftRegister = value;
+                case 0x9:
+                    // drive on
+                    currentDrive.setOn(true);
+                    currentDrive.addIndicator();
+                    break;
+
+                case 0xA:
+                    // drive 1
+                    currentDrive = drive1;
+                    break;
+
+                case 0xB:
+                    // drive 2
+                    currentDrive = drive2;
+                    break;
+
+                case 0xC:
+                    // read/write latch
+                    currentDrive.write();
+                    int latch = currentDrive.readLatch();
+                    e.setNewValue(latch);
+                    break;
+                case 0xF:
+                    // write mode
+                    currentDrive.setWriteMode();
+                case 0xD:
+                    // set latch
+                    if (e.getType() == RAMEvent.TYPE.WRITE)
+                    {
+                        currentDrive.setLatchValue((byte)e.getNewValue());
+                    }
+                    e.setNewValue(currentDrive.readLatch());
+                    break;
+
+                case 0xE:
+                    // read mode
+                    currentDrive.setReadMode();
+                    if (currentDrive.disk != null && currentDrive.disk.writeProtected)
+                    {
+                        e.setNewValue(0x080);
+                    }
+                    else
+                    {
+                        //                    e.setNewValue((byte) (Math.random() * 256.0));
+                        e.setNewValue(0);
+                    }
                     break;
             }
 
@@ -118,157 +150,6 @@ namespace InnoWerks.Computers.Apple
             shiftRegister = (byte)((shiftRegister << 1) | bit);
 
             drive.BitPosition = (drive.BitPosition + 1) % (track.Length * 8);
-        }
-    }
-
-    public class DiskIIDrive
-    {
-        public byte[][] Tracks = new byte[35][];
-
-        public int CurrentTrack;
-
-        public int BitPosition;
-
-        public bool WriteProtected;
-
-        public DiskIIDrive()
-        {
-            // DOS 3.3 nibble track (~6656 bytes)
-            for (int i = 0; i < 35; i++)
-            {
-                Tracks[i] = new byte[6656];
-            }
-        }
-    }
-
-    public static class DiskIINibble
-    {
-        // 6-and-2 encoding table
-        private static readonly byte[] EncodeTable =
-        [
-            0x96,0x97,0x9A,0x9B,0x9D,0x9E,0x9F,0xA6,
-            0xA7,0xAB,0xAC,0xAD,0xAE,0xAF,0xB2,0xB3,
-            0xB4,0xB5,0xB6,0xB7,0xB9,0xBA,0xBB,0xBC,
-            0xBD,0xBE,0xBF,0xCB,0xCD,0xCE,0xCF,0xD3,
-            0xD6,0xD7,0xD9,0xDA,0xDB,0xDC,0xDD,0xDE,
-            0xDF,0xE5,0xE6,0xE7,0xE9,0xEA,0xEB,0xEC,
-            0xED,0xEE,0xEF,0xF2,0xF3,0xF4,0xF5,0xF6,
-            0xF7,0xF9,0xFA,0xFB,0xFC,0xFD,0xFE,0xFF
-        ];
-
-        public static byte[] EncodeSector(byte[] sector)
-        {
-            ArgumentNullException.ThrowIfNull(sector, nameof(sector));
-
-            byte[] buf = new byte[342];
-            byte[] aux = new byte[86];
-
-            for (int i = 0; i < 256; i++)
-            {
-                byte v = sector[i];
-                aux[i % 86] |= (byte)(((v >> 1) & 1) << (i / 86));
-                aux[(i + 86) % 86] |= (byte)(((v >> 3) & 1) << (i / 86));
-                aux[(i + 172) % 86] |= (byte)(((v >> 5) & 1) << (i / 86));
-                buf[i] = (byte)((v >> 2) & 0x3F);
-            }
-
-            for (int i = 0; i < 86; i++)
-            {
-                buf[256 + i] = aux[i];
-            }
-
-            byte prev = 0;
-            for (int i = 0; i < 342; i++)
-            {
-                byte v = buf[i];
-                buf[i] = EncodeTable[prev ^ v];
-                prev = v;
-            }
-
-            return buf;
-        }
-
-        public static byte[] BuildTrack(byte[] dsk, int track)
-        {
-            byte[] trackData = new byte[6656];
-            int pos = 0;
-
-            for (int sector = 0; sector < 16; sector++)
-            {
-                void WriteSync(int count)
-                {
-                    for (int i = 0; i < count; i++)
-                    {
-                        trackData[pos++] = 0xFF;
-                    }
-                }
-
-                void WriteAddressField()
-                {
-                    trackData[pos++] = 0xD5;
-                    trackData[pos++] = 0xAA;
-                    trackData[pos++] = 0x96;
-
-                    void WriteOddEven(byte v)
-                    {
-                        trackData[pos++] = (byte)(0xAA | (v >> 1));
-                        trackData[pos++] = (byte)(0xAA | v);
-                    }
-
-                    WriteOddEven((byte)track);
-                    WriteOddEven((byte)sector);
-                    WriteOddEven(0xFE); // volume
-
-                    trackData[pos++] = 0xDE;
-                    trackData[pos++] = 0xAA;
-                    trackData[pos++] = 0xEB;
-                }
-
-                void WriteDataField(byte[] sectorData)
-                {
-                    trackData[pos++] = 0xD5;
-                    trackData[pos++] = 0xAA;
-                    trackData[pos++] = 0xAD;
-
-                    foreach (var b in sectorData)
-                    {
-                        trackData[pos++] = b;
-                    }
-
-                    trackData[pos++] = 0xDE;
-                    trackData[pos++] = 0xAA;
-                    trackData[pos++] = 0xEB;
-                }
-
-                WriteSync(40);
-                WriteAddressField();
-
-                WriteSync(10);
-
-                int offset = (track * 16 + sector) * 256;
-                var raw = new byte[256];
-                Array.Copy(dsk, offset, raw, 0, 256);
-
-                var encoded = EncodeSector(raw);
-                WriteDataField(encoded);
-            }
-
-            while (pos < trackData.Length)
-            {
-                trackData[pos++] = 0xFF;
-            }
-
-            return trackData;
-        }
-
-        public static void LoadDisk(DiskIIDrive drive, byte[] dsk)
-        {
-            ArgumentNullException.ThrowIfNull(drive, nameof(drive));
-
-            for (int t = 0; t < 35; t++)
-            {
-                drive.Tracks[t] = BuildTrack(dsk, t);
-            }
         }
     }
 }
