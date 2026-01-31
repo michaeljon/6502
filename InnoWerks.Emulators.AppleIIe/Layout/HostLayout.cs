@@ -26,7 +26,7 @@ namespace InnoWerks.Emulators.AppleIIe
 
         public static HostLayout ComputeLayout(int windowWidth, int windowHeight)
         {
-            const int CpuTraceWidth = 280;
+            const int CpuTraceWidth = 288;
             const int Padding = 8;
 
             int availableWidth = windowWidth - CpuTraceWidth - Padding * 3;

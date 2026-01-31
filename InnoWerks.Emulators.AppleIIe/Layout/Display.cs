@@ -83,7 +83,7 @@ namespace InnoWerks.Emulators.AppleIIe
         private readonly List<SoftSwitch> debugSwitchesBlock3 =
         [
             SoftSwitch.IntCxRomEnabled,
-            SoftSwitch.Slot3RomEnabled,
+            SoftSwitch.SlotC3RomEnabled,
             SoftSwitch.IntC8RomEnabled,
             SoftSwitch.LcBank2,
             SoftSwitch.LcReadEnabled,
@@ -107,7 +107,7 @@ namespace InnoWerks.Emulators.AppleIIe
             { SoftSwitch.AltCharSet, "ALTCHR" },
 
             { SoftSwitch.IntCxRomEnabled, "INTCX" },
-            { SoftSwitch.Slot3RomEnabled, "SLOTC3" },
+            { SoftSwitch.SlotC3RomEnabled, "SLOTC3" },
             { SoftSwitch.IntC8RomEnabled, "INTC8" },
             { SoftSwitch.LcBank2, "BANK2" },
             { SoftSwitch.LcReadEnabled, "LCRD" },
@@ -325,7 +325,7 @@ namespace InnoWerks.Emulators.AppleIIe
             int x = rectangle.X + 12;
             int y = rectangle.Bottom - debugFont.LineSpacing - 12;
 
-            for (var i = cpuTraceBuffer.Count - 1; i > 0; i--)
+            for (var i = cpuTraceBuffer.Count - 1; i >= 0; i--)
             {
                 var entry = cpuTraceBuffer[i];
 
@@ -386,7 +386,7 @@ namespace InnoWerks.Emulators.AppleIIe
         {
             var opcode = cpuTraceEntry.OpCode;
             var pc = cpuTraceEntry.ProgramCounter;
-            var decoded = cpuTraceEntry.OpCode.DecodeOperand(cpu, bus);
+            var decoded = cpuTraceEntry.OpCode.DecodeOperand(cpuTraceEntry.ProgramCounter, bus);
 
             if (breakpoints.Contains(cpuTraceEntry.ProgramCounter))
             {

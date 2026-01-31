@@ -1,10 +1,17 @@
 using System;
+using System.Reflection.PortableExecutable;
 using InnoWerks.Processors;
 using InnoWerks.Simulators;
 using Microsoft.VisualBasic;
 
 namespace InnoWerks.Computers.Apple
 {
+    public enum CardIoType
+    {
+        Read,
+        Write
+    }
+
     // Core soft switches
     //   $C000..C07F On Board Resources
     //
@@ -23,7 +30,7 @@ namespace InnoWerks.Computers.Apple
     //   $C800..CFFF Common area for all Slots (2 KiB 'ROM')
 
 #pragma warning disable CA1716, CA1707, CA1822
-    public abstract class SlotRomDevice : IDevice
+    public abstract class SlotRomDevice : ISlotDevice
     {
         private readonly IBus bus;
 
@@ -114,21 +121,81 @@ namespace InnoWerks.Computers.Apple
             bus.AddDevice(this);
         }
 
-        public DevicePriority Priority => DevicePriority.Slot;
-
         public int Slot { get; }
 
         public string Name { get; }
+        public virtual bool HandlesRead(ushort address) =>
+            (address >= IoBaseAddressLo && address <= IoBaseAddressHi) ||
+            (address >= RomBaseAddressLo && address <= RomBaseAddressHi) ||
+            (address >= ExpansionBaseAddressLo && address <= ExpansionBaseAddressHi);
 
-        public virtual bool HandlesRead(ushort address)
-            => address >= IoBaseAddressLo && address <= IoBaseAddressHi;
+        public virtual bool HandlesWrite(ushort address) =>
+            (address >= IoBaseAddressLo && address <= IoBaseAddressHi) ||
+            (address >= RomBaseAddressLo && address <= RomBaseAddressHi) ||
+            (address >= ExpansionBaseAddressLo && address <= ExpansionBaseAddressHi);
 
-        public virtual bool HandlesWrite(ushort address)
-            => address >= IoBaseAddressLo && address <= IoBaseAddressHi;
+        protected abstract byte DoIo(CardIoType ioType, byte address, byte value);
 
-        public abstract (byte value, bool remapNeeded) Read(ushort address);
+        protected abstract void DoCx(CardIoType ioType, byte address, byte value);
 
-        public abstract bool Write(ushort address, byte value);
+        protected abstract void DoC8(CardIoType ioType, byte address, byte value);
+
+        public byte Read(ushort address)
+        {
+            if (address >= IoBaseAddressLo && address <= IoBaseAddressHi)
+            {
+                return DoIo(CardIoType.Read, (byte)(address & 0x0F), 0x00);
+            }
+            else if (address >= RomBaseAddressLo && address <= RomBaseAddressHi)
+            {
+                machineState.CurrentSlot = Slot;
+
+                if (machineState.State[SoftSwitch.IntCxRomEnabled] == false)
+                {
+                    // return value from rom
+                    DoCx(CardIoType.Read, (byte)(address & 0x0F), 0x00);
+                }
+            }
+            else if (address >= ExpansionBaseAddressLo && address <= ExpansionBaseAddressHi)
+            {
+                if (machineState.State[SoftSwitch.IntCxRomEnabled] == false || machineState.State[SoftSwitch.IntC8RomEnabled] == false)
+                {
+                    // return value from rom
+                    DoC8(CardIoType.Read, (byte)(address & 0x0F), 0x00);
+                }
+            }
+
+            return machineState.FloatingValue;
+        }
+
+        public bool Write(ushort address, byte value)
+        {
+            if (address >= IoBaseAddressLo && address <= IoBaseAddressHi)
+            {
+                DoIo(CardIoType.Write, (byte)(address & 0x0F), value);
+                return false;
+            }
+            else if (address >= RomBaseAddressLo && address <= RomBaseAddressHi)
+            {
+                machineState.CurrentSlot = Slot;
+
+                if (machineState.State[SoftSwitch.IntCxRomEnabled] == false)
+                {
+                    // return value from rom
+                    DoCx(CardIoType.Write, (byte)(address & 0x0F), 0x00);
+                }
+            }
+            else if (address >= ExpansionBaseAddressLo && address <= ExpansionBaseAddressHi)
+            {
+                if (machineState.State[SoftSwitch.IntCxRomEnabled] == false || machineState.State[SoftSwitch.IntC8RomEnabled] == false)
+                {
+                    // return value from rom
+                    DoC8(CardIoType.Write, (byte)(address & 0x0F), 0x00);
+                }
+            }
+
+            return false;
+        }
 
         public abstract void Tick(int cycles);
 

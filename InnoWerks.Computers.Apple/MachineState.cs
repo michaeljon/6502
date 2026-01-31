@@ -67,36 +67,36 @@ namespace InnoWerks.Computers.Apple
         public byte FloatingValue => (byte)(rng.Next() & 0xFF);
 #pragma warning restore CA5394 // Do not use insecure randomness
 
-        public (byte value, bool remapNeeded) HandleReadStateToggle(SoftSwitch softSwitch, bool toState, bool floating = false)
+        public byte HandleReadStateToggle(Memory128k memoryBlocks, SoftSwitch softSwitch, bool toState, bool floating = false)
         {
-            byte returnValue = 0x00;
+            ArgumentNullException.ThrowIfNull(memoryBlocks);
 
-            if (floating == true)
-            {
 #pragma warning disable CA5394 // Do not use insecure randomness
-                returnValue = (byte)(rng.Next() & 0xFF);
+            byte returnValue = floating == true ? (byte)(rng.Next() & 0xFF) : (byte)0x00;
 #pragma warning restore CA5394 // Do not use insecure randomness
-            }
 
             if (State[softSwitch] == toState)
             {
-                return (returnValue, false);
+                return returnValue;
             }
 
             State[softSwitch] = toState;
+            memoryBlocks.Remap();
 
-            return (returnValue, true);
+            return returnValue;
         }
 
-        public bool HandleWriteStateToggle(SoftSwitch softSwitch, bool toState)
+        public void HandleWriteStateToggle(Memory128k memoryBlocks, SoftSwitch softSwitch, bool toState)
         {
+            ArgumentNullException.ThrowIfNull(memoryBlocks);
+
             if (State[softSwitch] == toState)
             {
-                return false;
+                return;
             }
 
             State[softSwitch] = toState;
-            return true;
+            memoryBlocks.Remap();
         }
     }
 }

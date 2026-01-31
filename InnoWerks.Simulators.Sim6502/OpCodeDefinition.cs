@@ -21,7 +21,7 @@ namespace InnoWerks.Simulators
         byte OpCodeValue,
         OpCode OpCode,
         Action<MosTechnologiesCpu, ushort, byte> Execute,
-        Func<MosTechnologiesCpu, IBus, DecodedOperation> DecodeOperand,
+        Func<ushort, IBus, DecodedOperation> DecodeOperand,
         AddressingMode AddressingMode,
         int Bytes = 0,
         int Cycles = 0)
@@ -39,7 +39,7 @@ namespace InnoWerks.Simulators
         /// <summary>
         ///
         /// </summary>
-        public Func<MosTechnologiesCpu, IBus, DecodedOperation> DecodeOperand { get; init; } = DecodeOperand;
+        public Func<ushort, IBus, DecodedOperation> DecodeOperand { get; init; } = DecodeOperand;
 
         /// <summary>
         ///

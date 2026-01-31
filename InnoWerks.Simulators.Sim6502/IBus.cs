@@ -19,7 +19,9 @@ namespace InnoWerks.Simulators
 
     public interface IBus
     {
-        void AddDevice(IDevice device);
+        void AddDevice(ISoftSwitchDevice device);
+
+        void AddDevice(ISlotDevice slotDevice);
 
         /// <summary>
         /// Starts a memory transaction to record a single

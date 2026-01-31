@@ -225,7 +225,7 @@ namespace InnoWerks.Simulators
             OpCodeDefinition opCodeDefinition =
                 GetInstruction(operation, false);
 
-            return new CpuTraceEntry(this, bus, bus.CycleCount, opCodeDefinition);
+            return new CpuTraceEntry(Registers.ProgramCounter, bus, bus.CycleCount, opCodeDefinition);
         }
 
         private OpCodeDefinition GetInstruction(byte operation, bool writeInstructions)
@@ -234,7 +234,7 @@ namespace InnoWerks.Simulators
 
             if (writeInstructions)
             {
-                var stepToExecute = $"{Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {opCodeDefinition.DecodeOperand(this, bus),-10}\n";
+                var stepToExecute = $"{Registers.ProgramCounter:X4} {opCodeDefinition.OpCode}   {opCodeDefinition.DecodeOperand(Registers.ProgramCounter, bus),-10}\n";
                 Console.Error.Write(stepToExecute);
             }
 

@@ -29,44 +29,45 @@ namespace InnoWerks.Computers.Apple
             drives[1] = new DiskIIDrive();
         }
 
-        public override (byte value, bool remapNeeded) Read(ushort address)
+        protected override byte DoIo(CardIoType ioType, byte address, byte value)
         {
-            SimDebugger.Info($"Read DiskII({address:X4})\n");
+            SimDebugger.Info($"Write DiskII({address:X4}, {value:X2})\n");
 
-            switch (address & 0x0F)
+            switch (address)
             {
+                case 0x00: SetPhase(0, false); break;
+                case 0x01: SetPhase(0, true); break;
+                case 0x02: SetPhase(1, false); break;
+                case 0x03: SetPhase(1, true); break;
+                case 0x04: SetPhase(2, false); break;
+                case 0x05: SetPhase(2, true); break;
+                case 0x06: SetPhase(3, false); break;
+                case 0x07: SetPhase(3, true); break;
+
+                case 0x08: motorOn = false; break;
+                case 0x09: motorOn = true; break;
+
+                case 0x0A: driveSelect = false; break;
+                case 0x0B: driveSelect = true; break;
+
                 case 0x0C:   // shift read
                     ShiftRead();
                     break;
 
                 case 0x0E:   // data read
-                    return (shiftRegister, false);
+                    return shiftRegister;
 
-                default:
-                    Handle(address);
-                    break;
-            }
-
-            return (machineState.FloatingValue, false);
-        }
-
-        public override bool Write(ushort address, byte value)
-        {
-            SimDebugger.Info($"Write DiskII({address:X4}, {value:X2})\n");
-
-            switch (address & 0x0F)
-            {
                 case 0x0F:   // data write
                     shiftRegister = value;
                     break;
-
-                default:
-                    Handle(address);
-                    break;
             }
 
-            return false;
+            return machineState.FloatingValue;
         }
+
+        protected override void DoCx(CardIoType ioType, byte address, byte value) { }
+
+        protected override void DoC8(CardIoType ioType, byte address, byte value) { }
 
         public override void Tick(int cycles) {/* NO-OP */ }
 
@@ -86,27 +87,6 @@ namespace InnoWerks.Computers.Apple
             }
 
             return drives[drive];
-        }
-
-        private void Handle(ushort address)
-        {
-            switch (address & 0x0F)
-            {
-                case 0x00: SetPhase(0, false); break;
-                case 0x01: SetPhase(0, true); break;
-                case 0x02: SetPhase(1, false); break;
-                case 0x03: SetPhase(1, true); break;
-                case 0x04: SetPhase(2, false); break;
-                case 0x05: SetPhase(2, true); break;
-                case 0x06: SetPhase(3, false); break;
-                case 0x07: SetPhase(3, true); break;
-
-                case 0x08: motorOn = false; break;
-                case 0x09: motorOn = true; break;
-
-                case 0x0A: driveSelect = false; break;
-                case 0x0B: driveSelect = true; break;
-            }
         }
 
         private void SetPhase(int p, bool on)

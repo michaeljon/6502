@@ -63,10 +63,10 @@ namespace Emu6502
 
             var bus = new AppleBus(config, memoryBlocks, machineState);
             var iou = new IOU(memoryBlocks, machineState, bus);
-            var mmu = new MMU(machineState, bus);
+            var mmu = new MMU(memoryBlocks, machineState, bus);
 
-            var disk = new DiskIISlotDevice(bus, machineState, diskIIRom);
-            DiskIINibble.LoadDisk(disk.GetDrive(1), dos33);
+            // var disk = new DiskIISlotDevice(bus, machineState, diskIIRom);
+            // DiskIINibble.LoadDisk(disk.GetDrive(1), dos33);
 
             var cpu = new Cpu65C02(
                 bus,
@@ -117,7 +117,7 @@ namespace Emu6502
                         Thread.Sleep(1);
                     }
 
-                    iou.Render();
+                    Render(machineState, memoryBlocks);
 
                     Thread.Sleep(16);
                 }
@@ -246,5 +246,94 @@ namespace Emu6502
 
             return (byte)key.KeyChar;
         }
+
+        public static void Render(MachineState machineState, Memory128k memoryBlocks)
+        {
+            if (machineState.State[SoftSwitch.EightyColumnMode] == false)
+            {
+                Render40Column(machineState, memoryBlocks);
+            }
+            else
+            {
+                Render80Column(machineState, memoryBlocks);
+            }
+        }
+
+        private static void Render40Column(MachineState machineState, Memory128k memoryBlocks)
+        {
+            Span<char> line = stackalloc char[40];
+
+            Console.CursorVisible = false;
+            Console.SetCursorPosition(0, 0);
+
+            bool page2 = machineState.State[SoftSwitch.Page2];
+
+            for (int row = 0; row < 24; row++)
+            {
+                for (int col = 0; col < 40; col++)
+                {
+                    ushort addr = GetTextAddress(row, col, page2);
+                    byte b = memoryBlocks.Read(addr);
+
+                    line[col] = DecodeAppleChar(b);
+                }
+
+                Console.WriteLine(line);
+            }
+        }
+
+        private static void Render80Column(MachineState machineState, Memory128k memoryBlocks)
+        {
+            Span<char> line = stackalloc char[80];
+
+            Console.CursorVisible = false;
+            Console.SetCursorPosition(0, 0);
+
+            for (int row = 0; row < 24; row++)
+            {
+                for (int col = 0; col < 40; col++)
+                {
+                    ushort addr = GetTextAddress(row, col, false);
+                    byte b = memoryBlocks.GetAux(addr);
+                    line[2 * col] = DecodeAppleChar(b);
+
+                    b = memoryBlocks.GetMain(addr);
+                    line[(2 * col) + 1] = DecodeAppleChar(b);
+                }
+
+                Console.WriteLine(line);
+            }
+        }
+
+        private static char DecodeAppleChar(byte b)
+        {
+            // Ignore inverse/flash for now
+            b &= 0x7F;
+
+            // Apple II uses ASCII-ish set
+            if (b < 0x20)
+                return ' ';
+
+            return (char)b;
+        }
+
+        private static ushort GetTextAddress(int row, int col, bool page2)
+        {
+            int pageOffset = page2 ? 0x800 : 0x400;
+
+            return (ushort)(
+                pageOffset +
+                textRowBase[row & 0x07] +
+                (row >> 3) * 40 +
+                col
+            );
+        }
+
+        private static readonly int[] textRowBase =
+        [
+            0x000, 0x080, 0x100, 0x180,
+            0x200, 0x280, 0x300, 0x380
+        ];
+
     }
 }

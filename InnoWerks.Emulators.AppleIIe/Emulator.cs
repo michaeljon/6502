@@ -36,8 +36,8 @@ namespace InnoWerks.Emulators.AppleIIe
         // debug, etc.
         //
         private CpuTraceBuffer cpuTraceBuffer = new(128);
-        private bool cpuPaused;
-        private bool stepRequested;
+        private bool cpuPaused = true;
+        private bool stepRequested = true;
         private readonly HashSet<ushort> breakpoints = [];
 
         private KeyboardState prevKeyboard;
@@ -115,10 +115,10 @@ namespace InnoWerks.Emulators.AppleIIe
 
             appleBus = new AppleBus(config, memoryBlocks, machineState);
             iou = new IOU(memoryBlocks, machineState, appleBus);
-            mmu = new MMU(machineState, appleBus);
+            mmu = new MMU(memoryBlocks, machineState, appleBus);
 
-            var disk = new DiskIISlotDevice(appleBus, machineState, diskIIRom);
-            DiskIINibble.LoadDisk(disk.GetDrive(1), dos33);
+            // var disk = new DiskIISlotDevice(appleBus, machineState, diskIIRom);
+            // DiskIINibble.LoadDisk(disk.GetDrive(1), dos33);
 
             cpu = new Cpu65C02(
                 appleBus,

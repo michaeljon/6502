@@ -49,7 +49,7 @@ namespace InnoWerks.Computers.Apple
 
         // ROM & slot control
         IntCxRomEnabled,
-        Slot3RomEnabled,
+        SlotC3RomEnabled,
         IntC8RomEnabled,
 
         LcBank2,

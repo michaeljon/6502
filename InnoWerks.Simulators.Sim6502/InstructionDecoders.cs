@@ -4,14 +4,13 @@ namespace InnoWerks.Simulators
 {
     public static class InstructionDecoders
     {
-        public static DecodedOperation DecodeUndefined(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeUndefined(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
+                OpCodeValue = bus.Peek(programCounter),
                 Display = "<illegal>",
             };
         }
@@ -20,15 +19,14 @@ namespace InnoWerks.Simulators
         /// Implied - In the implied addressing mode, the address containing
         /// the operand is implicitly stated in the operation code of the instruction.
         /// </summary>
-        public static DecodedOperation DecodeImplicit(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeImplicit(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 1,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
+                OpCodeValue = bus.Peek(programCounter),
                 Display = "",
             };
         }
@@ -37,15 +35,14 @@ namespace InnoWerks.Simulators
         /// Implied - In the implied addressing mode, the address containing
         /// the operand is implicitly stated in the operation code of the instruction.
         /// </summary>
-        public static DecodedOperation DecodeStack(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeStack(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 1,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
+                OpCodeValue = bus.Peek(programCounter),
                 Display = "",
             };
         }
@@ -54,15 +51,14 @@ namespace InnoWerks.Simulators
         /// Accum - This form of addressing is represented with a
         /// one byte instruction, implying an operation on the accumulator.
         /// </summary>
-        public static DecodedOperation DecodeAccumulator(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeAccumulator(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 1,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
+                OpCodeValue = bus.Peek(programCounter),
                 Display = "",
             };
         }
@@ -71,17 +67,16 @@ namespace InnoWerks.Simulators
         /// IMM - In immediate addressing, the second byte of the instruction
         /// contains the operand, with no further memory addressing required.
         /// </summary>
-        public static DecodedOperation DecodeImmediate(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeImmediate(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 2,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
-                Operand1 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)),
-                Display = $"#${bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)):X2}",
+                OpCodeValue = bus.Peek(programCounter),
+                Operand1 = bus.Peek((ushort)(programCounter + 1)),
+                Display = $"#${bus.Peek((ushort)(programCounter + 1)):X2}",
             };
         }
 
@@ -92,18 +87,17 @@ namespace InnoWerks.Simulators
         /// absolute addressing mode allows access to the entire 64k bytes
         /// of addressable memory.
         /// </summary>
-        public static DecodedOperation DecodeAbsolute(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeAbsolute(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 3,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
-                Operand1 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)),
-                Operand2 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 2)),
-                Display = $"${PeekWord(bus, (ushort)(cpu.Registers.ProgramCounter + 1)):X4}",
+                OpCodeValue = bus.Peek(programCounter),
+                Operand1 = bus.Peek((ushort)(programCounter + 1)),
+                Operand2 = bus.Peek((ushort)(programCounter + 2)),
+                Display = $"${PeekWord(bus, (ushort)(programCounter + 1)):X4}",
             };
         }
 
@@ -113,17 +107,16 @@ namespace InnoWerks.Simulators
         /// assuming a zero high address byte. Careful of use the zero page can
         /// result in significant increase in code efficiency.
         /// </summary>
-        public static DecodedOperation DecodeZeroPage(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeZeroPage(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 2,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
-                Operand1 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)),
-                Display = $"${bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)):X2}",
+                OpCodeValue = bus.Peek(programCounter),
+                Operand1 = bus.Peek((ushort)(programCounter + 1)),
+                Display = $"${bus.Peek((ushort)(programCounter + 1)):X2}",
             };
         }
 
@@ -137,18 +130,17 @@ namespace InnoWerks.Simulators
         /// This type of indexing allows any location referencing and the index
         /// to modify fields, resulting in reducing coding and execution time.
         /// </summary>
-        public static DecodedOperation DecodeAbsoluteXIndexed(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeAbsoluteXIndexed(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 3,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
-                Operand1 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)),
-                Operand2 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 2)),
-                Display = $"${PeekWord(bus, (ushort)(cpu.Registers.ProgramCounter + 1)):X4},X",
+                OpCodeValue = bus.Peek(programCounter),
+                Operand1 = bus.Peek((ushort)(programCounter + 1)),
+                Operand2 = bus.Peek((ushort)(programCounter + 2)),
+                Display = $"${PeekWord(bus, (ushort)(programCounter + 1)):X4},X",
             };
         }
 
@@ -162,18 +154,17 @@ namespace InnoWerks.Simulators
         /// This type of indexing allows any location referencing and the index
         /// to modify fields, resulting in reducing coding and execution time.
         /// </summary>
-        public static DecodedOperation DecodeAbsoluteYIndexed(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeAbsoluteYIndexed(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 3,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
-                Operand1 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)),
-                Operand2 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 2)),
-                Display = $"${PeekWord(bus, (ushort)(cpu.Registers.ProgramCounter + 1)):X4},Y",
+                OpCodeValue = bus.Peek(programCounter),
+                Operand1 = bus.Peek((ushort)(programCounter + 1)),
+                Operand2 = bus.Peek((ushort)(programCounter + 2)),
+                Display = $"${PeekWord(bus, (ushort)(programCounter + 1)):X4},Y",
             };
         }
 
@@ -187,17 +178,16 @@ namespace InnoWerks.Simulators
         /// of this mode, no carry is added to the high order eight bits of
         /// memory and crossing page boundaries does not occur.
         /// </summary>
-        public static DecodedOperation DecodeZeroPageXIndexed(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeZeroPageXIndexed(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 2,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
-                Operand1 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)),
-                Display = $"(${bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)):X2},X)",
+                OpCodeValue = bus.Peek(programCounter),
+                Operand1 = bus.Peek((ushort)(programCounter + 1)),
+                Display = $"(${bus.Peek((ushort)(programCounter + 1)):X2},X)",
             };
         }
 
@@ -211,17 +201,16 @@ namespace InnoWerks.Simulators
         /// of this mode, no carry is added to the high order eight bits of
         /// memory and crossing page boundaries does not occur.
         /// </summary>
-        public static DecodedOperation DecodeZeroPageYIndexed(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeZeroPageYIndexed(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 2,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
-                Operand1 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)),
-                Display = $"(${bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)):X2},Y",
+                OpCodeValue = bus.Peek(programCounter),
+                Operand1 = bus.Peek((ushort)(programCounter + 1)),
+                Display = $"(${bus.Peek((ushort)(programCounter + 1)):X2},Y",
             };
         }
 
@@ -234,17 +223,16 @@ namespace InnoWerks.Simulators
         /// counter when the counter is set at the next instruction. The range
         /// of the offset is -128 to +127 bytes from the next instruction.</para>
         /// </summary>
-        public static DecodedOperation DecodeRelative(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeRelative(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 2,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
-                Operand1 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)),
-                Display = $"${bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)):X2}",
+                OpCodeValue = bus.Peek(programCounter),
+                Operand1 = bus.Peek((ushort)(programCounter + 1)),
+                Display = $"${bus.Peek((ushort)(programCounter + 1)):X2}",
             };
         }
 
@@ -252,17 +240,16 @@ namespace InnoWerks.Simulators
         /// (IND) - The second byte of the instruction contains a zero page address
         /// serving as the indirect pointer.
         /// </summary>
-        public static DecodedOperation DecodeZeroPageIndirect(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeZeroPageIndirect(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 2,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
-                Operand1 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)),
-                Display = $"(${bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)):X2})",
+                OpCodeValue = bus.Peek(programCounter),
+                Operand1 = bus.Peek((ushort)(programCounter + 1)),
+                Display = $"(${bus.Peek((ushort)(programCounter + 1)):X2})",
             };
         }
 
@@ -271,18 +258,17 @@ namespace InnoWerks.Simulators
         /// added to the X register. The sixteen-bit result is a memory address
         /// containing the effective address (JMP (ABS,X) only).
         /// </summary>
-        public static DecodedOperation DecodeAbsoluteIndexedIndirect(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeAbsoluteIndexedIndirect(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 3,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
-                Operand1 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)),
-                Operand2 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 2)),
-                Display = $"(${PeekWord(bus, (ushort)(cpu.Registers.ProgramCounter + 1)):X4},X)",
+                OpCodeValue = bus.Peek(programCounter),
+                Operand1 = bus.Peek((ushort)(programCounter + 1)),
+                Operand2 = bus.Peek((ushort)(programCounter + 2)),
+                Display = $"(${PeekWord(bus, (ushort)(programCounter + 1)):X4},X)",
             };
         }
 
@@ -296,17 +282,16 @@ namespace InnoWerks.Simulators
         /// specifying the high and low order bytes of the effective address
         /// must be in page zero.
         /// </summary>
-        public static DecodedOperation DecodeXIndexedIndirect(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeXIndexedIndirect(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 2,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
-                Operand1 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)),
-                Display = $"(${bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)):X2},X)",
+                OpCodeValue = bus.Peek(programCounter),
+                Operand1 = bus.Peek((ushort)(programCounter + 1)),
+                Display = $"(${bus.Peek((ushort)(programCounter + 1)):X2},X)",
             };
         }
 
@@ -319,17 +304,16 @@ namespace InnoWerks.Simulators
         /// zero memory location, the result being the high order eight bits
         /// of the effective address.
         /// </summary>
-        public static DecodedOperation DecodeIndirectYIndexed(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeIndirectYIndexed(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 2,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
-                Operand1 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)),
-                Display = $"(${bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)):X2}),Y",
+                OpCodeValue = bus.Peek(programCounter),
+                Operand1 = bus.Peek((ushort)(programCounter + 1)),
+                Display = $"(${bus.Peek((ushort)(programCounter + 1)):X2}),Y",
             };
         }
 
@@ -342,18 +326,17 @@ namespace InnoWerks.Simulators
         /// byte of the effective address which is loaded into the sixteen bits
         /// of the program counter (JMP (ABS) only).
         /// </summary>
-        public static DecodedOperation DecodeAbsoluteIndirect(ICpu cpu, IBus bus)
+        public static DecodedOperation DecodeAbsoluteIndirect(ushort programCounter, IBus bus)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(bus);
 
             return new DecodedOperation
             {
                 Length = 3,
-                OpCodeValue = bus.Peek(cpu.Registers.ProgramCounter),
-                Operand1 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 1)),
-                Operand2 = bus.Peek((ushort)(cpu.Registers.ProgramCounter + 2)),
-                Display = $"(${PeekWord(bus, (ushort)(cpu.Registers.ProgramCounter + 1)):X4})",
+                OpCodeValue = bus.Peek(programCounter),
+                Operand1 = bus.Peek((ushort)(programCounter + 1)),
+                Operand2 = bus.Peek((ushort)(programCounter + 2)),
+                Display = $"(${PeekWord(bus, (ushort)(programCounter + 1)):X4})",
             };
         }
 

@@ -1,17 +1,7 @@
 namespace InnoWerks.Simulators
 {
-    public enum DevicePriority
+    public interface ISlotDevice
     {
-        SoftSwitch = 0,
-
-        Slot = 1
-    }
-
-#pragma warning disable CA1716
-    public interface IDevice
-    {
-        DevicePriority Priority { get; }
-
         int Slot { get; }
 
         string Name { get; }
@@ -20,7 +10,7 @@ namespace InnoWerks.Simulators
 
         bool HandlesWrite(ushort address);
 
-        (byte value, bool remapNeeded) Read(ushort address);
+        byte Read(ushort address);
 
         bool Write(ushort address, byte value);
 

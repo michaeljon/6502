@@ -11,20 +11,19 @@ namespace InnoWerks.Simulators
         public readonly string Formatted { get; init; }
 
         public CpuTraceEntry(
-            MosTechnologiesCpu cpu,
+            ushort programCounter,
             IBus bus,
             ulong cycleCount,
             OpCodeDefinition opcode)
         {
-            ArgumentNullException.ThrowIfNull(cpu);
             ArgumentNullException.ThrowIfNull(opcode);
 
-            ProgramCounter = cpu.Registers.ProgramCounter;
+            ProgramCounter = programCounter;
             OpCode = opcode;
             CycleCount = cycleCount;
 
             Mnemonic = opcode.OpCode.ToString();
-            Formatted = $"{ProgramCounter:X4} {OpCode.OpCode}   {opcode.DecodeOperand(cpu, bus).Display}";
+            Formatted = $"{ProgramCounter:X4} {OpCode.OpCode}   {opcode.DecodeOperand(ProgramCounter, bus).Display}";
         }
 
         public override bool Equals(object obj)
