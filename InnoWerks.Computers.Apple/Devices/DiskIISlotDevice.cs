@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection.Metadata;
 using InnoWerks.Processors;
 using InnoWerks.Simulators;
 
@@ -20,11 +22,13 @@ namespace InnoWerks.Computers.Apple
         {
             drive1 = new DiskIIDrive();
             drive2 = new DiskIIDrive();
+
+            currentDrive = drive1;
         }
 
         protected override byte DoIo(CardIoType ioType, byte address, byte value)
         {
-            SimDebugger.Info($"Write DiskII({address:X4}, {value:X2})\n");
+            // SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
 
             switch (address)
             {
@@ -36,62 +40,68 @@ namespace InnoWerks.Computers.Apple
                 case 0x5:
                 case 0x6:
                 case 0x7:
-                    currentDrive.step(address);
+                    // step the head
+                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    currentDrive.Step(address);
                     break;
 
                 case 0x8:
                     // drive off
-                    currentDrive.setOn(false);
-                    currentDrive.removeIndicator();
+                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    currentDrive.SetOn(false);
                     break;
 
                 case 0x9:
                     // drive on
-                    currentDrive.setOn(true);
-                    currentDrive.addIndicator();
+                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    currentDrive.SetOn(true);
                     break;
 
                 case 0xA:
-                    // drive 1
+                    // choose drive 1
+                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
                     currentDrive = drive1;
                     break;
 
                 case 0xB:
-                    // drive 2
+                    // choose drive 2
+                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
                     currentDrive = drive2;
                     break;
 
                 case 0xC:
                     // read/write latch
-                    currentDrive.write();
-                    int latch = currentDrive.readLatch();
-                    e.setNewValue(latch);
-                    break;
-                case 0xF:
-                    // write mode
-                    currentDrive.setWriteMode();
+                    currentDrive.Write();
+
+                    var val = currentDrive.ReadLatch();
+                    // SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2}) -> {val:X2}\n");
+                    return val;
+
                 case 0xD:
                     // set latch
-                    if (e.getType() == RAMEvent.TYPE.WRITE)
+                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    if (ioType == CardIoType.Write)
                     {
-                        currentDrive.setLatchValue((byte)e.getNewValue());
+                        currentDrive.SetLatchValue(value);
                     }
-                    e.setNewValue(currentDrive.readLatch());
-                    break;
+                    return currentDrive.ReadLatch();
 
                 case 0xE:
                     // read mode
-                    currentDrive.setReadMode();
-                    if (currentDrive.disk != null && currentDrive.disk.writeProtected)
+                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    currentDrive.SetReadMode();
+                    return 0x80;
+
+                case 0xF:
+                    // write mode
+                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    currentDrive.SetWriteMode();
+                    // set latch
+                    if (ioType == CardIoType.Write)
                     {
-                        e.setNewValue(0x080);
+                        currentDrive.SetLatchValue(value);
                     }
-                    else
-                    {
-                        //                    e.setNewValue((byte) (Math.random() * 256.0));
-                        e.setNewValue(0);
-                    }
-                    break;
+                    return currentDrive.ReadLatch();
             }
 
             return machineState.FloatingValue;
@@ -105,10 +115,10 @@ namespace InnoWerks.Computers.Apple
 
         public override void Reset()
         {
-            motorOn = false;
-            driveSelect = false;
-            phase = 0;
-            shiftRegister = 0;
+            drive1.Reset();
+            drive2.Reset();
+
+            currentDrive = drive1;
         }
 
         public DiskIIDrive GetDrive(int drive)
@@ -118,38 +128,7 @@ namespace InnoWerks.Computers.Apple
                 throw new ArgumentOutOfRangeException(nameof(drive), "DiskII Controller support Drive 1 and Drive 2 only");
             }
 
-            return drives[drive];
-        }
-
-        private void SetPhase(int p, bool on)
-        {
-            if (!motorOn) return;
-
-            if (on)
-            {
-                if (p == (phase + 1) % 4) { CurrentDrive.CurrentTrack++; }
-                else if (p == (phase + 3) % 4) { CurrentDrive.CurrentTrack--; }
-
-                CurrentDrive.CurrentTrack = Math.Clamp(CurrentDrive.CurrentTrack, 0, 34);
-                phase = p;
-            }
-        }
-
-        private void ShiftRead()
-        {
-            if (!motorOn) return;
-
-            var drive = CurrentDrive;
-            var track = drive.Tracks[drive.CurrentTrack];
-
-            int bytePos = drive.BitPosition >> 3;
-            int bitPos = 7 - (drive.BitPosition & 7);
-
-            int bit = (track[bytePos] >> bitPos) & 1;
-
-            shiftRegister = (byte)((shiftRegister << 1) | bit);
-
-            drive.BitPosition = (drive.BitPosition + 1) % (track.Length * 8);
+            return drive == 1 ? drive1 : drive2;
         }
     }
 }
