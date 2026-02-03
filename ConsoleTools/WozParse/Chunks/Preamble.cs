@@ -1,8 +1,7 @@
-using System;
-using System.Runtime.InteropServices;
-
 #pragma warning disable CA1051 // Do not declare visible instance fields
 #pragma warning disable IDE0017 // Object initialization can be simplified
+
+using System;
 
 namespace WozParse.Chunks
 {
@@ -13,22 +12,22 @@ namespace WozParse.Chunks
         public byte[] crlf;
         public uint crc;
 
-        public static Preamble Read(Span<byte> bytes, ref int streamPosition)
+        public static Preamble Read(ReadOnlySpan<byte> bytes, ref int streamPosition)
         {
-            var preamble = new Preamble();
+            var instance = new Preamble();
 
-            preamble.chunk_id = BitConverter.ToUInt32(bytes.Slice(0)); streamPosition += 4;
+            instance.chunk_id = BitConverter.ToUInt32(bytes.Slice(0)); streamPosition += 4;
 
-            if (preamble.chunk_id != (uint)ChunkId.Preamble)
+            if (instance.chunk_id != (uint)ChunkId.Woz1)
             {
-                throw new InvalidChunkIdException(ChunkId.Preamble, preamble.chunk_id);
+                throw new InvalidChunkIdException(ChunkId.Woz1, instance.chunk_id);
             }
 
-            preamble.check_byte = bytes[streamPosition++];
-            preamble.crlf = bytes.Slice(streamPosition, 3).ToArray(); streamPosition += 3;
-            preamble.crc = BitConverter.ToUInt32(bytes.Slice(streamPosition, 4)); streamPosition += 4;
+            instance.check_byte = bytes[streamPosition++];
+            instance.crlf = bytes.Slice(streamPosition, 3).ToArray(); streamPosition += 3;
+            instance.crc = BitConverter.ToUInt32(bytes.Slice(streamPosition, 4)); streamPosition += 4;
 
-            return preamble;
+            return instance;
         }
 
         public override readonly bool Equals(object obj)

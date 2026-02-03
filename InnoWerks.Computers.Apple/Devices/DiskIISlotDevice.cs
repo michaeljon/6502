@@ -12,7 +12,6 @@ namespace InnoWerks.Computers.Apple
     public sealed class DiskIISlotDevice : SlotRomDevice
     {
         private readonly DiskIIDrive drive1 = new();
-
         private readonly DiskIIDrive drive2 = new();
 
         DiskIIDrive currentDrive;
@@ -41,45 +40,42 @@ namespace InnoWerks.Computers.Apple
                 case 0x6:
                 case 0x7:
                     // step the head
-                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    // SimDebugger.Info($"DoIo{ioType} DiskII Step(${address:X1}, {value:X2})\n");
                     currentDrive.Step(address);
                     break;
 
                 case 0x8:
                     // drive off
-                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    // SimDebugger.Info($"DoIo{ioType} DiskII Off(${address:X1}, {value:X2})\n");
                     currentDrive.SetOn(false);
                     break;
 
                 case 0x9:
                     // drive on
-                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    // SimDebugger.Info($"DoIo{ioType} DiskII On(${address:X1}, {value:X2})\n");
                     currentDrive.SetOn(true);
                     break;
 
                 case 0xA:
                     // choose drive 1
-                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    // SimDebugger.Info($"DoIo{ioType} DiskII D1(${address:X1}, {value:X2})\n");
                     currentDrive = drive1;
                     break;
 
                 case 0xB:
                     // choose drive 2
-                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    // SimDebugger.Info($"DoIo{ioType} DiskII D2(${address:X1}, {value:X2})\n");
                     currentDrive = drive2;
                     break;
 
                 case 0xC:
                     // read/write latch
                     currentDrive.Write();
-
-                    var val = currentDrive.ReadLatch();
-                    // SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2}) -> {val:X2}\n");
-                    return val;
+                    return currentDrive.ReadLatch();
 
                 case 0xD:
                     // set latch
-                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    // SimDebugger.Info($"DoIo{ioType} DiskII Set(${address:X1}, {value:X2})\n");
                     if (ioType == CardIoType.Write)
                     {
                         currentDrive.SetLatchValue(value);
@@ -88,13 +84,13 @@ namespace InnoWerks.Computers.Apple
 
                 case 0xE:
                     // read mode
-                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    // SimDebugger.Info($"DoIo{ioType} DiskII Rmode(${address:X1}, {value:X2})\n");
                     currentDrive.SetReadMode();
                     return 0x80;
 
                 case 0xF:
                     // write mode
-                    SimDebugger.Info($"DoIo{ioType} DiskII(${address:X1}, {value:X2})\n");
+                    // SimDebugger.Info($"DoIo{ioType} DiskII Wmode(${address:X1}, {value:X2})\n");
                     currentDrive.SetWriteMode();
                     // set latch
                     if (ioType == CardIoType.Write)
@@ -104,7 +100,7 @@ namespace InnoWerks.Computers.Apple
                     return currentDrive.ReadLatch();
             }
 
-            return machineState.FloatingValue;
+            return 0xFF;
         }
 
         protected override void DoCx(CardIoType ioType, byte address, byte value) { }

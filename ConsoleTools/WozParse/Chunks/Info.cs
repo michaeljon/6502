@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using System.Text;
 
 #pragma warning disable CA1051 // Do not declare visible instance fields
@@ -29,6 +28,15 @@ namespace WozParse.Chunks
         AppleIIIPlus = 0x0100,
     }
 
+    public enum DiskType
+    {
+        Unknown = 0,
+
+        Disk525 = 1,
+
+        Disk35 = 2
+    }
+
     public struct Info : IEquatable<Info>
     {
         public uint chunk_id;
@@ -37,7 +45,7 @@ namespace WozParse.Chunks
 
         public byte version;
 
-        public byte disk_type;
+        public DiskType disk_type;
 
         public bool write_protected;
 
@@ -63,50 +71,49 @@ namespace WozParse.Chunks
 
         public ushort largest_flux_track;
 
-        public static Info Read(Span<byte> bytes, ref int streamPosition)
+        public static Info Read(ReadOnlySpan<byte> bytes, ref int streamPosition)
         {
-            var startingPosition = streamPosition;
+            var initialPosition = streamPosition;
 
-            var info = new Info();
+            var instance = new Info();
 
-            info.chunk_id = BitConverter.ToUInt32(bytes.Slice(streamPosition)); streamPosition += 4;
+            instance.chunk_id = BitConverter.ToUInt32(bytes.Slice(streamPosition)); streamPosition += 4;
 
-            if (info.chunk_id != (uint)ChunkId.Info)
+            if (instance.chunk_id != (uint)ChunkId.Info)
             {
-                throw new InvalidChunkIdException(ChunkId.Unknown, info.chunk_id);
+                throw new InvalidChunkIdException(ChunkId.Unknown, instance.chunk_id);
             }
 
-            info.chunk_size = BitConverter.ToUInt32(bytes.Slice(streamPosition)); streamPosition += 4;
-            info.version = bytes[streamPosition++];
-            info.disk_type = bytes[streamPosition++];
-            info.write_protected = bytes[streamPosition++] == 1;
-            info.synchronized = bytes[streamPosition++] == 1;
-            info.cleaned = bytes[streamPosition++] == 1;
+            instance.chunk_size = BitConverter.ToUInt32(bytes.Slice(streamPosition)); streamPosition += 4;
+            instance.version = bytes[streamPosition++];
+            instance.disk_type = (DiskType)bytes[streamPosition++];
+            instance.write_protected = bytes[streamPosition++] == 1;
+            instance.synchronized = bytes[streamPosition++] == 1;
+            instance.cleaned = bytes[streamPosition++] == 1;
 
             // this is just ugly
-            info.creator = Encoding.ASCII.GetString(bytes.Slice(streamPosition, 32).ToArray()).Trim();
+            instance.creator = Encoding.ASCII.GetString(bytes.Slice(streamPosition, 32).ToArray()).Trim();
             streamPosition += 32;
 
-            if (info.version >= 2)
+            if (instance.version >= 2)
             {
-                info.sides = bytes[streamPosition++];
-                info.boot_sector_format = (BootSectorFormat)bytes[streamPosition++];
-                info.optimal_bit_timing = bytes[streamPosition++];
-                info.compatible_hardware = (HardwareType)bytes[streamPosition]; streamPosition += 2;
-                info.required_ram = bytes[streamPosition++]; streamPosition += 2;
-                info.largest_track = bytes[streamPosition++]; streamPosition += 2;
+                instance.sides = bytes[streamPosition++];
+                instance.boot_sector_format = (BootSectorFormat)bytes[streamPosition++];
+                instance.optimal_bit_timing = bytes[streamPosition++];
+                instance.compatible_hardware = (HardwareType)bytes[streamPosition]; streamPosition += 2;
+                instance.required_ram = bytes[streamPosition++]; streamPosition += 2;
+                instance.largest_track = bytes[streamPosition++]; streamPosition += 2;
 
-                if (info.version >= 3)
+                if (instance.version >= 3)
                 {
-                    info.flux_block = bytes[streamPosition++]; streamPosition += 2;
-                    info.largest_flux_track = bytes[streamPosition++]; streamPosition += 2;
+                    instance.flux_block = bytes[streamPosition++]; streamPosition += 2;
+                    instance.largest_flux_track = bytes[streamPosition++]; streamPosition += 2;
                 }
             }
 
-            // the info block is always 60 bytes long
-            streamPosition = startingPosition + (int)info.chunk_size;
+            streamPosition = initialPosition + (int)instance.chunk_size + 8;
 
-            return info;
+            return instance;
         }
 
         public override readonly bool Equals(object obj)

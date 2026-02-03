@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using InnoWerks.Processors;
+using WozParse;
 
 namespace InnoWerks.Computers.Apple
 {
@@ -9,10 +10,10 @@ namespace InnoWerks.Computers.Apple
 
     public class DiskIIDrive
     {
-        DiskIIBitStream[] tracks;
+        FloppyDisk floppyDisk;
 
         private int halfTrack;
-        // private int trackStartOffset;
+        private int trackStartOffset;
         private int nibbleOffset;
         private bool writeMode;
         private bool driveOn;
@@ -32,7 +33,7 @@ namespace InnoWerks.Computers.Apple
 
         public void InsertDisk(string path)
         {
-            tracks = DiskIIBitStream.FromDsk(path);
+            floppyDisk = FloppyDisk.FromDsk(path);
 
             driveOn = false;
             magnets = 0;
@@ -49,7 +50,7 @@ namespace InnoWerks.Computers.Apple
             // switch drive head stepper motor magnets on/off
             int magnet = (register >> 1) & 0x3;
             magnets &= ~(1 << magnet);
-            magnets |= ((register & 0x1) << magnet);
+            magnets |= (register & 0x1) << magnet;
 
             // step the drive head according to stepper magnet changes
             if (driveOn)
@@ -70,14 +71,16 @@ namespace InnoWerks.Computers.Apple
                     if (newHalfTrack != halfTrack)
                     {
                         halfTrack = newHalfTrack;
-                        // trackStartOffset = (halfTrack >> 1) * FloppyDisk.TRACK_NIBBLE_LENGTH;
-                        // if (trackStartOffset >= FloppyDisk.DISK_NIBBLE_LENGTH)
-                        // {
-                        //     trackStartOffset = FloppyDisk.DISK_NIBBLE_LENGTH - FloppyDisk.TRACK_NIBBLE_LENGTH;
-                        // }
+
+                        trackStartOffset = (halfTrack >> 1) * FloppyDisk.TRACK_NIBBLE_LENGTH;
+                        if (trackStartOffset >= FloppyDisk.DISK_NIBBLE_LENGTH)
+                        {
+                            trackStartOffset = FloppyDisk.DISK_NIBBLE_LENGTH - FloppyDisk.TRACK_NIBBLE_LENGTH;
+                        }
+
                         nibbleOffset = 0;
 
-                        SimDebugger.Info($"step {register}, new half track {halfTrack}\n");
+                        // SimDebugger.Info($"stepped to new half track {halfTrack}\n");
                     }
                 }
             }
@@ -97,25 +100,14 @@ namespace InnoWerks.Computers.Apple
         {
             byte result = 0x7F;
 
-            if (!writeMode)
+            if (writeMode == false)
             {
                 spinCount = (spinCount + 1) & 0x0F;
                 if (spinCount > 0)
                 {
-                    if (tracks != null)
+                    if (floppyDisk != null)
                     {
-                        result = tracks[halfTrack].ReadNibble(nibbleOffset);
-
-                        // if (nibbleOffset == 1000)
-                        // {
-                        //     Debugger.Break();
-                        // }
-
-                        // if (nibbleOffset % 50 == 0)
-                        // { Debug.WriteLine(""); }
-
-                        // Debug.Write($"{result:X2} ");
-
+                        result = floppyDisk.ReadNibble(trackStartOffset + nibbleOffset);
                         if (IsOn())
                         {
                             nibbleOffset++;
@@ -127,7 +119,7 @@ namespace InnoWerks.Computers.Apple
                     }
                     else
                     {
-                        result = (byte)0xff;
+                        result = (byte)0xFF;
                     }
                 }
             }

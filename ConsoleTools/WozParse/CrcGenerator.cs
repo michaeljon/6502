@@ -50,7 +50,7 @@ namespace WozParse
             0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
         ];
 
-        public static uint crc32(uint crc, Span<byte> bytes)
+        public static uint crc32(uint crc, ReadOnlySpan<byte> bytes)
         {
             crc ^= ~0U;
             foreach (var b in bytes)
