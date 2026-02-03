@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using CommandLine;
 
 namespace InnoWerks.Emulators.AppleIIe
@@ -7,7 +8,17 @@ namespace InnoWerks.Emulators.AppleIIe
     {
         public static void Main(string[] args)
         {
-            var result = Parser.Default.ParseArguments<CliOptions>(args);
+            using var parser = new Parser(with =>
+            {
+                with.AutoHelp = true;
+                with.AutoVersion = true;
+                with.HelpWriter = Console.Error;
+                with.CaseInsensitiveEnumValues = true;
+                with.CaseSensitive = false;
+                with.ParsingCulture = CultureInfo.InvariantCulture;
+            });
+
+            var result = parser.ParseArguments<CliOptions>(args);
 
             result.MapResult(
                 Run,

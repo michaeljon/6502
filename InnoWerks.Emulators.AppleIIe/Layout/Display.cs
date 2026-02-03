@@ -58,6 +58,8 @@ namespace InnoWerks.Emulators.AppleIIe
         private readonly TextMemoryReader textMemoryReader;
         private readonly LoresMemoryReader loresMemoryReader;
 
+        private Color textColor;
+
         private bool disposed;
 
         private readonly List<SoftSwitch> debugSwitchesBlock1 =
@@ -136,9 +138,11 @@ namespace InnoWerks.Emulators.AppleIIe
             loresMemoryReader = new LoresMemoryReader(memoryBlocks, machineState);
         }
 
-        public void LoadContent(ContentManager contentManager)
+        public void LoadContent(Color textColor, ContentManager contentManager)
         {
             ArgumentNullException.ThrowIfNull(contentManager);
+
+            this.textColor = textColor;
 
             spriteBatch = new SpriteBatch(graphicsDevice);
             debugFont = contentManager.Load<SpriteFont>("DebugFont");
@@ -354,7 +358,7 @@ namespace InnoWerks.Emulators.AppleIIe
             int x,
             ref int y)
         {
-            spriteBatch.DrawString(debugFont, key, new Vector2(x, y), Color.LightGreen);
+            spriteBatch.DrawString(debugFont, key, new Vector2(x, y), textColor);
             spriteBatch.DrawString(debugFont, value, new Vector2(x + 64, y), Color.White);
             y += debugFont.LineSpacing;
         }
@@ -373,7 +377,7 @@ namespace InnoWerks.Emulators.AppleIIe
                 debugFont,
                 text,
                 new Vector2(x, y),
-                color ?? Color.LightGreen);
+                color ?? textColor);
 
             y += debugFont.LineSpacing;
         }
@@ -397,7 +401,7 @@ namespace InnoWerks.Emulators.AppleIIe
                     Color.Red);
             }
 
-            spriteBatch.DrawString(debugFont, $"{pc:X4}", new Vector2(x, y), Color.LightGreen);
+            spriteBatch.DrawString(debugFont, $"{pc:X4}", new Vector2(x, y), textColor);
 
             spriteBatch.DrawString(
                 debugFont,
@@ -474,8 +478,8 @@ namespace InnoWerks.Emulators.AppleIIe
                 ascii & 0x7F :
                 (ascii & 0x3F) | ((ascii & 0x40) != 0 ? 0x40 : 0x00);
 
-            var fg = inverse ? Color.Black : Color.LightGreen;
-            var bg = inverse ? Color.LightGreen : Color.Black;
+            var fg = inverse ? Color.Black : textColor;
+            var bg = inverse ? textColor : Color.Black;
 
             var srcX = (glyph % 16) * 8;
             var srcY = (glyph / 16) * 8;

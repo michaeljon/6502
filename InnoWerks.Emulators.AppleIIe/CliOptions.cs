@@ -1,4 +1,5 @@
 using CommandLine;
+using Microsoft.Xna.Framework;
 
 namespace InnoWerks.Emulators.AppleIIe
 {

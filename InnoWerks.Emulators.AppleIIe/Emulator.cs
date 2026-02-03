@@ -25,7 +25,7 @@ namespace InnoWerks.Emulators.AppleIIe
         //
         // Command line options
         //
-        private readonly CliOptions options;
+        private readonly CliOptions cliOptions;
 
         //
         // The Apple IIe itself
@@ -41,7 +41,7 @@ namespace InnoWerks.Emulators.AppleIIe
         // debug, etc.
         //
         private CpuTraceBuffer cpuTraceBuffer = new(128);
-        private bool cpuPaused;
+        private bool cpuPaused = true;
         private bool stepRequested;
         private readonly HashSet<ushort> breakpoints = [];
 
@@ -70,9 +70,9 @@ namespace InnoWerks.Emulators.AppleIIe
         private double flashTimer;
         private bool flashOn = true;
 
-        public Emulator(CliOptions options)
+        public Emulator(CliOptions cliOptions)
         {
-            this.options = options;
+            this.cliOptions = cliOptions;
 
             graphicsDeviceManager = new GraphicsDeviceManager(this)
             {
@@ -123,10 +123,10 @@ namespace InnoWerks.Emulators.AppleIIe
             mmu = new MMU(memoryBlocks, machineState, appleBus);
 
             var disk = new DiskIISlotDevice(appleBus, machineState, diskIIRom);
-            disk.GetDrive(1).InsertDisk(options.Disk1);
-            if (string.IsNullOrEmpty(options.Disk2) == false)
+            disk.GetDrive(1).InsertDisk(cliOptions.Disk1);
+            if (string.IsNullOrEmpty(cliOptions.Disk2) == false)
             {
-                disk.GetDrive(2).InsertDisk(options.Disk2);
+                disk.GetDrive(2).InsertDisk(cliOptions.Disk2);
             }
 
             cpu = new Cpu65C02(
@@ -148,7 +148,7 @@ namespace InnoWerks.Emulators.AppleIIe
         {
             display = new Display(GraphicsDevice, cpu, appleBus, memoryBlocks, machineState);
 
-            display.LoadContent(Content);
+            display.LoadContent(Color.Orange, Content);
         }
 
         protected override void Update(GameTime gameTime)
