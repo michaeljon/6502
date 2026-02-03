@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.NetworkInformation;
@@ -22,6 +22,11 @@ namespace InnoWerks.Emulators.AppleIIe
 {
     public class Emulator : Game
     {
+        //
+        // Command line options
+        //
+        private readonly CliOptions options;
+
         //
         // The Apple IIe itself
         //
@@ -65,8 +70,10 @@ namespace InnoWerks.Emulators.AppleIIe
         private double flashTimer;
         private bool flashOn = true;
 
-        public Emulator()
+        public Emulator(CliOptions options)
         {
+            this.options = options;
+
             graphicsDeviceManager = new GraphicsDeviceManager(this)
             {
                 PreferredBackBufferWidth = 1160,   // initial width
@@ -98,7 +105,6 @@ namespace InnoWerks.Emulators.AppleIIe
 
             var mainRom = File.ReadAllBytes("roms/apple2e-16k.rom");
             var diskIIRom = File.ReadAllBytes("roms/DiskII.rom");
-            var audit = File.ReadAllBytes("tests/audit.o");
 
             var config = new AppleConfiguration(AppleModel.AppleIIe)
             {
@@ -117,7 +123,11 @@ namespace InnoWerks.Emulators.AppleIIe
             mmu = new MMU(memoryBlocks, machineState, appleBus);
 
             var disk = new DiskIISlotDevice(appleBus, machineState, diskIIRom);
-            disk.GetDrive(1).InsertDisk("disks/dos33.dsk");
+            disk.GetDrive(1).InsertDisk(options.Disk1);
+            if (string.IsNullOrEmpty(options.Disk2) == false)
+            {
+                disk.GetDrive(2).InsertDisk(options.Disk2);
+            }
 
             cpu = new Cpu65C02(
                 appleBus,
@@ -125,7 +135,9 @@ namespace InnoWerks.Emulators.AppleIIe
                 (cpu) => { });
 
             appleBus.LoadProgramToRom(mainRom);
-            appleBus.LoadProgramToRam(audit, 0x6000);
+
+            // var audit = File.ReadAllBytes("tests/audit.o");
+            // appleBus.LoadProgramToRam(audit, 0x6000);
 
             cpu.Reset();
 
