@@ -151,6 +151,30 @@ namespace InnoWerks.Computers.Apple
             Remap();
         }
 
+        public void Reset()
+        {
+            // main and aux memory
+            for (var p = 0; p < mainMemory.Length; p++)
+            {
+                mainMemory[p].ZeroOut();
+                auxMemory[p].ZeroOut();
+            }
+
+            // language cards
+            for (var p = 0; p < languageCardRam.Length; p++)
+            {
+                languageCardRam[p].ZeroOut();
+                auxLanguageCardRam[p].ZeroOut();
+            }
+            for (var p = 0; p < languageCardBank2.Length; p++)
+            {
+                languageCardBank2[p].ZeroOut();
+                languageCardBank2[p].ZeroOut();
+            }
+
+            Remap();
+        }
+
         /// <summary>
         /// Overall memory map
         ///

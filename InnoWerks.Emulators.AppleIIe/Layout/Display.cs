@@ -496,6 +496,14 @@ namespace InnoWerks.Emulators.AppleIIe
                     bg = Color.Black;
                 }
             }
+            else
+            {
+                if (cell.Attr.HasFlag(TextAttributes.Flash) && flashOn)
+                {
+                    fg = Color.Black;
+                    bg = textColor;
+                }
+            }
 
             var srcX = (glyph % 16) * 8;
             var srcY = (glyph / 16) * 8;

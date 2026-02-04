@@ -201,6 +201,11 @@ namespace InnoWerks.Computers.Apple
 
         public void Reset()
         {
+            foreach (var (softSwitch, value) in machineState.State)
+            {
+                machineState.State[softSwitch] = false;
+            }
+
             foreach (var device in softSwitchDevices)
             {
                 device.Reset();

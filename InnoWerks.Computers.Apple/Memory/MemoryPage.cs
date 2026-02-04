@@ -44,6 +44,14 @@ namespace InnoWerks.Computers.Apple
             return $"{MemoryPageType} {Description} at ${PageNumber:X2} ({PageNumber})";
         }
 
+        public void ZeroOut()
+        {
+            for (var i = 0; i < PageSize; i++)
+            {
+                Block[i] = 0x00;
+            }
+        }
+
         public static MemoryPage Zeros(MemoryPageType memoryPageType, byte pageNumber)
         {
             var page = new MemoryPage(memoryPageType, "0x00", pageNumber);
