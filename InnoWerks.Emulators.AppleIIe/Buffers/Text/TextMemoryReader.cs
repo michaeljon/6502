@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using InnoWerks.Computers.Apple;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
@@ -84,12 +85,56 @@ namespace InnoWerks.Emulators.AppleIIe
             0x200, 0x280, 0x300, 0x380
         ];
 
-        private static TextCell ConstructTextCell(byte value)
-        {
-            var highBitSet = (value & 0x80) != 0;
-            var attr = highBitSet ? TextAttributes.None : TextAttributes.Inverse;
+        // normal character set
+        // | screen code | mode     | characters        | Pos in Char Rom |
+        // | ----------- | -------- | ----------------- | --------------- |
+        // | $00 - $1F   | Inverse  | Uppercase Letters | 00 - 1F         |
+        // | $20 - $3F   | Inverse  | Symbols/Numbers   | 20 - 3F         |
+        // | $40 - $5F   | Flashing | Uppercase Letters | 00 - 1F         |
+        // | $60 - $7F   | Flashing | Symbols/Numbers   | 20 - 3F         |
+        // | $80 - $9F   | Normal   | Uppercase Letters | 80 - 9F         |
+        // | $A0 - $BF   | Normal   | Symbols/Numbers   | A0 - BF         |
+        // | $C0 - $DF   | Normal   | Uppercase Letters | C0 - DF         |
+        // | $E0 - $FF   | Normal   | Symbols/Numbers   | E0 - FF         |
 
-            return new TextCell((byte)(value & 0x7F), attr);
+        // alternate character set
+        // | screen code | mode    | characters                       | Pos in Char Rom |
+        // | ----------- | ------- | -------------------------------- | --------------- |
+        // | $00 - $1F   | Inverse | Uppercase Letters                | 00 - 1F         |
+        // | $20 - $3F   | Inverse | Symbols/Numbers                  | 20 - 3F         |
+        // | $40 - $5F   | Inverse | Uppercase Letters (tb mousetext) | 40 - 5F         |
+        // | $60 - $7F   | Inverse | Lowercase letters                | 60 - 7F         |
+        // | $80 - $9F   | Normal  | Uppercase Letters                | 80 - 9F         |
+        // | $A0 - $BF   | Normal  | Symbols/Numbers                  | A0 - BF         |
+        // | $C0 - $DF   | Normal  | Uppercase Letters                | C0 - DF         |
+        // | $E0 - $FF   | Normal  | Symbols/Numbers                  | E0 - FF         |
+
+
+        private TextCell ConstructTextCell(byte value)
+        {
+            var attr = TextAttributes.None;
+
+            if (value <= 0x3F)
+            {
+                // inverse
+                attr |= TextAttributes.Inverse;
+            }
+            else if (value >= 0x40 && value <= 0x5F)
+            {
+                // mouse text, remap to upper case
+                if (machineState.State[SoftSwitch.AltCharSet] == false)
+                {
+                    value &= 0xBF;
+                    attr |= TextAttributes.Flash;
+                }
+            }
+            else if (value <= 0x7F)
+            {
+                // inverse
+                attr |= TextAttributes.Inverse;
+            }
+
+            return new TextCell(value, attr);
         }
     }
 }

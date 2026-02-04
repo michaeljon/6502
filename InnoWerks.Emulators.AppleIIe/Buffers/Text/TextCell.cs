@@ -15,16 +15,14 @@ namespace InnoWerks.Emulators.AppleIIe
 
     public readonly struct TextCell : IEquatable<TextCell>
     {
-        public readonly byte Ascii { get; init; }           // 0x00–0x7F
+        public readonly byte Ascii { get; init; }
         public readonly TextAttributes Attr { get; init; }  // inverse / flash
 
         public TextCell(byte ascii, TextAttributes attr = TextAttributes.None)
         {
-            Ascii = (byte)(ascii & 0x7F);
+            Ascii = ascii;
             Attr = attr;
         }
-
-        public char ToChar() => (Ascii < 0x20 || Ascii > 0x7E) ? ' ' : (char)Ascii;
 
         public override bool Equals(object obj) => ((TextCell)obj).Ascii == Ascii && ((TextCell)obj).Attr == Attr;
 

@@ -1,3 +1,5 @@
+// #define RENDER_CHAR_MAP
+
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -44,13 +46,12 @@ namespace InnoWerks.Emulators.AppleIIe
         //
         // MonoGame stuff
         //
-        private GraphicsDevice graphicsDevice;
+        private readonly GraphicsDevice graphicsDevice;
         private SpriteBatch spriteBatch;
         private SpriteFont debugFont;
         private Texture2D whitePixel;
         private Texture2D[] loresPixels;
         private Texture2D charTexture;
-
         private readonly MosTechnologiesCpu cpu;
         private readonly IBus bus;
         private readonly MachineState machineState;
@@ -163,7 +164,7 @@ namespace InnoWerks.Emulators.AppleIIe
 
         private void LoadCharacterRom()
         {
-            var charRom = File.ReadAllBytes("roms/342-0133.bin");
+            var charRom = File.ReadAllBytes("roms/342-0265-A.bin");
             Debug.Assert(charRom.Length == 4096);
 
             charTexture = new Texture2D(graphicsDevice, TexWidth, TexHeight);
@@ -277,6 +278,13 @@ namespace InnoWerks.Emulators.AppleIIe
                 sortMode: SpriteSortMode.Deferred,
                 samplerState: SamplerState.PointClamp);
 
+#if RENDER_CHAR_MAP
+            spriteBatch.Draw(
+                charTexture,
+                charTexture.Bounds,
+                charTexture.Bounds,
+                Color.Orange);
+#else
             if (machineState.State[SoftSwitch.TextMode])
             {
                 DrawTextMode(0, 24, flashOn);
@@ -290,6 +298,7 @@ namespace InnoWerks.Emulators.AppleIIe
                 DrawLoresMode(0, 20);
                 DrawTextMode(20, 4, flashOn);
             }
+#endif
 
             spriteBatch.End();
         }
@@ -464,22 +473,29 @@ namespace InnoWerks.Emulators.AppleIIe
                 {
                     var cell = textBuffer.Get(row, col);
 
-                    DrawChar(cell.Ascii, col, row);
+                    DrawChar(cell, col, row, flashOn);
                 }
             }
         }
 
-        private void DrawChar(byte ascii, int col, int row)
+        private void DrawChar(TextCell cell, int col, int row, bool flashOn)
         {
-            var inverse = (ascii & 0x80) != 0;
-            var flash = (ascii & 0x40) != 0;
+            var glyph = cell.Ascii;
 
-            int glyph = machineState.State[SoftSwitch.EightyColumnMode] ?
-                ascii & 0x7F :
-                (ascii & 0x3F) | ((ascii & 0x40) != 0 ? 0x40 : 0x00);
+            var fg = textColor;
+            var bg = Color.Black;
 
-            var fg = inverse ? Color.Black : textColor;
-            var bg = inverse ? textColor : Color.Black;
+            if (cell.Attr.HasFlag(TextAttributes.Inverse) || (glyph & 0x80) == 0x80)
+            {
+                fg = Color.Black;
+                bg = textColor;
+
+                if (cell.Attr.HasFlag(TextAttributes.Flash) && flashOn)
+                {
+                    fg = textColor;
+                    bg = Color.Black;
+                }
+            }
 
             var srcX = (glyph % 16) * 8;
             var srcY = (glyph / 16) * 8;
@@ -488,7 +504,7 @@ namespace InnoWerks.Emulators.AppleIIe
             var dst = new Rectangle(col * AppleCellWidth, row * AppleCellHeight, AppleCellWidth, AppleCellHeight);
 
             // Background
-            if (bg != Color.Transparent)
+            if (fg != textColor)
             {
                 spriteBatch.Draw(whitePixel, dst, bg);
             }

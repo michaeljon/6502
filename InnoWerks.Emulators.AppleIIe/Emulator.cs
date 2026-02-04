@@ -41,7 +41,7 @@ namespace InnoWerks.Emulators.AppleIIe
         // debug, etc.
         //
         private CpuTraceBuffer cpuTraceBuffer = new(128);
-        private bool cpuPaused = true;
+        private bool cpuPaused;
         private bool stepRequested;
         private readonly HashSet<ushort> breakpoints = [];
 
@@ -67,7 +67,7 @@ namespace InnoWerks.Emulators.AppleIIe
         // state stuff
         //
         private KeyboardState previousKeyboardState;
-        private double flashTimer;
+        private double lastTimer;
         private bool flashOn = true;
 
         public Emulator(CliOptions cliOptions)
@@ -174,12 +174,17 @@ namespace InnoWerks.Emulators.AppleIIe
 
             RunEmulator();
 
-            // Toggle flashing every 500ms
-            flashTimer += gameTime.ElapsedGameTime.TotalMilliseconds;
-            if (flashTimer >= 500)
+            // Toggle flashing every 100ms - should be about 1 in 10 frames,
+            // this would be much better handled by tracking number of cycles,
+            // which is closer to frame count and possibly VBL state
+            if (gameTime.ElapsedGameTime.TotalMilliseconds - lastTimer >= 100)
             {
-                flashTimer = 0;
+                lastTimer = 0;
                 flashOn = !flashOn;
+            }
+            else
+            {
+                lastTimer = gameTime.ElapsedGameTime.TotalMilliseconds;
             }
 
             base.Update(gameTime);
