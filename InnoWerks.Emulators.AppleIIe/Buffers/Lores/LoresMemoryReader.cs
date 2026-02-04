@@ -41,7 +41,7 @@ namespace InnoWerks.Emulators.AppleIIe
             {
                 for (int col = 0; col < 40; col++)
                 {
-                    ushort addr = GetTextAddress(row, col, page2);
+                    ushort addr = GetBlockAddress(row, col, page2);
                     byte value = ram.Read(addr);
 
                     loresBuffer.Put(row, col, ConstructLoresCell(value));
@@ -55,7 +55,7 @@ namespace InnoWerks.Emulators.AppleIIe
             {
                 for (int col = 0; col < 40; col++)
                 {
-                    ushort addr = GetTextAddress(row, col, false);
+                    ushort addr = GetBlockAddress(row, col, false);
 
                     byte value = ram.GetAux(addr);
                     loresBuffer.Put(row, col * 2, ConstructLoresCell(value));
@@ -66,19 +66,19 @@ namespace InnoWerks.Emulators.AppleIIe
             }
         }
 
-        private static ushort GetTextAddress(int row, int col, bool page2)
+        private static ushort GetBlockAddress(int row, int col, bool page2)
         {
             int pageOffset = page2 ? 0x800 : 0x400;
 
             return (ushort)(
                 pageOffset +
-                textRowBase[row & 0x07] +
+                blockRowBase[row & 0x07] +
                 (row >> 3) * 40 +
                 col
             );
         }
 
-        private static readonly int[] textRowBase =
+        private static readonly int[] blockRowBase =
         [
             0x000, 0x080, 0x100, 0x180,
             0x200, 0x280, 0x300, 0x380

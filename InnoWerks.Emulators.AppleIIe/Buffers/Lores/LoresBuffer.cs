@@ -4,16 +4,18 @@ namespace InnoWerks.Emulators.AppleIIe
 {
     public class LoresBuffer
     {
-        private readonly LoresCell[,] graphicsBuffer = new LoresCell[24, 80];
+        private readonly LoresCell[,] graphicsBuffer;
 
-        public LoresCell Get(int row, int col)
+        public int Columns { get; set; }
+
+        public LoresBuffer(int columns)
         {
-            return graphicsBuffer[row, col];
+            Columns = columns;
+            graphicsBuffer = new LoresCell[24, columns];
         }
 
-        public void Put(int row, int col, LoresCell cell)
-        {
-            graphicsBuffer[row, col] = cell;
-        }
+        public LoresCell Get(int row, int col) => graphicsBuffer[row, col];
+
+        public void Put(int row, int col, LoresCell cell) => graphicsBuffer[row, col] = cell;
     }
 }

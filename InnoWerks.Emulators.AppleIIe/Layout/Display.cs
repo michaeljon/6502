@@ -50,7 +50,6 @@ namespace InnoWerks.Emulators.AppleIIe
         private SpriteBatch spriteBatch;
         private SpriteFont debugFont;
         private Texture2D whitePixel;
-        private Texture2D[] loresPixels;
         private Texture2D charTexture;
         private readonly MosTechnologiesCpu cpu;
         private readonly IBus bus;
@@ -151,13 +150,13 @@ namespace InnoWerks.Emulators.AppleIIe
             whitePixel = new Texture2D(graphicsDevice, 1, 1);
             whitePixel.SetData([Color.White]);
 
-            // this is a hack for now
-            loresPixels = new Texture2D[LoresCell.PaletteSize];
-            for (var p = 0; p < LoresCell.PaletteSize; p++)
-            {
-                loresPixels[p] = new Texture2D(graphicsDevice, 1, 1);
-                loresPixels[p].SetData([LoresCell.GetPaletteColor(p)]);
-            }
+            // // this is a hack for now
+            // loresPixels = new Texture2D[LoresCell.PaletteSize];
+            // for (var p = 0; p < LoresCell.PaletteSize; p++)
+            // {
+            //     loresPixels[p] = new Texture2D(graphicsDevice, 1, 1);
+            //     loresPixels[p].SetData([LoresCell.GetPaletteColor(p)]);
+            // }
 
             LoadCharacterRom();
         }
@@ -440,10 +439,10 @@ namespace InnoWerks.Emulators.AppleIIe
 
         private void DrawLoresMode(int start, int count)
         {
-            var loresBuffer = new LoresBuffer();
-            loresMemoryReader.ReadLoresPage(loresBuffer);
-
             var cols = machineState.State[SoftSwitch.EightyColumnMode] ? 80 : 40;
+
+            var loresBuffer = new LoresBuffer(cols);
+            loresMemoryReader.ReadLoresPage(loresBuffer);
 
             for (var row = start; row < start + count; row++)
             {
@@ -462,10 +461,10 @@ namespace InnoWerks.Emulators.AppleIIe
 
         private void DrawTextMode(int start, int count, bool flashOn)
         {
-            var textBuffer = new TextBuffer();
-            textMemoryReader.ReadTextPage(textBuffer);
-
             var cols = machineState.State[SoftSwitch.EightyColumnMode] ? 80 : 40;
+
+            var textBuffer = new TextBuffer(cols);
+            textMemoryReader.ReadTextPage(textBuffer);
 
             for (var row = start; row < start + count; row++)
             {
@@ -526,23 +525,19 @@ namespace InnoWerks.Emulators.AppleIIe
 
         private void DrawBlocks(LoresCell cell, int col, int row)
         {
-            var topPixel = loresPixels[cell.TopIndex];
             var topRect = new Rectangle(
                 col * AppleBlockWidth,
                 row * 2 * AppleBlockHeight,
                 AppleBlockWidth,
                 AppleBlockHeight);
+            spriteBatch.Draw(whitePixel, topRect, cell.Top);
 
-            spriteBatch.Draw(topPixel, topRect, cell.Top);
-
-            var bottomPixel = loresPixels[cell.BottomIndex];
             var bottomRect = new Rectangle(
                 col * AppleBlockWidth,
                 ((row * 2) + 1) * AppleBlockHeight,
                 AppleBlockWidth,
                 AppleBlockHeight);
-
-            spriteBatch.Draw(bottomPixel, bottomRect, cell.Bottom);
+            spriteBatch.Draw(whitePixel, bottomRect, cell.Bottom);
         }
 
         public void Dispose()

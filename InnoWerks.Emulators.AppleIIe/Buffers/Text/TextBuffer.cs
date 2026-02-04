@@ -4,16 +4,18 @@ namespace InnoWerks.Emulators.AppleIIe
 {
     public class TextBuffer
     {
-        private readonly TextCell[,] textBuffer = new TextCell[24, 80];
+        private readonly TextCell[,] textBuffer;
 
-        public TextCell Get(int row, int col)
+        public int Columns { get; set; }
+
+        public TextBuffer(int columns)
         {
-            return textBuffer[row, col];
+            Columns = columns;
+            textBuffer = new TextCell[24, columns];
         }
 
-        public void Put(int row, int col, TextCell cell)
-        {
-            textBuffer[row, col] = cell;
-        }
+        public TextCell Get(int row, int col) => textBuffer[row, col];
+
+        public void Put(int row, int col, TextCell cell) => textBuffer[row, col] = cell;
     }
 }

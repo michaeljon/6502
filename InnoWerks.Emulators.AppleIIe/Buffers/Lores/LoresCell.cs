@@ -23,19 +23,37 @@ namespace InnoWerks.Emulators.AppleIIe
             new Color(255,255,  0),
             new Color( 64,255,144),
             new Color(255,255,255)
+
+            // Color.Black,
+            // Color.Magenta,
+            // Color.DarkBlue,
+            // Color.Purple,
+            // Color.DarkGreen,
+            // Color.DarkGray,
+            // Color.MediumBlue,
+            // Color.LightBlue,
+
+            // Color.Brown,
+            // Color.Orange,
+            // Color.Gray,
+            // Color.Pink,
+            // Color.LightGreen,
+            // Color.Yellow,
+            // Color.Aquamarine,
+            // Color.White
         ];
 
         public static Color GetPaletteColor(int index) => loresPalette[index];
 
         public static int PaletteSize => loresPalette.Length;
 
-        public readonly Color Top => loresPalette[value & 0xF0 >> 4];
 
-        public readonly byte TopIndex => (byte)(value & 0xF0 >> 4);
+        public readonly byte TopIndex => (byte)(value & 0x0F);
+        public readonly byte BottomIndex => (byte)((value & 0xF0) >> 4);
 
-        public readonly Color Bottom => loresPalette[value & 0x0F];
+        public readonly Color Top => loresPalette[TopIndex];
+        public readonly Color Bottom => loresPalette[BottomIndex];
 
-        public readonly byte BottomIndex => (byte)(value & 0x0F);
 
         private readonly byte value;
 
