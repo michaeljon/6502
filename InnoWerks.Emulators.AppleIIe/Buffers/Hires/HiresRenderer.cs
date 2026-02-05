@@ -15,9 +15,9 @@ namespace InnoWerks.Emulators.AppleIIe
         private static readonly Color HiresPurple = new(128, 0, 255);
         private static readonly Color HiresGreen = new(0, 192, 0);
 
-        private static readonly Color HiresWhite = new(255, 255, 255);
-        private static readonly Color HiresOrange = new(255, 128, 0);
-        private static readonly Color HiresBlue = new(0, 0, 255);
+        // private static readonly Color HiresWhite = new(255, 255, 255);
+        // private static readonly Color HiresOrange = new(255, 128, 0);
+        // private static readonly Color HiresBlue = new(0, 0, 255);
 
         //
         // MonoGame stuff
@@ -113,32 +113,28 @@ namespace InnoWerks.Emulators.AppleIIe
             {
                 for (int x = 0; x < width; x++)
                 {
-                    bool center = buffer.GetPixel(y, x);
-                    byte sourceByte = buffer.GetSourceByte(y, x);
+                    var p = buffer.GetPixel(y, x);
 
-                    // Determine phase
-                    bool isAuxPixel = (x % 2) == 0;
-                    bool bit7Phase = (sourceByte & 0x80) != 0;
-                    bool phase = isAuxPixel ^ bit7Phase;
+#pragma warning disable CA2201 // Do not raise reserved exception types
+                    if (p.AuxBit && p.MainBit == false && p.IsOn == false)
+                        throw new Exception("AUX-only pixel not considered ON");
 
-                    Color color;
+                    if (!p.AuxBit && p.MainBit && p.IsOn == false)
+                        throw new Exception("MAIN-only pixel not considered ON");
+#pragma warning restore CA2201 // Do not raise reserved exception types
 
-                    if (!center)
+                    Color color = HiresBlack;
+
+                    if (p.IsOn)
                     {
-                        color = HiresBlack;
-                    }
-                    else
-                    {
-                        // Check horizontal neighbors for second-tier
-                        bool left = x > 0 ? buffer.GetPixel(y, x - 1) : false;
-                        bool right = x < width - 1 ? buffer.GetPixel(y, x + 1) : false;
+                        bool phase = ((x % 2) == 0) ^ ((p.SourceByte & 0x80) != 0);
 
-                        if (left && right)
-                            color = HiresWhite;               // both neighbors set → white
-                        else if (left || right)
-                            color = phase ? HiresOrange : HiresBlue; // one neighbor → orange/blue
+                        if (p.AuxBit && !p.MainBit)
+                            color = phase ? HiresGreen : HiresPurple;
+                        else if (!p.AuxBit && p.MainBit)
+                            color = phase ? HiresGreen : HiresPurple;
                         else
-                            color = phase ? HiresGreen : HiresPurple; // default first-tier
+                            color = phase ? HiresGreen : HiresPurple; // both bits set
                     }
 
                     var rect = new Rectangle(

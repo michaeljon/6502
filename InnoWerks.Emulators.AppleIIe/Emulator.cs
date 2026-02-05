@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.NetworkInformation;
+using System.Reflection.PortableExecutable;
 using InnoWerks.Computers.Apple;
 using InnoWerks.Processors;
 using InnoWerks.Simulators;
@@ -235,6 +236,34 @@ namespace InnoWerks.Emulators.AppleIIe
             base.Draw(gameTime);
         }
 
+        private int currentHiresTestPattern;
+        private List<(ushort page, bool page2, byte main, byte aux)> hiresPatterns = [
+            (0x2000, true, 0xFF, 0xFF),
+            (0x2000, true, 0x7F, 0x7F),
+            (0x2000, true, 0x55, 0xAA),
+
+            (0x4000, false, 0xFF, 0xFF),
+            (0x4000, false, 0x7F, 0x7F),
+            (0x4000, false, 0x55, 0xAA),
+        ];
+
+        private int currentDHiresTestPattern;
+        private List<(ushort page, bool page2, byte main, byte aux)> dhiresPatterns = [
+            (0x2000, true, 0xFF, 0xFF), // solid green
+            (0x2000, true, 0x7F, 0x7F), // green/purple bars
+            (0x2000, true, 0x00, 0x7F), // solid black
+            (0x2000, true, 0x7F, 0x00), // green/purple bars
+            (0x2000, true, 0x2A, 0x55), // black/black then green/purple
+            (0x2000, true, 0x7F, 0xFF), // green/purple bars
+
+            (0x4000, false, 0xFF, 0xFF), // solid green
+            (0x4000, false, 0x7F, 0x7F), // green/purple bars
+            (0x4000, false, 0x00, 0x7F), // solid black
+            (0x4000, false, 0x7F, 0x00), // green/purple bars
+            (0x4000, false, 0x2A, 0x55), // black/black then green/purple
+            (0x4000, false, 0x7F, 0xFF), // green/purple bars
+        ];
+
         private void HandleKeyboardInput()
         {
             var state = Keyboard.GetState();
@@ -276,74 +305,70 @@ namespace InnoWerks.Emulators.AppleIIe
 
                     if (state.IsKeyDown(Keys.F9) && !prevKeyboard.IsKeyDown(Keys.F9))
                     {
-                        machineState.State[SoftSwitch.Page2] = !machineState.State[SoftSwitch.Page2];
-                        int pageBase = machineState.State[SoftSwitch.Page2] ? 0x4000 : 0x2000;
+                        var (addr, page2, main, aux) = hiresPatterns[currentHiresTestPattern];
 
-                        // Fill every HIRES byte with 0xFF (all pixels ON)
-                        for (int y = 0; y < 192; y++)
-                        {
-                            int rowAddr =
-                                pageBase +
-                                ((y & 0x07) << 10) +       // (y % 8) * 0x400
-                                (((y >> 3) & 0x07) << 7) + // ((y / 8) % 8) * 0x80
-                                ((y >> 6) * 40);           // (y / 64) * 40
+                        machineState.State[SoftSwitch.Page2] = !page2;
+                        machineState.State[SoftSwitch.TextMode] = false;
+                        machineState.State[SoftSwitch.MixedMode] = false;
+                        machineState.State[SoftSwitch.HiRes] = true;
+                        machineState.State[SoftSwitch.IOUDisabled] = false;
+                        machineState.State[SoftSwitch.DoubleHiRes] = false;
+                        machineState.State[SoftSwitch.Store80] = true;
 
-                            for (int byteCol = 0; byteCol < 40; byteCol++)
-                            {
-                                ushort addr = (ushort)(rowAddr + byteCol);
+                        SimDebugger.Info(
+                            "test={0} addr={1:X4} main={2:X2} aux={3:X2} page1={4} text={5} mixed={6} hires={7} ioudis={8} dhires={9} 80col={10}\n",
+                            currentHiresTestPattern,
+                            addr,
+                            main,
+                            aux,
+                            machineState.State[SoftSwitch.Page2] ? 1 : 0,
+                            machineState.State[SoftSwitch.TextMode] ? 1 : 0,
+                            machineState.State[SoftSwitch.MixedMode] ? 1 : 0,
+                            machineState.State[SoftSwitch.HiRes] ? 1 : 0,
+                            machineState.State[SoftSwitch.IOUDisabled] ? 1 : 0,
+                            machineState.State[SoftSwitch.DoubleHiRes] ? 1 : 0,
+                            machineState.State[SoftSwitch.Store80] ? 1 : 0
+                        );
 
-                                memoryBlocks.SetMain(addr, 0xFF);  // all 7 pixels ON in MAIN
-                                memoryBlocks.SetAux(addr, 0xFF);  // all 7 pixels ON in AUX
-                            }
-                        }
+                        memoryBlocks.Remap();
+
+                        currentHiresTestPattern++;
+                        currentHiresTestPattern %= hiresPatterns.Count;
+                        DoHiresTest(addr, main, aux);
                     }
 
                     if (state.IsKeyDown(Keys.F10) && !prevKeyboard.IsKeyDown(Keys.F10))
                     {
-                        machineState.State[SoftSwitch.Page2] = !machineState.State[SoftSwitch.Page2];
-                        int pageBase = machineState.State[SoftSwitch.Page2] ? 0x4000 : 0x2000;
+                        var (addr, page2, main, aux) = dhiresPatterns[currentDHiresTestPattern];
 
-                        // Fill every HIRES byte with 0xFF (all pixels ON)
-                        for (int y = 0; y < 192; y++)
-                        {
-                            int rowAddr =
-                                pageBase +
-                                ((y & 0x07) << 10) +       // (y % 8) * 0x400
-                                (((y >> 3) & 0x07) << 7) + // ((y / 8) % 8) * 0x80
-                                ((y >> 6) * 40);           // (y / 64) * 40
+                        machineState.State[SoftSwitch.Page2] = !page2;
+                        machineState.State[SoftSwitch.TextMode] = false;
+                        machineState.State[SoftSwitch.MixedMode] = false;
+                        machineState.State[SoftSwitch.HiRes] = true;
+                        machineState.State[SoftSwitch.IOUDisabled] = true;
+                        machineState.State[SoftSwitch.DoubleHiRes] = true;
+                        machineState.State[SoftSwitch.Store80] = true;
 
-                            for (int byteCol = 0; byteCol < 40; byteCol++)
-                            {
-                                ushort addr = (ushort)(rowAddr + byteCol);
+                        SimDebugger.Info(
+                            "test={0} addr={1:X4} main={2:X2} aux={3:X2} page1={4} text={5} mixed={6} hires={7} ioudis={8} dhires={9} 80col={10}\n",
+                            currentDHiresTestPattern,
+                            addr,
+                            main,
+                            aux,
+                            machineState.State[SoftSwitch.Page2] ? 1 : 0,
+                            machineState.State[SoftSwitch.TextMode] ? 1 : 0,
+                            machineState.State[SoftSwitch.MixedMode] ? 1 : 0,
+                            machineState.State[SoftSwitch.HiRes] ? 1 : 0,
+                            machineState.State[SoftSwitch.IOUDisabled] ? 1 : 0,
+                            machineState.State[SoftSwitch.DoubleHiRes] ? 1 : 0,
+                            machineState.State[SoftSwitch.Store80] ? 1 : 0
+                        );
 
-                                memoryBlocks.SetMain(addr, 0x7F);  // all 7 pixels ON in MAIN
-                                memoryBlocks.SetAux(addr, 0x7F);  // all 7 pixels ON in AUX
-                            }
-                        }
-                    }
+                        memoryBlocks.Remap();
 
-                    if (state.IsKeyDown(Keys.F11) && !prevKeyboard.IsKeyDown(Keys.F11))
-                    {
-                        machineState.State[SoftSwitch.Page2] = !machineState.State[SoftSwitch.Page2];
-                        int pageBase = machineState.State[SoftSwitch.Page2] ? 0x4000 : 0x2000;
-
-                        // Fill every HIRES byte with 0xFF (all pixels ON)
-                        for (int y = 0; y < 192; y++)
-                        {
-                            int rowAddr =
-                                pageBase +
-                                ((y & 0x07) << 10) +       // (y % 8) * 0x400
-                                (((y >> 3) & 0x07) << 7) + // ((y / 8) % 8) * 0x80
-                                ((y >> 6) * 40);           // (y / 64) * 40
-
-                            for (int byteCol = 0; byteCol < 40; byteCol++)
-                            {
-                                ushort addr = (ushort)(rowAddr + byteCol);
-
-                                memoryBlocks.SetMain(addr, 0x55); // 01010101 pattern
-                                memoryBlocks.SetAux(addr, 0xAA);  // 10101010 pattern                            }
-                            }
-                        }
+                        currentDHiresTestPattern++;
+                        currentDHiresTestPattern %= dhiresPatterns.Count;
+                        DoDHiresTest(addr, main, aux);
                     }
 
                     if (KeyMapper.TryMap(key, state, out byte ascii))
@@ -355,6 +380,48 @@ namespace InnoWerks.Emulators.AppleIIe
             }
 
             previousKeyboardState = state;
+        }
+
+        private void DoDHiresTest(int pageBase, byte aux, byte main)
+        {
+            // Fill every HIRES byte with 0xFF (all pixels ON)
+            for (int y = 0; y < 192; y++)
+            {
+                int rowAddr =
+                    pageBase +
+                    ((y & 0x07) << 10) +       // (y % 8) * 0x400
+                    (((y >> 3) & 0x07) << 7) + // ((y / 8) % 8) * 0x80
+                    ((y >> 6) * 40);           // (y / 64) * 40
+
+                for (int byteCol = 0; byteCol < 40; byteCol++)
+                {
+                    ushort addr = (ushort)(rowAddr + byteCol);
+
+                    memoryBlocks.SetMain(addr, main);
+                    memoryBlocks.SetAux(addr, aux);
+                }
+            }
+        }
+
+        private void DoHiresTest(int pageBase, byte aux, byte main)
+        {
+            // Fill every HIRES byte with 0xFF (all pixels ON)
+            for (int y = 0; y < 192; y++)
+            {
+                int rowAddr =
+                    pageBase +
+                    ((y & 0x07) << 10) +       // (y % 8) * 0x400
+                    (((y >> 3) & 0x07) << 7) + // ((y / 8) % 8) * 0x80
+                    ((y >> 6) * 40);           // (y / 64) * 40
+
+                for (int byteCol = 0; byteCol < 40; byteCol++)
+                {
+                    ushort addr = (ushort)(rowAddr + byteCol);
+
+                    memoryBlocks.SetMain(addr, main);
+                    memoryBlocks.SetAux(addr, aux);
+                }
+            }
         }
 
         private void HandleResize(object sender, EventArgs e)
