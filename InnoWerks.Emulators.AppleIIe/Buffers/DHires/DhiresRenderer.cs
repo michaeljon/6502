@@ -9,15 +9,15 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace InnoWerks.Emulators.AppleIIe
 {
-    public class HiresRenderer : IDisposable
+    public class DhiresRenderer : IDisposable
     {
-        // private static readonly Color HiresBlack = new(0, 0, 0);
+        private static readonly Color HiresBlack = new(0, 0, 0);
         private static readonly Color HiresPurple = new(128, 0, 255);
         private static readonly Color HiresGreen = new(0, 192, 0);
 
         // private static readonly Color HiresWhite = new(255, 255, 255);
-        // private static readonly Color HiresOrange = new(255, 128, 0);
-        // private static readonly Color HiresBlue = new(0, 0, 255);
+        private static readonly Color HiresOrange = new(255, 128, 0);
+        private static readonly Color HiresBlue = new(0, 0, 255);
 
         //
         // MonoGame stuff
@@ -30,10 +30,9 @@ namespace InnoWerks.Emulators.AppleIIe
 
         private bool disposed;
 
-        private readonly HiresMemoryReader hiresMemoryReader;
         private readonly DhiresMemoryReader dhiresMemoryReader;
 
-        public HiresRenderer(
+        public DhiresRenderer(
             GraphicsDevice graphicsDevice,
             MosTechnologiesCpu cpu,
             IBus bus,
@@ -58,7 +57,6 @@ namespace InnoWerks.Emulators.AppleIIe
             whitePixel = new Texture2D(graphicsDevice, 1, 1);
             whitePixel.SetData([Color.White]);
 
-            hiresMemoryReader = new(memoryBlocks, machineState);
             dhiresMemoryReader = new(memoryBlocks, machineState);
         }
 
@@ -66,26 +64,45 @@ namespace InnoWerks.Emulators.AppleIIe
         {
             ArgumentNullException.ThrowIfNull(spriteBatch);
 
-            var hiresBuffer = new HiresBuffer();
-            hiresMemoryReader.ReadHiresPage(hiresBuffer);
+            var buffer = new DhiresBuffer();
+            dhiresMemoryReader.ReadDhiresPage(buffer);
 
+            int width = DisplayCharacteristics.HiresAppleWidth;
             int pixelWidth = DisplayCharacteristics.AppleBlockWidth / 2;
             int pixelHeight = DisplayCharacteristics.AppleBlockHeight;
 
             for (int y = start; y < start + count; y++)
             {
-                for (int x = 0; x < 280; x++)
+                for (int x = 0; x < width; x++)
                 {
-                    if (!hiresBuffer.GetPixel(y, x))
-                        continue; // Off pixel → nothing to draw
+                    var p = buffer.GetPixel(y, x);
 
-                    byte sourceByte = hiresBuffer.GetSourceByte(y, x);
+                    bool phase = (x % 2 == 0) ^ p.MSB;
 
-                    // Phase calculation: bit7 of byte + horizontal position
-                    bool phaseBit = (sourceByte & 0x80) != 0;
-                    bool phase = ((x & 1) == 1) ^ phaseBit;
+                    // Neighbor check for Tier 2
+                    bool left = x > 0 ? buffer.GetPixel(y, x - 1).IsOn : false;
+                    bool right = x < width - 1 ? buffer.GetPixel(y, x + 1).IsOn : false;
 
-                    Color color = phase ? HiresGreen : HiresPurple;
+                    Color color;
+
+                    if (!p.IsOn)
+                    {
+                        color = HiresBlack;
+                    }
+                    else if (left ^ right) // Tier 2
+                    {
+                        color = phase ? HiresOrange : HiresBlue;
+                    }
+                    else
+                    {
+                        // Tier 1 fallback
+                        if (p.AuxBit && !p.MainBit)
+                            color = phase ? HiresGreen : HiresPurple;
+                        else if (!p.AuxBit && p.MainBit)
+                            color = phase ? HiresGreen : HiresPurple;
+                        else
+                            color = phase ? HiresGreen : HiresPurple;
+                    }
 
                     var rect = new Rectangle(
                         x * pixelWidth,

@@ -1,3 +1,5 @@
+// #define RENDER_DHIRES_PAGE
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -236,6 +238,7 @@ namespace InnoWerks.Emulators.AppleIIe
             base.Draw(gameTime);
         }
 
+#if RENDER_DHIRES_PAGE
         private int currentHiresTestPattern;
         private List<(ushort page, bool page2, byte main, byte aux)> hiresPatterns = [
             (0x2000, true, 0xFF, 0xFF),
@@ -249,20 +252,21 @@ namespace InnoWerks.Emulators.AppleIIe
 
         private int currentDHiresTestPattern;
         private List<(ushort page, bool page2, byte main, byte aux)> dhiresPatterns = [
-            (0x2000, true, 0xFF, 0xFF), // solid green
-            (0x2000, true, 0x7F, 0x7F), // green/purple bars
-            (0x2000, true, 0x00, 0x7F), // solid black
-            (0x2000, true, 0x7F, 0x00), // green/purple bars
-            (0x2000, true, 0x2A, 0x55), // black/black then green/purple
-            (0x2000, true, 0x7F, 0xFF), // green/purple bars
+            (0x2000, true, 0x55, 0xAA), // Alternating green/purple stripes (Tier 1)
+            (0x2000, true, 0xF0, 0x0F), // Creates single-neighbor ON pixels → Tier 2 (orange/blue)
+            (0x2000, true, 0x00, 0xFF), // All Aux ON, Main OFF → purple/green Tier 1
+            (0x2000, true, 0xFF, 0x00), // All Main ON, Aux OFF → purple/green Tier 1
+            (0x2000, true, 0x55, 0x2A), // Mix → checkerboard of Tier 1 + Tier 2
+            (0x2000, true, 0x2A, 0x55), // Tier 1 + Tier 2 → stripes with small black gaps
 
-            (0x4000, false, 0xFF, 0xFF), // solid green
-            (0x4000, false, 0x7F, 0x7F), // green/purple bars
-            (0x4000, false, 0x00, 0x7F), // solid black
-            (0x4000, false, 0x7F, 0x00), // green/purple bars
-            (0x4000, false, 0x2A, 0x55), // black/black then green/purple
-            (0x4000, false, 0x7F, 0xFF), // green/purple bars
+            (0x4000, false, 0x55, 0xAA), // Alternating green/purple stripes (Tier 1)
+            (0x4000, false, 0xF0, 0x0F), // Creates single-neighbor ON pixels → Tier 2 (orange/blue)
+            (0x4000, false, 0x00, 0xFF), // All Aux ON, Main OFF → purple/green Tier 1
+            (0x4000, false, 0xFF, 0x00), // All Main ON, Aux OFF → purple/green Tier 1
+            (0x4000, false, 0x55, 0x2A), // Mix → checkerboard of Tier 1 + Tier 2
+            (0x4000, false, 0x2A, 0x55), // Tier 1 + Tier 2 → stripes with small black gaps
         ];
+#endif
 
         private void HandleKeyboardInput()
         {
@@ -303,6 +307,7 @@ namespace InnoWerks.Emulators.AppleIIe
                         cpuPaused = false;
                     }
 
+#if RENDER_DHIRES_PAGE
                     if (state.IsKeyDown(Keys.F9) && !prevKeyboard.IsKeyDown(Keys.F9))
                     {
                         var (addr, page2, main, aux) = hiresPatterns[currentHiresTestPattern];
@@ -371,6 +376,34 @@ namespace InnoWerks.Emulators.AppleIIe
                         DoDHiresTest(addr, main, aux);
                     }
 
+                    if (state.IsKeyDown(Keys.F11) && !prevKeyboard.IsKeyDown(Keys.F11))
+                    {
+                        machineState.State[SoftSwitch.Page2] = !machineState.State[SoftSwitch.Page2];
+                        machineState.State[SoftSwitch.TextMode] = false;
+                        machineState.State[SoftSwitch.MixedMode] = false;
+                        machineState.State[SoftSwitch.HiRes] = true;
+                        machineState.State[SoftSwitch.IOUDisabled] = true;
+                        machineState.State[SoftSwitch.DoubleHiRes] = true;
+                        machineState.State[SoftSwitch.Store80] = true;
+
+                        memoryBlocks.Remap();
+
+                        WriteDhiresTest((ushort)(machineState.State[SoftSwitch.Page2] ? 0x4000 : 0x2000));
+
+                        SimDebugger.Info(
+                            "test={0} page1={1} text={2} mixed={3} hires={4} ioudis={5} dhires={6} 80col={7}\n",
+                            99,
+                            machineState.State[SoftSwitch.Page2] ? 1 : 0,
+                            machineState.State[SoftSwitch.TextMode] ? 1 : 0,
+                            machineState.State[SoftSwitch.MixedMode] ? 1 : 0,
+                            machineState.State[SoftSwitch.HiRes] ? 1 : 0,
+                            machineState.State[SoftSwitch.IOUDisabled] ? 1 : 0,
+                            machineState.State[SoftSwitch.DoubleHiRes] ? 1 : 0,
+                            machineState.State[SoftSwitch.Store80] ? 1 : 0
+                        );
+                    }
+#endif
+
                     if (KeyMapper.TryMap(key, state, out byte ascii))
                     {
                         iou.InjectKey(ascii);
@@ -382,8 +415,15 @@ namespace InnoWerks.Emulators.AppleIIe
             previousKeyboardState = state;
         }
 
+#if RENDER_DHIRES_PAGE
         private void DoDHiresTest(int pageBase, byte aux, byte main)
         {
+            for (ushort addr = (ushort)pageBase; addr < pageBase + 0x1000; addr++)
+            {
+                memoryBlocks.SetMain(addr, 0x00);
+                memoryBlocks.SetAux(addr, 0x00);
+            }
+
             // Fill every HIRES byte with 0xFF (all pixels ON)
             for (int y = 0; y < 192; y++)
             {
@@ -423,6 +463,40 @@ namespace InnoWerks.Emulators.AppleIIe
                 }
             }
         }
+
+        // Fill first few bytes with test patterns
+        void WriteDhiresTest(ushort pageBase)
+        {
+            for (ushort addr = pageBase; addr < pageBase + 0x2000; addr++)
+            {
+                memoryBlocks.SetMain(addr, 0x00);
+                memoryBlocks.SetAux(addr, 0x00);
+            }
+
+            for (ushort addr = pageBase; addr < pageBase + 0x2000; addr += 5)
+            {
+                // Byte 0 → alternating bits to produce Tier 1 stripes
+                memoryBlocks.SetMain((ushort)(addr + 0), 0x55);
+                memoryBlocks.SetAux((ushort)(addr + 0), 0xAA);
+
+                // Byte 1 → single neighbor ON → Tier 2 (orange/blue)
+                memoryBlocks.SetMain((ushort)(addr + 1), 0x0F);
+                memoryBlocks.SetAux((ushort)(addr + 1), 0xF0);
+
+                // Byte 2 → solid Aux ON → Tier 1
+                memoryBlocks.SetMain((ushort)(addr + 2), 0x00);
+                memoryBlocks.SetAux((ushort)(addr + 2), 0xFF);
+
+                // Byte 3 → solid Main ON → Tier 1
+                memoryBlocks.SetMain((ushort)(addr + 3), 0xFF);
+                memoryBlocks.SetAux((ushort)(addr + 3), 0x00);
+
+                // Byte 4 → mix for checkerboard Tier 1/2
+                memoryBlocks.SetMain((ushort)(addr + 4), 0x2A);
+                memoryBlocks.SetAux((ushort)(addr + 4), 0x55);
+            }
+        }
+#endif
 
         private void HandleResize(object sender, EventArgs e)
         {

@@ -41,9 +41,10 @@ namespace InnoWerks.Emulators.AppleIIe
                         bool mainBit = ((mainByte >> bit) & 1) != 0;
 
                         int x = byteCol * 14 + bit * 2;
+                        bool msb = (auxByte & 0x80) != 0 || (mainByte & 0x80) != 0;
 
-                        buffer.SetPixel(y, x, auxBit, mainBit, auxByte);   // left
-                        buffer.SetPixel(y, x + 1, auxBit, mainBit, mainByte); // right
+                        buffer.SetPixel(y, x, auxBit, mainBit, msb);   // left
+                        buffer.SetPixel(y, x + 1, auxBit, mainBit, msb); // right
                     }
                 }
             }

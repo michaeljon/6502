@@ -652,7 +652,7 @@ namespace InnoWerks.Computers.Apple
             var page = GetPage(address);
             var offset = GetOffset(address);
 
-            mainMemory[page].Block[offset] = value;
+            auxMemory[page].Block[offset] = value;
         }
 
         internal void DumpPage(MemoryPage memoryPage)

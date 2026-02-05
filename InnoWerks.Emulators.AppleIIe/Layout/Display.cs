@@ -1,5 +1,3 @@
-// #define RENDER_DHIRES_PAGE
-
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -33,6 +31,7 @@ namespace InnoWerks.Emulators.AppleIIe
         private TextModeRenderer textModeRenderer;
         private LoresRenderer loresRenderer;
         private HiresRenderer hiresRenderer;
+        private DhiresRenderer dhiresRenderer;
         private DebugToolsRenderer debugToolsRenderer;
 
         private bool disposed;
@@ -69,6 +68,7 @@ namespace InnoWerks.Emulators.AppleIIe
             textModeRenderer = new(graphicsDevice, cpu, bus, memoryBlocks, machineState, contentManager, textColor);
             loresRenderer = new(graphicsDevice, cpu, bus, memoryBlocks, machineState, contentManager);
             hiresRenderer = new(graphicsDevice, cpu, bus, memoryBlocks, machineState, contentManager);
+            dhiresRenderer = new(graphicsDevice, cpu, bus, memoryBlocks, machineState, contentManager);
             debugToolsRenderer = new(graphicsDevice, cpu, bus, memoryBlocks, machineState, contentManager, textColor);
         }
 
@@ -129,20 +129,17 @@ namespace InnoWerks.Emulators.AppleIIe
             spriteBatch.Draw(whitePixel, hostLayout.AppleDisplay, Color.White);
             spriteBatch.Draw(whitePixel, new Rectangle(hostLayout.AppleDisplay.X + 1, hostLayout.AppleDisplay.Y + 1, hostLayout.AppleDisplay.Width - 2, hostLayout.AppleDisplay.Height - 2), new Color(20, 20, 20));
 
-#if RENDER_DHIRES_PAGE
-            hiresRenderer.DrawDhiresMode(spriteBatch, 0, 192);
-#else
             if (machineState.State[SoftSwitch.DoubleHiRes])
             {
-                hiresRenderer.DrawDhiresMode(spriteBatch, 0, 192);
+                dhiresRenderer.Draw(spriteBatch, 0, 192);
             }
             else if (machineState.State[SoftSwitch.HiRes] && machineState.State[SoftSwitch.MixedMode] == false)
             {
-                hiresRenderer.DrawHiresMode(spriteBatch, 0, 192);
+                hiresRenderer.Draw(spriteBatch, 0, 192);
             }
             else if (machineState.State[SoftSwitch.HiRes] && machineState.State[SoftSwitch.MixedMode] == true)
             {
-                hiresRenderer.DrawHiresMode(spriteBatch, 0, 192 - 4 * DisplayCharacteristics.AppleCellHeight);
+                hiresRenderer.Draw(spriteBatch, 0, 192 - 4 * DisplayCharacteristics.AppleCellHeight);
                 textModeRenderer.Draw(spriteBatch, 20, 4, flashOn);
             }
             else if (machineState.State[SoftSwitch.TextMode] == false && machineState.State[SoftSwitch.MixedMode] == false)
@@ -158,7 +155,6 @@ namespace InnoWerks.Emulators.AppleIIe
             {
                 textModeRenderer.Draw(spriteBatch, 0, 24, flashOn);
             }
-#endif
 
             spriteBatch.End();
         }
@@ -190,6 +186,7 @@ namespace InnoWerks.Emulators.AppleIIe
                 textModeRenderer?.Dispose();
                 loresRenderer?.Dispose();
                 hiresRenderer?.Dispose();
+                dhiresRenderer?.Dispose();
                 debugToolsRenderer?.Dispose();
             }
 
