@@ -274,6 +274,78 @@ namespace InnoWerks.Emulators.AppleIIe
                         cpuPaused = false;
                     }
 
+                    if (state.IsKeyDown(Keys.F9) && !prevKeyboard.IsKeyDown(Keys.F9))
+                    {
+                        machineState.State[SoftSwitch.Page2] = !machineState.State[SoftSwitch.Page2];
+                        int pageBase = machineState.State[SoftSwitch.Page2] ? 0x4000 : 0x2000;
+
+                        // Fill every HIRES byte with 0xFF (all pixels ON)
+                        for (int y = 0; y < 192; y++)
+                        {
+                            int rowAddr =
+                                pageBase +
+                                ((y & 0x07) << 10) +       // (y % 8) * 0x400
+                                (((y >> 3) & 0x07) << 7) + // ((y / 8) % 8) * 0x80
+                                ((y >> 6) * 40);           // (y / 64) * 40
+
+                            for (int byteCol = 0; byteCol < 40; byteCol++)
+                            {
+                                ushort addr = (ushort)(rowAddr + byteCol);
+
+                                memoryBlocks.SetMain(addr, 0xFF);  // all 7 pixels ON in MAIN
+                                memoryBlocks.SetAux(addr, 0xFF);  // all 7 pixels ON in AUX
+                            }
+                        }
+                    }
+
+                    if (state.IsKeyDown(Keys.F10) && !prevKeyboard.IsKeyDown(Keys.F10))
+                    {
+                        machineState.State[SoftSwitch.Page2] = !machineState.State[SoftSwitch.Page2];
+                        int pageBase = machineState.State[SoftSwitch.Page2] ? 0x4000 : 0x2000;
+
+                        // Fill every HIRES byte with 0xFF (all pixels ON)
+                        for (int y = 0; y < 192; y++)
+                        {
+                            int rowAddr =
+                                pageBase +
+                                ((y & 0x07) << 10) +       // (y % 8) * 0x400
+                                (((y >> 3) & 0x07) << 7) + // ((y / 8) % 8) * 0x80
+                                ((y >> 6) * 40);           // (y / 64) * 40
+
+                            for (int byteCol = 0; byteCol < 40; byteCol++)
+                            {
+                                ushort addr = (ushort)(rowAddr + byteCol);
+
+                                memoryBlocks.SetMain(addr, 0x7F);  // all 7 pixels ON in MAIN
+                                memoryBlocks.SetAux(addr, 0x7F);  // all 7 pixels ON in AUX
+                            }
+                        }
+                    }
+
+                    if (state.IsKeyDown(Keys.F11) && !prevKeyboard.IsKeyDown(Keys.F11))
+                    {
+                        machineState.State[SoftSwitch.Page2] = !machineState.State[SoftSwitch.Page2];
+                        int pageBase = machineState.State[SoftSwitch.Page2] ? 0x4000 : 0x2000;
+
+                        // Fill every HIRES byte with 0xFF (all pixels ON)
+                        for (int y = 0; y < 192; y++)
+                        {
+                            int rowAddr =
+                                pageBase +
+                                ((y & 0x07) << 10) +       // (y % 8) * 0x400
+                                (((y >> 3) & 0x07) << 7) + // ((y / 8) % 8) * 0x80
+                                ((y >> 6) * 40);           // (y / 64) * 40
+
+                            for (int byteCol = 0; byteCol < 40; byteCol++)
+                            {
+                                ushort addr = (ushort)(rowAddr + byteCol);
+
+                                memoryBlocks.SetMain(addr, 0x55); // 01010101 pattern
+                                memoryBlocks.SetAux(addr, 0xAA);  // 10101010 pattern                            }
+                            }
+                        }
+                    }
+
                     if (KeyMapper.TryMap(key, state, out byte ascii))
                     {
                         iou.InjectKey(ascii);

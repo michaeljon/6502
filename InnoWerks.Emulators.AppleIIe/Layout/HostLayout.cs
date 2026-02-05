@@ -34,11 +34,11 @@ namespace InnoWerks.Emulators.AppleIIe
 
             int scale = Math.Max(
                 1,
-                Math.Min(availableWidth / Display.AppleDisplayWidth, availableHeight / Display.AppleDisplayHeight)
+                Math.Min(availableWidth / DisplayCharacteristics.AppleDisplayWidth, availableHeight / DisplayCharacteristics.AppleDisplayHeight)
             );
 
-            int appleRenderWidth = Display.AppleDisplayWidth * scale;
-            int appleRenderHeight = Display.AppleDisplayHeight * scale;
+            int appleRenderWidth = DisplayCharacteristics.AppleDisplayWidth * scale;
+            int appleRenderHeight = DisplayCharacteristics.AppleDisplayHeight * scale;
 
             int blockWidth = (appleRenderWidth - (3 * Padding)) / 4;
             int blockHeight = windowHeight - appleRenderHeight - (3 * Padding);

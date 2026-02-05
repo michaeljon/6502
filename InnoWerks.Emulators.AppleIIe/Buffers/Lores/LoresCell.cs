@@ -1,11 +1,12 @@
 using System;
+using System.Linq;
 using Microsoft.Xna.Framework;
 
 namespace InnoWerks.Emulators.AppleIIe
 {
     public readonly struct LoresCell : IEquatable<LoresCell>
     {
-        private static readonly Color[] loresPalette =
+        private static readonly Color[] loresPaletteEven =
         [
             new Color(0,  0,  0),
             new Color(208,  0, 48),
@@ -23,37 +24,15 @@ namespace InnoWerks.Emulators.AppleIIe
             new Color(255,255,  0),
             new Color( 64,255,144),
             new Color(255,255,255)
-
-            // Color.Black,
-            // Color.Magenta,
-            // Color.DarkBlue,
-            // Color.Purple,
-            // Color.DarkGreen,
-            // Color.DarkGray,
-            // Color.MediumBlue,
-            // Color.LightBlue,
-
-            // Color.Brown,
-            // Color.Orange,
-            // Color.Gray,
-            // Color.Pink,
-            // Color.LightGreen,
-            // Color.Yellow,
-            // Color.Aquamarine,
-            // Color.White
         ];
 
-        public static Color GetPaletteColor(int index) => loresPalette[index];
-
-        public static int PaletteSize => loresPalette.Length;
-
+        private static readonly Color[] loresPaletteOdd = [.. loresPaletteEven.Select(c => Bias(c, 0.88f))];
 
         public readonly byte TopIndex => (byte)(value & 0x0F);
         public readonly byte BottomIndex => (byte)((value & 0xF0) >> 4);
 
-        public readonly Color Top => loresPalette[TopIndex];
-        public readonly Color Bottom => loresPalette[BottomIndex];
-
+        public readonly Color Top(int col, bool hires) => (col & 1) == 1 && hires ? loresPaletteOdd[TopIndex] : loresPaletteEven[TopIndex];
+        public readonly Color Bottom(int col, bool hires) => (col & 1) == 1 && hires ? loresPaletteOdd[BottomIndex] : loresPaletteEven[BottomIndex];
 
         private readonly byte value;
 
@@ -82,6 +61,15 @@ namespace InnoWerks.Emulators.AppleIIe
         public static bool operator !=(LoresCell left, LoresCell right)
         {
             return !(left == right);
+        }
+
+        private static Color Bias(Color c, float scale)
+        {
+            return new Color(
+                (byte)(c.R * scale),
+                (byte)(c.G * scale),
+                (byte)(c.B * scale)
+            );
         }
     }
 }

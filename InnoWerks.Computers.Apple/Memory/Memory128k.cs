@@ -625,6 +625,14 @@ namespace InnoWerks.Computers.Apple
             return mainMemory[page].Block[offset];
         }
 
+        public void SetMain(ushort address, byte value)
+        {
+            var page = GetPage(address);
+            var offset = GetOffset(address);
+
+            mainMemory[page].Block[offset] = value;
+        }
+
         /// <summary>
         /// Allows for bus-tied devices to directly access the
         /// aux 64k of RAM. Used primarily by the video system.
@@ -637,6 +645,14 @@ namespace InnoWerks.Computers.Apple
             var offset = GetOffset(address);
 
             return auxMemory[page].Block[offset];
+        }
+
+        public void SetAux(ushort address, byte value)
+        {
+            var page = GetPage(address);
+            var offset = GetOffset(address);
+
+            mainMemory[page].Block[offset] = value;
         }
 
         internal void DumpPage(MemoryPage memoryPage)
