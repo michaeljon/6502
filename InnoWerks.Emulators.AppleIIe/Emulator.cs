@@ -151,7 +151,7 @@ namespace InnoWerks.Emulators.AppleIIe
         {
             display = new Display(GraphicsDevice, cpu, appleBus, memoryBlocks, machineState);
 
-            display.LoadContent(Color.Orange, Content);
+            display.LoadContent(DisplayCharacteristics.AmberText, Content);
         }
 
         protected override void Update(GameTime gameTime)
